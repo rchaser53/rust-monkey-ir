@@ -1,0 +1,8 @@
+[package]
+name = "hoge-rust"
+version = "0.1.0"
+authors = ["rchaser53 <tayoshizawa29@gmail.com>"]
+
+[dependencies]
+clap = "~2.27.0"
+
