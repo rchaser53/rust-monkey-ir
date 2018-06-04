@@ -1,22 +1,33 @@
 extern crate clap;
+extern crate serde_json;
+
 use clap::{Arg, App, SubCommand};
+use serde_json::{Value, Error};
+use std::fs::File;
+use std::io::prelude::*;
+
+fn read_file(filename: &str) -> Result<String, std::io::Error> {
+    let mut file = File::open(filename)?;
+    let mut contents = String::new();
+    file.read_to_string(&mut contents)?;
+    Ok(contents.to_string())
+}
 
 fn main() {
-  let hoge = App::new("My Super Program")
+  let matcher = App::new("input something")
                   .version("1.0")
                   .arg(Arg::with_name("INPUT")
-                      .help("Sets the input file to use")
                       .required(true)
-                      .index(1)
-                  )
+                      .index(1))
                   .get_matches();
 
-  let mut ret = "";
-  if let Some(c) = hoge.value_of("INPUT") {
-    ret = c;
+  let mut filename = "";
+  if let Some(c) = matcher.value_of("INPUT") {
+    filename = c;
   } else {
-    ret = "nothing!";
+    panic!("{} is not found!", filename);
   }
-  println!("{}", ret);
+
+  println!("{}", read_file(&filename).unwrap());
 }
 
