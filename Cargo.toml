@@ -6,3 +6,4 @@ authors = ["rchaser53 <tayoshizawa29@gmail.com>"]
 [dependencies]
 clap = "~2.27.0"
 serde_json = "1.0"
+reqwest = "0.8.6"

@@ -49,3 +49,13 @@ fn main() {
   println!("{}", json_obj["key"]);
 }
 
+
+  // let body = reqwest::get("https://api.binance.com/api/v1/exchangeInfo").unwrap()
+  //                     .text().unwrap();
+
+  // let json = convert_str_json(&body).unwrap();
+
+  // for row in json["rateLimits"].as_array().unwrap() {
+  //   println!("{}", row);
+  // } 
+
