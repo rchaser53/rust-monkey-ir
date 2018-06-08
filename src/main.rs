@@ -1,12 +1,35 @@
 extern crate clap;
 extern crate reqwest;
 extern crate regex;
+extern crate serde_json;
+
+#[macro_use]
+extern crate lazy_static;
 
 use regex::Regex;
+use serde_json::{Value, Error};
 
+use std::collections::HashMap;
 
 mod cli_to_read_file;
 use cli_to_read_file::*;
+
+lazy_static! {
+    pub static ref JSON_HASH: HashMap<&'static str, Value> = {
+      let mut m = HashMap::new();
+      let val: Value = serde_json::from_str(r#"{
+                    "name": "John Doe",
+                    "age": 43,
+                    "phones": [
+                      "+44 1234567",
+                      "+44 2345678"
+                    ]
+                  }"#).unwrap();
+
+      m.insert("abc", val);
+      m
+    };
+}
 
 fn main() {
   println!("{}", attach_slash_initials("abc/def/"));
