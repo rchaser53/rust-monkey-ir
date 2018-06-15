@@ -3,73 +3,24 @@ extern crate reqwest;
 extern crate regex;
 extern crate serde_json;
 
-#[macro_use]
-extern crate lazy_static;
-
-use regex::Regex;
-use serde_json::{Value, Error};
-
-use std::collections::HashMap;
-
-mod cli_to_read_file;
-use cli_to_read_file::*;
-
-use std::fmt;
-
-lazy_static! {
-    pub static ref JSON_HASH: HashMap<&'static str, Value> = {
-      let mut m = HashMap::new();
-      let val: Value = serde_json::from_str(r#"{
-                    "name": "John Doe",
-                    "age": 43,
-                    "phones": [
-                      "+44 1234567",
-                      "+44 2345678"
-                    ]
-                  }"#).unwrap();
-
-      m.insert("abc", val);
-      m
-    };
-}
-
-// fn main() {
-  // println!("{}", attach_slash_initials("abc/def/"));
-  // println!("{}", attach_slash_initials("/abc/def/"));
-  // println!("{:?}", JSON_HASH["abc"]);
-// }
-
-fn attach_slash_initials(target_str: &str) -> String {
-  let re = Regex::new(r"^/").unwrap();
-
-  if re.is_match(target_str) {
-    return target_str.to_string();
-  }
-  return "/".to_owned() + target_str;
-}
-
-
-fn hoge<T, F, S>(x : &T, f : F) -> S
-    where F : Fn(&T) -> S {
-    f(x)
-}
-
-fn test(v: &Vec<u16>) -> Vec<u32> {
-  v.into_iter().map(|new_v| {
-    let a = *new_v as u32;
-    a
-  }).collect()
+#[derive(Debug)]
+pub enum AstType {
+  Start,
+  End,
+  Normal,
 }
 
 #[derive(Debug)]
 struct Part {
-  kind: String
+  kind: AstType,
+  value: char,
 }
 
 impl Part {
-  fn new(imput: &str) -> Part {
-    return Part{
-      kind: imput.to_string()
+  fn new(kind: AstType , imput: char) -> Part {
+    return Part {
+      kind: kind,
+      value: imput
     }
   }
 }
@@ -81,19 +32,22 @@ impl Part {
 // }
 
 fn main() {
-  let input_str = "{abc}";
+  let input_str = "{a b  c}";
 
-  let mut i_vec: Vec<Part> = vec![];
+  let mut i_vec: Vec<Part> = Vec::with_capacity(input_str.len());;
   for cha in input_str.chars() {
-    let i = match cha {
-      '{' | '}' => {
-        Part::new("a")
+    match cha {
+      '{' => {
+        i_vec.push(Part::new(AstType::Start, cha));
       },
+      '}' => {
+        i_vec.push(Part::new(AstType::End, cha));
+      },
+      ' ' => {},
       _ => {
-        Part::new("b")
+        i_vec.push(Part::new(AstType::Normal, cha));
       }
     };
-    i_vec.push(i);
   }
 
   println!("{:?}", i_vec);
