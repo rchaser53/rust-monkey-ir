@@ -14,6 +14,8 @@ use std::collections::HashMap;
 mod cli_to_read_file;
 use cli_to_read_file::*;
 
+use std::fmt;
+
 lazy_static! {
     pub static ref JSON_HASH: HashMap<&'static str, Value> = {
       let mut m = HashMap::new();
@@ -59,11 +61,42 @@ fn test(v: &Vec<u16>) -> Vec<u32> {
   }).collect()
 }
 
-fn main() {
-    let v = vec![0, 1, 2];
-    let aaa = hoge(&v, test);
+#[derive(Debug)]
+struct Part {
+  kind: String
+}
 
-    println!("{:?}", aaa);
+impl Part {
+  fn new(imput: &str) -> Part {
+    return Part{
+      kind: imput.to_string()
+    }
+  }
+}
+
+// impl fmt::Debug for Part {
+//     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+//         write!(f, "{}", self.kind)
+//     }
+// }
+
+fn main() {
+  let input_str = "{abc}";
+
+  let mut i_vec: Vec<Part> = vec![];
+  for cha in input_str.chars() {
+    let i = match cha {
+      '{' | '}' => {
+        Part::new("a")
+      },
+      _ => {
+        Part::new("b")
+      }
+    };
+    i_vec.push(i);
+  }
+
+  println!("{:?}", i_vec);
 }
 
   // let separeteds: Vec<&str> = url_string.split("/").collect();
