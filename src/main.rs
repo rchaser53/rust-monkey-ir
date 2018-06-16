@@ -12,17 +12,68 @@ pub enum AstType {
 
 #[derive(Debug)]
 struct Part {
+  start: usize,
+  end: usize,
   kind: AstType,
   value: char,
 }
 
 impl Part {
-  fn new(kind: AstType , imput: char) -> Part {
+  fn new(kind: AstType , imput: char, start: usize) -> Part {
     return Part {
+      start: start,
+      end: 0,
       kind: kind,
       value: imput
     }
   }
+}
+
+#[derive(Debug)]
+pub enum WalkingType {
+  Function,
+  Normal,
+}
+
+#[derive(Debug)]
+struct Walker {
+  input: String,
+  part: Vec<Part>,
+  current_type: WalkingType
+}
+
+impl Walker {
+  fn new(input: &str) -> Walker {
+    Walker {
+      input: input.to_string(),
+      part: Vec::new(),
+      current_type: WalkingType::Function 
+    }
+  }
+
+  fn walk(&mut self) {
+    for (index, cha) in self.input.chars().enumerate() {
+      match cha {
+        '{' => {
+          self.part.push(Part::new(AstType::Start, cha, index));
+        },
+        '}' => {
+          self.part.push(Part::new(AstType::End, cha, index));
+        },
+        ' ' => {},
+        _ => {
+          self.part.push(Part::new(AstType::Normal, cha, index));
+        }
+      };
+    }
+  }
+}
+
+fn main() {
+  let mut walker = Walker::new("{a b  c}");
+  &walker.walk();
+
+  println!("{:?}", walker);
 }
 
 // impl fmt::Debug for Part {
@@ -30,55 +81,3 @@ impl Part {
 //         write!(f, "{}", self.kind)
 //     }
 // }
-
-fn main() {
-  let input_str = "{a b  c}";
-
-  let mut i_vec: Vec<Part> = Vec::with_capacity(input_str.len());;
-  for cha in input_str.chars() {
-    match cha {
-      '{' => {
-        i_vec.push(Part::new(AstType::Start, cha));
-      },
-      '}' => {
-        i_vec.push(Part::new(AstType::End, cha));
-      },
-      ' ' => {},
-      _ => {
-        i_vec.push(Part::new(AstType::Normal, cha));
-      }
-    };
-  }
-
-  println!("{:?}", i_vec);
-}
-
-  // let separeteds: Vec<&str> = url_string.split("/").collect();
-  // for s in separeteds {
-  //   println!("{}", s);
-  // }
-// fn main() {
-  // let client = reqwest::Client::new();
-  // let status = client
-  //     .request(reqwest::Method::Options, "http://localhost:3000/test")
-  //     .send()
-  //     .map(|res| res.status())
-  //     .map_err(|err| panic!(err));
-  
-  // if status.unwrap() == reqwest::StatusCode::Ok {
-  //   let res = client.put("http://localhost:3000/test")
-  //         .body("nyan")
-  //         .send();
-
-  //   println!("{:?}", res.unwrap().text());
-  // }
-
-
-  // let json = convert_str_json(&body).unwrap();
-  // println!("{:?}", res);
-// }
- // let body = reqwest::get("https://api.binance.com/api/v1/ticker/24hr?symbol=XRPBTC").unwrap()
-  //                     .text().unwrap();
-
-  // let json = convert_str_json(&body).unwrap();
-  // println!("{}", json);
