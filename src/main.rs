@@ -16,6 +16,7 @@ struct Part {
   end: usize,
   kind: AstType,
   value: char,
+  children: Vec<Part>
 }
 
 impl Part {
@@ -24,7 +25,8 @@ impl Part {
       start: start,
       end: 0,
       kind: kind,
-      value: imput
+      value: imput,
+      children: Vec::new()
     }
   }
 }
@@ -36,18 +38,20 @@ pub enum WalkingType {
 }
 
 #[derive(Debug)]
-struct Walker {
-  input: String,
+struct Walker<'a> {
+  input: &'a str,
   part: Vec<Part>,
-  current_type: WalkingType
+  current_type: WalkingType,
+  walking_index: usize
 }
 
-impl Walker {
-  fn new(input: &str) -> Walker {
+impl <'a>Walker<'a> {
+  fn new(input: &'a str) -> Walker {
     Walker {
-      input: input.to_string(),
+      input: input,
       part: Vec::new(),
-      current_type: WalkingType::Function 
+      current_type: WalkingType::Function,
+      walking_index: 0
     }
   }
 
