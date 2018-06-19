@@ -42,7 +42,6 @@ struct Walker<'a> {
   input: &'a str,
   part: Vec<Part>,
   current_type: WalkingType,
-  walking_index: usize
 }
 
 impl <'a>Walker<'a> {
@@ -51,25 +50,32 @@ impl <'a>Walker<'a> {
       input: input,
       part: Vec::new(),
       current_type: WalkingType::Function,
-      walking_index: 0
     }
   }
 
   fn walk(&mut self) {
-    for (index, cha) in self.input.chars().enumerate() {
-      match cha {
-        '{' => {
-          self.part.push(Part::new(AstType::Start, cha, index));
-        },
-        '}' => {
-          self.part.push(Part::new(AstType::End, cha, index));
-        },
-        ' ' => {},
-        _ => {
-          self.part.push(Part::new(AstType::Normal, cha, index));
-        }
-      };
+    let str_len = self.input.len();
+    let mut walking_index = 0;
+    while walking_index < str_len {
+      let hoge = self.input.chars().nth(walking_index).unwrap();
+      println!("{}", hoge);
+      walking_index += 1;
     }
+
+    // for (index, cha) in self.input.chars().enumerate() {
+    //   match cha {
+    //     '{' => {
+    //       self.part.push(Part::new(AstType::Start, cha, index));
+    //     },
+    //     '}' => {
+    //       self.part.push(Part::new(AstType::End, cha, index));
+    //     },
+    //     ' ' => {},
+    //     _ => {
+    //       self.part.push(Part::new(AstType::Normal, cha, index));
+    //     }
+    //   };
+    // }
   }
 }
 
@@ -77,7 +83,7 @@ fn main() {
   let mut walker = Walker::new("{a b  c}");
   &walker.walk();
 
-  println!("{:?}", walker);
+  // println!("{:?}", walker);
 }
 
 // impl fmt::Debug for Part {
