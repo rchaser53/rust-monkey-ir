@@ -54,12 +54,9 @@ impl <'a>Walker<'a> {
   }
 
   fn walk(&mut self) {
-    let str_len = self.input.len();
-    let mut walking_index = 0;
-    while walking_index < str_len {
-      let hoge = self.input.chars().nth(walking_index).unwrap();
+    let mut chars = self.input.chars();
+    while let Some(hoge) = chars.next() {
       println!("{}", hoge);
-      walking_index += 1;
     }
 
     // for (index, cha) in self.input.chars().enumerate() {
@@ -82,6 +79,9 @@ impl <'a>Walker<'a> {
 fn main() {
   let mut walker = Walker::new("{a b  c}");
   &walker.walk();
+
+  let nyn: String = "abc".to_string();
+  println!("{}", nyn);
 
   // println!("{:?}", walker);
 }
