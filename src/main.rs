@@ -53,7 +53,17 @@ impl <'a>Walker<'a> {
     }
   }
 
-  pub fn get_next_target(last_part: &mut Vec<Part>, last_index: usize) -> &mut Vec<Part> {
+  pub fn get_next_target(last_part: &mut Vec<Part>, index: usize) -> &mut Vec<Part> {
+    if index == 0 {
+      return last_part;
+    }
+
+    let last_index = index - 1;
+    let last_char = last_part[last_index].value;
+    if last_char == '{' {
+      return &mut last_part[last_index].children;
+    }
+
     return last_part;
   }
 
@@ -61,19 +71,20 @@ impl <'a>Walker<'a> {
     let mut chars = self.input.chars();
     let mut index = 0;
     
-    let mut target = &mut self.part;
+    let target = &mut self.part;
     while let Some(cha) = chars.next() {
-      if index != 0 {
-        let mut target = Walker::get_next_target(target, index - 1);
-      }
+      let mut target = Walker::get_next_target(target, index);
       match cha {
         '{' => {
           target.push(Part::new(AstType::Start, cha, index));
+          continue;
         },
         '}' => {
           target.push(Part::new(AstType::End, cha, index));
         },
-        ' ' => {},
+        ' ' => {
+          target.push(Part::new(AstType::End, cha, index));
+        },
         _ => {
           target.push(Part::new(AstType::Normal, cha, index));
         }
