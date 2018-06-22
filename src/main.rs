@@ -53,26 +53,34 @@ impl <'a>Walker<'a> {
     }
   }
 
-  fn walk(&mut self) {
-    let mut chars = self.input.chars();
-    while let Some(hoge) = chars.next() {
-      println!("{}", hoge);
-    }
+  pub fn get_next_target(last_part: &mut Vec<Part>, last_index: usize) -> &mut Vec<Part> {
+    return last_part;
+  }
 
-    // for (index, cha) in self.input.chars().enumerate() {
-    //   match cha {
-    //     '{' => {
-    //       self.part.push(Part::new(AstType::Start, cha, index));
-    //     },
-    //     '}' => {
-    //       self.part.push(Part::new(AstType::End, cha, index));
-    //     },
-    //     ' ' => {},
-    //     _ => {
-    //       self.part.push(Part::new(AstType::Normal, cha, index));
-    //     }
-    //   };
-    // }
+  pub fn walk(&mut self) {
+    let mut chars = self.input.chars();
+    let mut index = 0;
+    
+    let mut target = &mut self.part;
+    while let Some(cha) = chars.next() {
+      if index != 0 {
+        let mut target = Walker::get_next_target(target, index - 1);
+      }
+      match cha {
+        '{' => {
+          target.push(Part::new(AstType::Start, cha, index));
+        },
+        '}' => {
+          target.push(Part::new(AstType::End, cha, index));
+        },
+        ' ' => {},
+        _ => {
+          target.push(Part::new(AstType::Normal, cha, index));
+        }
+      };
+      index += 1;
+    }
+    println!("{:?}", target);
   }
 }
 
