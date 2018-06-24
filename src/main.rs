@@ -3,6 +3,9 @@ extern crate reqwest;
 extern crate regex;
 extern crate serde_json;
 
+use std::rc::Rc;
+use std::cell::RefCell;
+
 #[derive(Debug)]
 pub enum AstType {
   Start,
@@ -16,7 +19,8 @@ struct Part {
   end: usize,
   kind: AstType,
   value: char,
-  children: Vec<Part>
+  children: Vec<Part>,
+  parent: RefCell<Option<Rc<Part>>>,
 }
 
 impl Part {
@@ -26,7 +30,19 @@ impl Part {
       end: 0,
       kind: kind,
       value: imput,
-      children: Vec::new()
+      children: Vec::new(),
+      parent: RefCell::new(None)
+    }
+  }
+
+  fn add_child(kind: AstType , imput: char, start: usize, parent: Part) -> Part {
+    return Part {
+      start: start,
+      end: 0,
+      kind: kind,
+      value: imput,
+      children: Vec::new(),
+      parent: RefCell::new(Some(Rc::new(parent)))
     }
   }
 }
@@ -62,6 +78,8 @@ impl <'a>Walker<'a> {
     let last_char = last_part[last_index].value;
     if last_char == '{' {
       return &mut last_part[last_index].children;
+    } else if last_char == '}' {
+
     }
 
     return last_part;
