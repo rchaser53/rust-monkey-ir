@@ -3,8 +3,7 @@ extern crate reqwest;
 extern crate regex;
 extern crate serde_json;
 
-use std::rc::Rc;
-use std::cell::RefCell;
+use std::rc::{Rc, Weak};
 
 #[derive(Debug)]
 pub enum AstType {
@@ -19,8 +18,8 @@ struct Part {
   end: usize,
   kind: AstType,
   value: char,
-  children: Vec<Part>,
-  parent: RefCell<Option<Rc<Part>>>,
+  children: Vec<Rc<Part>>,
+  parent: Weak<Part>,
 }
 
 impl Part {
@@ -31,18 +30,18 @@ impl Part {
       kind: kind,
       value: imput,
       children: Vec::new(),
-      parent: RefCell::new(None)
+      parent: Weak::new(),
     }
   }
 
-  fn add_child(kind: AstType , imput: char, start: usize, parent: Part) -> Part {
+  fn add_child(mut self, kind: AstType , imput: char, start: usize) -> Part {
     return Part {
       start: start,
       end: 0,
       kind: kind,
       value: imput,
       children: Vec::new(),
-      parent: RefCell::new(Some(Rc::new(parent)))
+      parent: Rc::downgrade(&Rc::new(self)),
     }
   }
 }
@@ -56,7 +55,7 @@ pub enum WalkingType {
 #[derive(Debug)]
 struct Walker<'a> {
   input: &'a str,
-  part: Vec<Part>,
+  part: Vec<Rc<Part>>,
   current_type: WalkingType,
 }
 
@@ -69,7 +68,7 @@ impl <'a>Walker<'a> {
     }
   }
 
-  pub fn get_next_target(last_part: &mut Vec<Part>, index: usize) -> &mut Vec<Part> {
+  pub fn get_next_target(last_part: &mut Vec<Rc<Part>>, index: usize) -> &mut Vec<Rc<Part>> {
     if index == 0 {
       return last_part;
     }
@@ -77,7 +76,7 @@ impl <'a>Walker<'a> {
     let last_index = index - 1;
     let last_char = last_part[last_index].value;
     if last_char == '{' {
-      return &mut last_part[last_index].children;
+      return &mut Rc::get_mut(&mut last_part[last_index]).unwrap().children;
     } else if last_char == '}' {
 
     }
@@ -94,17 +93,17 @@ impl <'a>Walker<'a> {
       let mut target = Walker::get_next_target(target, index);
       match cha {
         '{' => {
-          target.push(Part::new(AstType::Start, cha, index));
+          target.push(Rc::new(Part::new(AstType::Start, cha, index)));
           continue;
         },
         '}' => {
-          target.push(Part::new(AstType::End, cha, index));
+          target.push(Rc::new(Part::new(AstType::End, cha, index)));
         },
         ' ' => {
-          target.push(Part::new(AstType::End, cha, index));
+          target.push(Rc::new(Part::new(AstType::End, cha, index)));
         },
         _ => {
-          target.push(Part::new(AstType::Normal, cha, index));
+          target.push(Rc::new(Part::new(AstType::Normal, cha, index)));
         }
       };
       index += 1;
