@@ -7,6 +7,7 @@ use std::rc::{Rc, Weak};
 
 #[derive(Debug)]
 pub enum AstType {
+  Root,
   Start,
   End,
   Normal,
@@ -16,12 +17,6 @@ pub enum AstType {
 pub struct PartArena {
   pub parts: Vec<Part>,
 }
-
-// impl PartArena {
-//   pub fn insert(mut self, part: Part) {
-//     self.parts.push(part);
-//   }
-// }
 
 #[derive(Debug)]
 pub struct Part {
@@ -35,20 +30,20 @@ pub struct Part {
 }
 
 impl Part {
-  fn new(id: usize, kind: AstType, imput: char, start: usize) {
-    let p = Part {
-      id: id,
+  fn new(kind: AstType, imput: char, start: usize) -> Part {
+    Part {
+      id: 0,
       start: start,
       end: 0,
       kind: kind,
       value: imput,
       children: Vec::new(),
       parent: None,
-    };
+    }
   }
 
-  fn add_child(&mut self, id: usize, kind: AstType, imput: char, start: usize) {
-    let c = Part {
+  fn add_child(&mut self, id: usize, kind: AstType, imput: char, start: usize) -> Part {
+    let p = Part {
       id: id,
       start: start,
       end: 0,
@@ -57,7 +52,8 @@ impl Part {
       children: Vec::new(),
       parent: Some(self.id),
     };
-    self.children.push(Some(c.id));
+    self.children.push(Some(p.id));
+    p
   }
 }
 
@@ -77,10 +73,15 @@ struct Walker<'a> {
 
 impl <'a>Walker<'a> {
   fn new(input: &str) -> Walker {
+    let mut pa = PartArena{ parts: Vec::new() };
+    pa.parts.push(Part::new(
+      AstType::Root, ' ', 0
+    ));
+    
     Walker {
       input: input,
       part: 0,
-      part_arena: PartArena{ parts: Vec::new() },
+      part_arena: pa,
       current_type: WalkingType::Function,
     }
   }
@@ -105,13 +106,15 @@ impl <'a>Walker<'a> {
   //   return last_part;
   // }
 
-  pub fn walk(&mut self) {
+  pub fn get_mut_part(&mut self) -> Part {
     let length = self.part_arena.parts.len();
-    if let Some(part) = self.part_arena.parts.get_mut(self.part) {
-      part.add_child(length, AstType::Start, '{', 0);
-    }
-    
-    // self.part_arena.parts.push(part);
+    let part = self.part_arena.parts.get_mut(self.part);
+    part.unwrap().add_child(length + 1, AstType::Start, '{', 0)
+  }
+
+  pub fn walk(&mut self) {
+    let new_part = self.get_mut_part();
+    self.part_arena.parts.push(new_part);
 
 
     // let mut chars = self.input.chars();
