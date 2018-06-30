@@ -5,92 +5,115 @@ extern crate serde_json;
 
 use std::rc::{Rc, Weak};
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub enum AstType {
   Start,
   End,
   Normal,
 }
 
-#[derive(Debug, Clone)]
-struct Part<'a> {
+#[derive(Debug)]
+pub struct PartArena {
+  pub parts: Vec<Part>,
+}
+
+// impl PartArena {
+//   pub fn insert(mut self, part: Part) {
+//     self.parts.push(part);
+//   }
+// }
+
+#[derive(Debug)]
+pub struct Part {
+  id: usize,
   start: usize,
   end: usize,
   kind: AstType,
   value: char,
-  children: Vec<Rc<Part<'a>>>,
-  parent: Weak<&'a Part<'a>>,
+  children: Vec<Option<usize>>,
+  parent: Option<usize>,
 }
 
-impl <'a>Part<'a> {
-  fn new(kind: AstType , imput: char, start: usize) -> Part<'a> {
-    return Part {
+impl Part {
+  fn new(id: usize, kind: AstType, imput: char, start: usize) {
+    let p = Part {
+      id: id,
       start: start,
       end: 0,
       kind: kind,
       value: imput,
       children: Vec::new(),
-      parent: Weak::new(),
-    }
+      parent: None,
+    };
   }
 
-  // fn add_child(mut self, kind: AstType , imput: char, start: usize, parent: &'a mut Part) -> Part<'a> {
-  fn add_child(mut self, kind: AstType , imput: char, start: usize, parent: &'a mut Part<'a>) {
-    let child = Rc::new(Part {
+  fn add_child(&mut self, id: usize, kind: AstType, imput: char, start: usize) {
+    let c = Part {
+      id: id,
       start: start,
       end: 0,
       kind: kind,
       value: imput,
       children: Vec::new(),
-      parent: Rc::downgrade(&Rc::new(parent)),
-    });
-    self.children.push(child);
+      parent: Some(self.id),
+    };
+    self.children.push(Some(c.id));
   }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub enum WalkingType {
   Function,
   Normal,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 struct Walker<'a> {
   input: &'a str,
-  part: Part<'a>,
+  part: usize,
+  part_arena: PartArena,
   current_type: WalkingType,
 }
 
 impl <'a>Walker<'a> {
-  fn new(input: &'a str) -> Walker {
+  fn new(input: &str) -> Walker {
     Walker {
       input: input,
-      part: Part::new(AstType::Start, ' ', 0),
+      part: 0,
+      part_arena: PartArena{ parts: Vec::new() },
       current_type: WalkingType::Function,
     }
   }
 
-  pub fn get_next_target(last_part: &'a mut Part<'a>, index: usize) -> &'a mut Part<'a> {
-    if index == 0 {
-      return last_part;
+  // pub fn get_next_target(mut self, last_part: &mut Part, index: usize) -> &mut Part {
+  //   if index == 0 {
+  //     return last_part;
+  //   }
+
+  //   let last_index = index - 1;
+  //   let last_char = last_part.value;
+
+  //   if last_char == '{' {
+  //     // last_part.add_child(AstType::Start, '{', 0, last_part);
+  //     return &mut self.part_arena.parts[last_part.children[index].unwrap()]
+  //   } else if last_char == '}' {
+  //     // let def = last_part.parent.upgrade().unwrap();
+  //     // return &mut Rc::get_mut(&mut last_part.parent.upgrade().unwrap()).unwrap();
+
+  //   }
+
+  //   return last_part;
+  // }
+
+  pub fn walk(&mut self) {
+    let length = self.part_arena.parts.len();
+    if let Some(part) = self.part_arena.parts.get_mut(self.part) {
+      part.add_child(length, AstType::Start, '{', 0);
     }
+    
+    // self.part_arena.parts.push(part);
 
-    let last_index = index - 1;
-    let last_char = last_part.value;
 
-    if last_char == '{' {
-      // last_part.add_child(AstType::Start, '{', 0, last_part);
-      return Rc::get_mut(&mut last_part.children[index]).unwrap();
-    } else if last_char == '}' {
-      // let def = last_part.parent.upgrade().unwrap();
-      return &mut Rc::get_mut(&mut last_part.parent.upgrade().unwrap()).unwrap();
-
-    }
-
-    return last_part;
-  }
-
-  pub fn walk(&'_ mut self) {
     // let mut chars = self.input.chars();
     // let mut index = 0;
     
@@ -123,8 +146,6 @@ fn main() {
 
   let nyn: String = "abc".to_string();
   println!("{}", nyn);
-
-  // println!("{:?}", walker);
 }
 
 // impl fmt::Debug for Part {
