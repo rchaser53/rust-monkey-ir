@@ -1,10 +1,3 @@
-extern crate clap;
-extern crate reqwest;
-extern crate regex;
-extern crate serde_json;
-
-use std::rc::{Rc, Weak};
-
 #[derive(Debug)]
 pub enum AstType {
   Root,
@@ -86,60 +79,41 @@ impl <'a>Walker<'a> {
     }
   }
 
-  // pub fn get_next_target(mut self, last_part: &mut Part, index: usize) -> &mut Part {
-  //   if index == 0 {
-  //     return last_part;
-  //   }
-
-  //   let last_index = index - 1;
-  //   let last_char = last_part.value;
-
-  //   if last_char == '{' {
-  //     // last_part.add_child(AstType::Start, '{', 0, last_part);
-  //     return &mut self.part_arena.parts[last_part.children[index].unwrap()]
-  //   } else if last_char == '}' {
-  //     // let def = last_part.parent.upgrade().unwrap();
-  //     // return &mut Rc::get_mut(&mut last_part.parent.upgrade().unwrap()).unwrap();
-
-  //   }
-
-  //   return last_part;
-  // }
-
-  pub fn get_mut_part(&mut self) -> Part {
+  pub fn add_child_to_part(&mut self, part_index: usize, kind: AstType, imput: char, start: usize) -> Part {
     let length = self.part_arena.parts.len();
-    let part = self.part_arena.parts.get_mut(self.part);
-    part.unwrap().add_child(length + 1, AstType::Start, '{', 0)
+    let part = self.part_arena.parts.get_mut(part_index).unwrap();
+    part.add_child(length + 1, kind, imput, start)
   }
 
   pub fn walk(&mut self) {
-    let new_part = self.get_mut_part();
-    self.part_arena.parts.push(new_part);
-
-
-    // let mut chars = self.input.chars();
-    // let mut index = 0;
+    let mut chars = self.input.chars();
+    let mut index: usize = 0;
     
-    // let target = &mut self.part;
-    // while let Some(cha) = chars.next() {
-    //   let mut target = Walker::get_next_target(&mut target, index);
-    //   match cha {
-    //     '{' => {
-    //       target.children.push(Rc::new(Part::new(AstType::Start, cha, index)));
-    //       continue;
-    //     },
-    //     '}' => {
-    //       target.children.push(Rc::new(Part::new(AstType::End, cha, index)));
-    //     },
-    //     ' ' => {
-    //       target.children.push(Rc::new(Part::new(AstType::End, cha, index)));
-    //     },
-    //     _ => {
-    //       target.children.push(Rc::new(Part::new(AstType::Normal, cha, index)));
-    //     }
-    //   };
-    //   index += 1;
-    // }
+    while let Some(cha) = chars.next() {
+      
+      let new_part = match cha {
+        '{' => {
+          let id = self.part_arena.parts.get_mut(index).unwrap().id;
+          self.add_child_to_part(id, AstType::Start, cha, index)
+        },
+        '}' => {
+          // TBD need to change index to get parent
+          // let id = self.part_arena.parts.get_mut(index).unwrap().parent.unwrap();
+          let id = self.part_arena.parts.get_mut(index).unwrap().id;
+          self.add_child_to_part(id, AstType::End, cha, index)
+        },
+        ' ' => {
+          let id = self.part_arena.parts.get_mut(index).unwrap().id;
+          self.add_child_to_part(id, AstType::End, cha, index)
+        },
+        _ => {
+          let id = self.part_arena.parts.get_mut(index).unwrap().id;
+          self.add_child_to_part(id, AstType::Normal, cha, index)
+        } 
+      };
+      self.part_arena.parts.push(new_part);
+      index += 1;
+    }
   }
 }
 
