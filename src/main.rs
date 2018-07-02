@@ -59,6 +59,7 @@ pub enum WalkingType {
 #[derive(Debug)]
 struct Walker<'a> {
   input: &'a str,
+  next: usize,
   part: usize,
   part_arena: PartArena,
   current_type: WalkingType,
@@ -73,11 +74,14 @@ impl <'a>Walker<'a> {
     
     Walker {
       input: input,
+      next: 0,
       part: 0,
       part_arena: pa,
       current_type: WalkingType::Function,
     }
   }
+
+
 
   pub fn add_child_to_part(&mut self, part_index: usize, kind: AstType, imput: char, start: usize) -> Part {
     let length = self.part_arena.parts.len();
@@ -88,38 +92,45 @@ impl <'a>Walker<'a> {
   pub fn walk(&mut self) {
     let mut chars = self.input.chars();
     let mut index: usize = 0;
-    let mut part_id: usize = 0;
+    let mut part_counter = PartCounter { next: 0 };
     let mut new_part: Part;
-
+    
     while let Some(cha) = chars.next() {
       {
+        let part_id = part_counter.next;
         let mut part = &mut self.part_arena.parts.get_mut(part_id).unwrap();
-        new_part = match cha {
+        let (np, id) = match cha {
           '{' => {
-            let child_part = part.add_child(index, AstType::Start, cha, index);
-            part_id = child_part.id;
-            child_part
+            let child_part = part.add_child(index + 1, AstType::Start, cha, index);
+            let id = child_part.id;
+            (child_part, id)
           },
           '}' => {
-            part_id = part.id;
-            let child_part = part.add_child(index, AstType::Start, cha, index);
-            child_part
+            let child_part = part.add_child(index + 1, AstType::Start, cha, index);
+            (child_part, part.parent.unwrap())
           },
           ' ' => {
             index += 1;
             continue
           },
           _ => {
-            let child_part = part.add_child(index, AstType::Start, cha, index);
-            part_id = child_part.id;
-            child_part
-          } 
+            let id = part.id;
+            let child_part = part.add_child(index + 1, AstType::Start, cha, index);
+            (child_part, id)
+          }
         };
+        new_part = np;
+        part_counter.next = id;
       }
       self.part_arena.parts.push(new_part);
       index += 1;
+      
     }
   }
+}
+
+struct PartCounter {
+  next: usize,
 }
 
 fn main() {
@@ -129,9 +140,3 @@ fn main() {
   let nyn: String = "abc".to_string();
   println!("{}", nyn);
 }
-
-// impl fmt::Debug for Part {
-//     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-//         write!(f, "{}", self.kind)
-//     }
-// }
