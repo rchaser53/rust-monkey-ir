@@ -88,29 +88,34 @@ impl <'a>Walker<'a> {
   pub fn walk(&mut self) {
     let mut chars = self.input.chars();
     let mut index: usize = 0;
-    
+    let mut part_id: usize = 0;
+    let mut new_part: Part;
+
     while let Some(cha) = chars.next() {
-      
-      let new_part = match cha {
-        '{' => {
-          let id = self.part_arena.parts.get_mut(index).unwrap().id;
-          self.add_child_to_part(id, AstType::Start, cha, index)
-        },
-        '}' => {
-          // TBD need to change index to get parent
-          // let id = self.part_arena.parts.get_mut(index).unwrap().parent.unwrap();
-          let id = self.part_arena.parts.get_mut(index).unwrap().id;
-          self.add_child_to_part(id, AstType::End, cha, index)
-        },
-        ' ' => {
-          let id = self.part_arena.parts.get_mut(index).unwrap().id;
-          self.add_child_to_part(id, AstType::End, cha, index)
-        },
-        _ => {
-          let id = self.part_arena.parts.get_mut(index).unwrap().id;
-          self.add_child_to_part(id, AstType::Normal, cha, index)
-        } 
-      };
+      {
+        let mut part = &mut self.part_arena.parts.get_mut(part_id).unwrap();
+        new_part = match cha {
+          '{' => {
+            let child_part = part.add_child(index, AstType::Start, cha, index);
+            part_id = child_part.id;
+            child_part
+          },
+          '}' => {
+            part_id = part.id;
+            let child_part = part.add_child(index, AstType::Start, cha, index);
+            child_part
+          },
+          ' ' => {
+            index += 1;
+            continue
+          },
+          _ => {
+            let child_part = part.add_child(index, AstType::Start, cha, index);
+            part_id = child_part.id;
+            child_part
+          } 
+        };
+      }
       self.part_arena.parts.push(new_part);
       index += 1;
     }
