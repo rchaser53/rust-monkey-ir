@@ -81,56 +81,39 @@ impl <'a>Walker<'a> {
     }
   }
 
-
-
-  pub fn add_child_to_part(&mut self, part_index: usize, kind: AstType, imput: char, start: usize) -> Part {
-    let length = self.part_arena.parts.len();
-    let part = self.part_arena.parts.get_mut(part_index).unwrap();
-    part.add_child(length + 1, kind, imput, start)
-  }
-
   pub fn walk(&mut self) {
     let mut chars = self.input.chars();
     let mut index: usize = 0;
-    let mut part_counter = PartCounter { next: 0 };
+    let mut arena_id: usize = 0;
     let mut new_part: Part;
     
     while let Some(cha) = chars.next() {
       {
-        let part_id = part_counter.next;
-        let mut part = &mut self.part_arena.parts.get_mut(part_id).unwrap();
-        let (np, id) = match cha {
+        let mut part = &mut self.part_arena.parts.get_mut(arena_id).unwrap();
+        new_part = match cha {
           '{' => {
             let child_part = part.add_child(index + 1, AstType::Start, cha, index);
-            let id = child_part.id;
-            (child_part, id)
+            arena_id = child_part.id;
+            child_part
           },
           '}' => {
-            let child_part = part.add_child(index + 1, AstType::Start, cha, index);
-            (child_part, part.parent.unwrap())
+            arena_id = part.parent.unwrap();
+            part.add_child(index + 1, AstType::Start, cha, index)
           },
           ' ' => {
             index += 1;
             continue
           },
           _ => {
-            let id = part.id;
-            let child_part = part.add_child(index + 1, AstType::Start, cha, index);
-            (child_part, id)
+            arena_id = part.id;
+            part.add_child(index + 1, AstType::Start, cha, index)
           }
         };
-        new_part = np;
-        part_counter.next = id;
       }
       self.part_arena.parts.push(new_part);
       index += 1;
-      
     }
   }
-}
-
-struct PartCounter {
-  next: usize,
 }
 
 fn main() {
