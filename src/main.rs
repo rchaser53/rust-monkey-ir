@@ -89,6 +89,7 @@ impl <'a>Walker<'a> {
     
     while let Some(cha) = chars.next() {
       {
+        println!("{} {}", cha, arena_id);
         let mut part = &mut self.part_arena.parts.get_mut(arena_id).unwrap();
         new_part = match cha {
           '{' => {
@@ -101,7 +102,6 @@ impl <'a>Walker<'a> {
             part.add_child(index + 1, AstType::Start, cha, index)
           },
           ' ' => {
-            index += 1;
             continue
           },
           _ => {
@@ -113,11 +113,13 @@ impl <'a>Walker<'a> {
       self.part_arena.parts.push(new_part);
       index += 1;
     }
+
+    println!("{:?}", self.part_arena);
   }
 }
 
 fn main() {
-  let mut walker = Walker::new("{a b  c}");
+  let mut walker = Walker::new("{a {b  c} } ");
   walker.walk();
 
   let nyn: String = "abc".to_string();
