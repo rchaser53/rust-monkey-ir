@@ -1,9 +1,13 @@
+#![feature(slice_concat_ext)]
+use std::slice::SliceConcatExt;
+
 #[derive(Debug)]
 pub enum AstType {
   Root,
   Start,
   End,
   Normal,
+  Delimiter
 }
 
 #[derive(Debug)]
@@ -101,19 +105,47 @@ impl <'a>Walker<'a> {
             part.add_child(index + 1, AstType::Start, cha, index)
           },
           ' ' => {
-            continue
+            part.add_child(index + 1, AstType::Delimiter, cha, index)
           },
           _ => {
-            arena_id = part.id;
-            part.add_child(index + 1, AstType::Start, cha, index)
+            part.add_child(index + 1, AstType::Normal, cha, index)
           }
         };
       }
       self.part_arena.parts.push(new_part);
       index += 1;
     }
+  }
+}
 
-    println!("{:?}", self.part_arena);
+#[derive(Debug)]
+struct Tokens<'a> {
+  strs: Vec<&'a str>,
+  chars: Vec<char>
+}
+
+impl <'a>Tokens<'a> {
+  pub fn new() -> Tokens<'a> {
+    Tokens {
+      strs: Vec::new(),
+      chars: Vec::new(),
+    }
+  }
+
+  pub fn add_str(&mut self, part: &Part) {
+    match part.kind {
+      AstType::Normal => {
+        self.chars.push(part.value);
+      },
+      AstType::Delimiter => {
+        // // let hoge: String = self.chars.into_iter().collect::<String>();
+        // let hoge = *self.chars.into_iter().collect::<&str>();
+        // // let hoge = self.chars.join(" ");
+        // // let hoge = ["a", "b"].concat();
+        // println!("{:?}", hoge);
+      }
+      _ => {}
+    };
   }
 }
 
@@ -121,6 +153,12 @@ fn main() {
   let mut walker = Walker::new("{a {b  c} } ");
   walker.walk();
 
-  let nyn: String = "abc".to_string();
-  println!("{}", nyn);
+  let mut tokens = Tokens::new();
+
+  for part in walker.part_arena.parts.iter() {
+    &tokens.add_str(part);
+  }
+  println!("{:?}", tokens);
+
+
 }
