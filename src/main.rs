@@ -158,6 +158,9 @@ fn main() {
   for part in walker.part_arena.parts.iter() {
     &tokens.add_str(part);
   }
+
+  let nyan = vec!('a', 'b', 'c').into_iter().collect::<String>();
+
   println!("{:?}", tokens);
 
 
