@@ -119,13 +119,13 @@ impl <'a>Walker<'a> {
 }
 
 #[derive(Debug)]
-struct Tokens<'a> {
-  strs: Vec<&'a str>,
+struct Tokens {
+  strs: Vec<String>,
   chars: Vec<char>
 }
 
-impl <'a>Tokens<'a> {
-  pub fn new() -> Tokens<'a> {
+impl Tokens {
+  pub fn new() -> Tokens {
     Tokens {
       strs: Vec::new(),
       chars: Vec::new(),
@@ -138,11 +138,11 @@ impl <'a>Tokens<'a> {
         self.chars.push(part.value);
       },
       AstType::Delimiter => {
-        // // let hoge: String = self.chars.into_iter().collect::<String>();
-        // let hoge = *self.chars.into_iter().collect::<&str>();
-        // // let hoge = self.chars.join(" ");
-        // // let hoge = ["a", "b"].concat();
-        // println!("{:?}", hoge);
+        if self.chars.len() == 0 {
+          return
+        }
+        self.strs.push(self.chars.iter().collect::<String>());
+        self.chars = Vec::new();
       }
       _ => {}
     };
@@ -150,7 +150,7 @@ impl <'a>Tokens<'a> {
 }
 
 fn main() {
-  let mut walker = Walker::new("{a {b  c} } ");
+  let mut walker = Walker::new("{afda {b  c} } ");
   walker.walk();
 
   let mut tokens = Tokens::new();
@@ -158,10 +158,5 @@ fn main() {
   for part in walker.part_arena.parts.iter() {
     &tokens.add_str(part);
   }
-
-  let nyan = vec!('a', 'b', 'c').into_iter().collect::<String>();
-
   println!("{:?}", tokens);
-
-
 }
