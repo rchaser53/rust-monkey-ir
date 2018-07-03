@@ -18,7 +18,7 @@ pub struct Part {
   end: usize,
   kind: AstType,
   value: char,
-  children: Vec<Option<usize>>,
+  children: Vec<usize>,
   parent: Option<usize>,
 }
 
@@ -45,7 +45,7 @@ impl Part {
       children: Vec::new(),
       parent: Some(self.id),
     };
-    self.children.push(Some(p.id));
+    self.children.push(p.id);
     p
   }
 }
@@ -89,7 +89,6 @@ impl <'a>Walker<'a> {
     
     while let Some(cha) = chars.next() {
       {
-        println!("{} {}", cha, arena_id);
         let mut part = &mut self.part_arena.parts.get_mut(arena_id).unwrap();
         new_part = match cha {
           '{' => {
