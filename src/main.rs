@@ -118,34 +118,24 @@ impl <'a>Walker<'a> {
   }
 }
 
-#[derive(Debug)]
-struct Tokens {
-  strs: Vec<String>,
-  chars: Vec<char>
-}
 
-impl Tokens {
-  pub fn new() -> Tokens {
-    Tokens {
-      strs: Vec::new(),
-      chars: Vec::new(),
-    }
-  }
 
-  pub fn add_str(&mut self, part: &Part) {
-    match part.kind {
-      AstType::Normal => {
-        self.chars.push(part.value);
-      },
-      AstType::Delimiter => {
-        if self.chars.len() == 0 {
-          return
-        }
-        self.strs.push(self.chars.iter().collect::<String>());
-        self.chars = Vec::new();
+
+pub fn add_str(chars: &mut Vec<char>, part: &Part) -> bool {
+  match part.kind {
+    AstType::Normal => {
+      chars.push(part.value);
+      false
+    },
+    AstType::Delimiter => {
+      if chars.len() == 0 {
+        return false;
       }
-      _ => {}
-    };
+      true
+    }
+    _ => {
+      false
+    }
   }
 }
 
@@ -153,10 +143,13 @@ fn main() {
   let mut walker = Walker::new("{afda {b  c} } ");
   walker.walk();
 
-  let mut tokens = Tokens::new();
-
+  let mut chars: Vec<char> = Vec::new();
+  let mut strs: Vec<String> = Vec::new();
   for part in walker.part_arena.parts.iter() {
-    &tokens.add_str(part);
+    if add_str(&mut chars, part) {
+      strs.push(chars.iter().collect::<String>());
+      chars.truncate(0);
+    }
   }
-  println!("{:?}", tokens);
+  println!("{:?}", strs);
 }
