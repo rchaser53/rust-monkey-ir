@@ -147,12 +147,16 @@ enum TokenType {
 }
 
 #[derive(Debug)]
-struct TempToken {
-  stack: Vec<u32>
+struct TempToken<T> {
+  stack: Vec<T>
 }
 
-impl TempToken {
-  pub fn add_stack(&mut self, value: u32) {
+pub trait AddStack<T> {
+  fn add_stack(&mut self, value: T);
+}
+
+impl AddStack<u32> for TempToken<u32> {
+  fn add_stack(&mut self, value: u32) {
     self.stack.push(value);
   }
 }
