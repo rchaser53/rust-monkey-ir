@@ -119,8 +119,6 @@ impl <'a>Walker<'a> {
 }
 
 
-
-
 pub fn add_str(chars: &mut Vec<char>, part: &Part) -> bool {
   match part.kind {
     AstType::Normal => {
@@ -139,40 +137,49 @@ pub fn add_str(chars: &mut Vec<char>, part: &Part) -> bool {
   }
 }
 
+enum TokenType {
+  TOKEN_IDENTIFIER,
+  TOKEN_DIGIT,
+  TOKEN_SYMBOL,
+  TOKEN_INT,
+  TOKEN_RETURN,
+  TOKEN_EOF
+}
+
+#[derive(Debug)]
+struct TempToken {
+  stack: Vec<u32>
+}
+
+impl TempToken {
+  pub fn add_stack(&mut self, value: u32) {
+    self.stack.push(value);
+  }
+}
+
 fn main() {
-  let mut walker = Walker::new("{afda {b  c} } ");
-  walker.walk();
+  // let mut walker = Walker::new("{afda {b  c} } ");
+  // walker.walk();
 
-  let mut chars: Vec<char> = Vec::new();
-  let mut strs: Vec<String> = Vec::new();
-  for part in walker.part_arena.parts.iter() {
-    if add_str(&mut chars, part) {
-      strs.push(chars.iter().collect::<String>());
-      chars.truncate(0);
+  // let mut chars: Vec<char> = Vec::new();
+  // let mut strs: Vec<String> = Vec::new();
+  // for part in walker.part_arena.parts.iter() {
+  //   if add_str(&mut chars, part) {
+  //     strs.push(chars.iter().collect::<String>());
+  //     chars.truncate(0);
+  //   }
+  // }
+  // println!("{:?}", strs);
+  let mut temp_stack = TempToken{stack: Vec::new() };
+  let temp_char = '1';
+
+  match temp_char {
+    '0' ... '9' => {
+      temp_stack.stack.push(temp_char as u32 - '0' as u32);
+    },
+    _ => {
+      println!("koya-n");
     }
-  }
-  println!("{:?}", strs);
-}
-
-struct List<T> {
-    value: T,
-    next: Option<Box<List<T>>>,
-}
-
-fn to_refs<T>(mut list: &mut List<T>) -> Vec<&mut T> {
-  let mut result = vec![];
-  loop {
-    // need to assign another variable to avoid borrow check
-    let list1 = list;
-    result.push(&mut list1.value);
-    /*
-      if let Some(n) = list.next.as_mut() {
-      result.push(&mut list.value);
-    */
-    if let Some(n) = list1.next.as_mut() {
-      list = n;
-    } else {
-      return result;
-    }
-  }
+  };
+  println!("{:?}", temp_stack);
 }
