@@ -147,36 +147,24 @@ enum TokenType {
   TOKEN_EOF
 }
 
-// #[derive(Debug)]
-struct TempToken<T> {
-  stack: Vec<T>
+#[derive(Debug)]
+struct TempToken {
+  temp_str: String
 }
 
-impl fmt::Debug for TempToken<u32> {
-  fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-      write!(f, "TempToken: u32 {:?}", self.stack)
-  }
-}
+// pub trait AddStack<T> {
+//   fn add_stack(&mut self, value: T);
+// }
 
-impl fmt::Debug for TempToken<char> {
-  fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-      write!(f, "TempToken: char {:?}", self.stack)
-  }
-}
+// impl AddStack<u32> for TempToken<u32> {
+//   fn add_stack(&mut self, value: u32) {
+//     self.temp_str + value;
+//   }
+// }
 
-pub trait AddStack<T> {
-  fn add_stack(&mut self, value: T);
-}
-
-impl AddStack<u32> for TempToken<u32> {
-  fn add_stack(&mut self, value: u32) {
-    self.stack.push(value);
-  }
-}
-
-impl AddStack<char> for TempToken<char> {
-  fn add_stack(&mut self, value: char) {
-    self.stack.push(value);
+impl TempToken {
+  fn add_temp_str(&mut self, value: char) {
+    self.temp_str += &value.to_string();
   }
 }
 
@@ -193,22 +181,28 @@ fn main() {
   //   }
   // }
   // println!("{:?}", strs);
-  let mut num_stack = TempToken{ stack: Vec::new() };
-  let mut identifier_stack = TempToken{ stack: Vec::new() };
+  let mut num_stack = TempToken{ temp_str: "".to_string() };
+  let mut identifier_stack = TempToken{ temp_str: "".to_string() };
+  let mut num_flag = true;
   let temp_str = "0123";
 
   for temp_char in temp_str.chars() {
     match temp_char {
       '0' => {
-        let stack_length = num_stack.stack.len();
+        let stack_length = num_stack.temp_str.len();
         if stack_length == 0 {
-          identifier_stack.stack.push(temp_char); 
+          identifier_stack.add_temp_str(temp_char);
+          num_flag = false;
         } else {
-          num_stack.stack.push(temp_char as u32 - '0' as u32);
+          num_stack.add_temp_str(temp_char);
         }
       },
       '1' ... '9' => {
-        num_stack.stack.push(temp_char as u32 - '0' as u32);
+        if num_flag == true {
+          num_stack.add_temp_str(temp_char);
+        } else {
+          identifier_stack.add_temp_str(temp_char);
+        }
       },
       _ => {
         println!("koya-n");
@@ -218,7 +212,7 @@ fn main() {
 
 
 
-  println!("{:?}, {:?}", num_stack, identifier_stack);
+  println!("{:?}, {:?}", num_stack.temp_str, identifier_stack.temp_str );
 }
 
 
