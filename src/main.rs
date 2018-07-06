@@ -1,5 +1,6 @@
 #![feature(slice_concat_ext)]
 use std::slice::SliceConcatExt;
+use std::fmt;
 
 #[derive(Debug)]
 pub enum AstType {
@@ -146,9 +147,21 @@ enum TokenType {
   TOKEN_EOF
 }
 
-#[derive(Debug)]
+// #[derive(Debug)]
 struct TempToken<T> {
   stack: Vec<T>
+}
+
+impl fmt::Debug for TempToken<u32> {
+  fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+      write!(f, "TempToken: u32 {:?}", self.stack)
+  }
+}
+
+impl fmt::Debug for TempToken<char> {
+  fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+      write!(f, "TempToken: char {:?}", self.stack)
+  }
 }
 
 pub trait AddStack<T> {
@@ -157,6 +170,12 @@ pub trait AddStack<T> {
 
 impl AddStack<u32> for TempToken<u32> {
   fn add_stack(&mut self, value: u32) {
+    self.stack.push(value);
+  }
+}
+
+impl AddStack<char> for TempToken<char> {
+  fn add_stack(&mut self, value: char) {
     self.stack.push(value);
   }
 }
@@ -174,16 +193,33 @@ fn main() {
   //   }
   // }
   // println!("{:?}", strs);
-  let mut temp_stack = TempToken{stack: Vec::new() };
-  let temp_char = '1';
+  let mut num_stack = TempToken{ stack: Vec::new() };
+  let mut identifier_stack = TempToken{ stack: Vec::new() };
+  let temp_str = "0123";
 
-  match temp_char {
-    '0' ... '9' => {
-      temp_stack.stack.push(temp_char as u32 - '0' as u32);
-    },
-    _ => {
-      println!("koya-n");
+  for temp_char in temp_str.chars() {
+    match temp_char {
+      '0' => {
+        let stack_length = num_stack.stack.len();
+        if stack_length == 0 {
+          identifier_stack.stack.push(temp_char); 
+        } else {
+          num_stack.stack.push(temp_char as u32 - '0' as u32);
+        }
+      },
+      '1' ... '9' => {
+        num_stack.stack.push(temp_char as u32 - '0' as u32);
+      },
+      _ => {
+        println!("koya-n");
+      }
     }
-  };
-  println!("{:?}", temp_stack);
+  }
+
+
+
+  println!("{:?}, {:?}", num_stack, identifier_stack);
 }
+
+
+// temp_char as u32 - '0' as u32
