@@ -138,6 +138,7 @@ pub fn add_str(chars: &mut Vec<char>, part: &Part) -> bool {
   }
 }
 
+#[derive(Debug)]
 enum TokenType {
   TOKEN_IDENTIFIER,
   TOKEN_DIGIT,
@@ -166,7 +167,38 @@ impl TempToken {
   fn add_temp_str(&mut self, value: char) {
     self.temp_str += &value.to_string();
   }
+
+  fn emit_temp_str(&mut self) -> String {
+    let ret_string = self.temp_str.clone();
+    self.temp_str.clear();
+    ret_string
+  }
 }
+
+#[derive(Debug)]
+struct AstToken {
+  kind: TokenType
+}
+
+impl AstToken {
+  fn new(kind: TokenType) -> AstToken {
+    AstToken {
+      kind: kind
+    }
+  }
+}
+
+#[derive(Debug)]
+struct AstTokens {
+  tokens: Vec<AstToken>
+}
+
+impl AstTokens {
+  pub fn add_token(&mut self, token: AstToken) {
+    self.tokens.push(token);
+  }
+}
+
 
 fn main() {
   // let mut walker = Walker::new("{afda {b  c} } ");
@@ -181,10 +213,13 @@ fn main() {
   //   }
   // }
   // println!("{:?}", strs);
+
+  let mut ast_tokens = AstTokens { tokens: Vec::new() };
+
   let mut num_stack = TempToken{ temp_str: "".to_string() };
   let mut identifier_stack = TempToken{ temp_str: "".to_string() };
   let mut num_flag = true;
-  let temp_str = "0123";
+  let temp_str = "0123 ";
 
   for temp_char in temp_str.chars() {
     match temp_char {
@@ -204,6 +239,22 @@ fn main() {
           identifier_stack.add_temp_str(temp_char);
         }
       },
+      ' ' => {
+        let num_stack_length = num_stack.temp_str.len();
+        let identifier_stack_length = identifier_stack.temp_str.len();
+
+        if (0 < num_stack_length) {
+          ast_tokens.add_token(AstToken::new(TokenType::TOKEN_DIGIT));
+          // println!("num {}", num_stack.emit_temp_str());
+        }
+
+        if (0 < identifier_stack_length) {
+          ast_tokens.add_token(AstToken::new(TokenType::TOKEN_IDENTIFIER));
+          // println!("char {}", identifier_stack.emit_temp_str());
+        }
+
+        num_flag = true;
+      },
       _ => {
         println!("koya-n");
       }
@@ -212,7 +263,9 @@ fn main() {
 
 
 
-  println!("{:?}, {:?}", num_stack.temp_str, identifier_stack.temp_str );
+  // println!("{:?}, {:?}", num_stack.temp_str, identifier_stack.temp_str );
+
+  println!("{:?}", ast_tokens);
 }
 
 
