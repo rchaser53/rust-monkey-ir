@@ -50,60 +50,71 @@ impl AstToken {
 
 #[derive(Debug)]
 struct AstTokens {
-  tokens: Vec<AstToken>
+  tokens: Vec<AstToken>,
+  identifier_stack: TempToken,
+  num_stack: TempToken,
+  num_flag: bool
 }
 
 impl AstTokens {
+  pub fn new() -> AstTokens {
+    AstTokens {
+      tokens: Vec::new(),
+      identifier_stack: TempToken{ temp_str: String::new() },
+      num_stack: TempToken{ temp_str: String::new() },
+      num_flag: true
+    }
+  }
+
   pub fn add_token(&mut self, token: AstToken) {
     self.tokens.push(token);
   }
 }
 
 fn main() {
-  let mut ast_tokens = AstTokens { tokens: Vec::new() };
+  let mut ast_tokens = AstTokens::new();
 
-  let mut num_stack = TempToken{ temp_str: String::new() };
-  let mut identifier_stack = TempToken{ temp_str: String::new() };
-  let mut num_flag = true;
   let temp_str = "0123 456 ";
 
   for temp_char in temp_str.chars() {
     match temp_char {
       '0' => {
-        let stack_length = num_stack.temp_str.len();
+        let stack_length = ast_tokens.num_stack.temp_str.len();
         if stack_length == 0 {
-          identifier_stack.add_temp_str(temp_char);
-          num_flag = false;
+          ast_tokens.identifier_stack.add_temp_str(temp_char);
+          ast_tokens.num_flag = false;
         } else {
-          num_stack.add_temp_str(temp_char);
+          ast_tokens.num_stack.add_temp_str(temp_char);
         }
       },
       '1' ... '9' => {
-        if num_flag == true {
-          num_stack.add_temp_str(temp_char);
+        if ast_tokens.num_flag == true {
+          ast_tokens.num_stack.add_temp_str(temp_char);
         } else {
-          identifier_stack.add_temp_str(temp_char);
+          ast_tokens.identifier_stack.add_temp_str(temp_char);
         }
       },
       ' ' => {
-        let num_stack_length = num_stack.temp_str.len();
-        let identifier_stack_length = identifier_stack.temp_str.len();
+        let num_stack_length = ast_tokens.num_stack.temp_str.len();
+        let identifier_stack_length = ast_tokens.identifier_stack.temp_str.len();
 
         if 0 < num_stack_length {
+          let emit_string = ast_tokens.num_stack.emit_temp_str();
           ast_tokens.add_token(AstToken::new(
             TokenType::TokenDigit,
-            num_stack.emit_temp_str()
+            emit_string
           ));
         }
 
         if 0 < identifier_stack_length {
+          let emit_string = ast_tokens.identifier_stack.emit_temp_str();
           ast_tokens.add_token(AstToken::new(
             TokenType::TokenIdentifier,
-            identifier_stack.emit_temp_str()
+            emit_string
           ));
         }
 
-        num_flag = true;
+        ast_tokens.num_flag = true;
       },
       _ => {
         println!("koya-n");
