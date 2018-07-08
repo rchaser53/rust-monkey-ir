@@ -66,15 +66,33 @@ impl AstTokens {
     }
   }
 
-  pub fn add_token(&mut self, token: AstToken) {
-    self.tokens.push(token);
+  pub fn add_token(&mut self) {
+    let num_stack_length = self.num_stack.temp_str.len();
+    let identifier_stack_length = self.identifier_stack.temp_str.len();
+
+    if 0 < num_stack_length {
+      let emit_string = self.num_stack.emit_temp_str();
+      self.tokens.push(AstToken::new(
+        TokenType::TokenDigit,
+        emit_string
+      ));
+    }
+
+    if 0 < identifier_stack_length {
+      let emit_string = self.identifier_stack.emit_temp_str();
+      self.tokens.push(AstToken::new(
+        TokenType::TokenIdentifier,
+        emit_string
+      ));
+    }
+    self.num_flag = true;
   }
 }
 
 fn main() {
   let mut ast_tokens = AstTokens::new();
 
-  let temp_str = "0123 456 ";
+  let temp_str = "0123 456";
 
   for temp_char in temp_str.chars() {
     match temp_char {
@@ -95,32 +113,15 @@ fn main() {
         }
       },
       ' ' => {
-        let num_stack_length = ast_tokens.num_stack.temp_str.len();
-        let identifier_stack_length = ast_tokens.identifier_stack.temp_str.len();
-
-        if 0 < num_stack_length {
-          let emit_string = ast_tokens.num_stack.emit_temp_str();
-          ast_tokens.add_token(AstToken::new(
-            TokenType::TokenDigit,
-            emit_string
-          ));
-        }
-
-        if 0 < identifier_stack_length {
-          let emit_string = ast_tokens.identifier_stack.emit_temp_str();
-          ast_tokens.add_token(AstToken::new(
-            TokenType::TokenIdentifier,
-            emit_string
-          ));
-        }
-
-        ast_tokens.num_flag = true;
+        ast_tokens.add_token();
       },
       _ => {
         println!("koya-n");
       }
     }
   }
+
+  ast_tokens.add_token();
   println!("{:?}", ast_tokens);
 }
 
