@@ -87,44 +87,57 @@ impl AstTokens {
     }
     self.num_flag = true;
   }
+
+  pub fn read(&mut self, input: String) {
+    for temp_char in input.chars() {
+      match temp_char {
+        '0' => {
+          let stack_length = self.num_stack.temp_str.len();
+          if stack_length == 0 {
+            self.identifier_stack.add_temp_str(temp_char);
+            self.num_flag = false;
+          } else {
+            self.num_stack.add_temp_str(temp_char);
+          }
+        },
+        '1' ... '9' => {
+          if self.num_flag == true {
+            self.num_stack.add_temp_str(temp_char);
+          } else {
+            self.identifier_stack.add_temp_str(temp_char);
+          }
+        },
+        ' ' => {
+          self.add_token();
+        },
+        _ => {
+          println!("koya-n");
+        }
+      }
+    }
+    self.add_token();
+  }
 }
 
 fn main() {
   let mut ast_tokens = AstTokens::new();
 
-  let temp_str = "0123 456";
+  ast_tokens.read("0123 456".to_string());
 
-  for temp_char in temp_str.chars() {
-    match temp_char {
-      '0' => {
-        let stack_length = ast_tokens.num_stack.temp_str.len();
-        if stack_length == 0 {
-          ast_tokens.identifier_stack.add_temp_str(temp_char);
-          ast_tokens.num_flag = false;
-        } else {
-          ast_tokens.num_stack.add_temp_str(temp_char);
-        }
-      },
-      '1' ... '9' => {
-        if ast_tokens.num_flag == true {
-          ast_tokens.num_stack.add_temp_str(temp_char);
-        } else {
-          ast_tokens.identifier_stack.add_temp_str(temp_char);
-        }
-      },
-      ' ' => {
-        ast_tokens.add_token();
-      },
-      _ => {
-        println!("koya-n");
-      }
-    }
-  }
 
-  ast_tokens.add_token();
-  println!("{:?}", ast_tokens);
+  println!("{}", ast_tokens.tokens[0].value);
+
+  
 }
 
+#[test]
+fn it_works() {
+  let mut ast_tokens = AstTokens::new();
+  ast_tokens.read("0123 456".to_string());
+
+  let temp_str = &ast_tokens.tokens[0].value;
+  assert!(*temp_str == "0123".to_string());
+}
 
 // temp_char as u32 - '0' as u32
 
