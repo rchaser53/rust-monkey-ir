@@ -156,3 +156,12 @@ fn it_works() {
   // println!("{:?}", strs);
 
   // println!("{:?}, {:?}", num_stack.temp_str, identifier_stack.temp_str );
+
+
+  // let hoge = "konkonko";
+  // for temp_char in hoge.as_bytes() {
+  //   match temp_char {
+  //     b'k' => println!("{}", temp_char),
+  //     _ => {}
+  //   }
+  // }
