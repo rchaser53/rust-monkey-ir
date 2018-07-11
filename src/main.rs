@@ -165,3 +165,6 @@ fn it_works() {
   //     _ => {}
   //   }
   // }
+
+  // let hhhh = "abcdefg";
+  // println!("{:?}", &hhhh[0..2]);
