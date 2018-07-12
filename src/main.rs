@@ -1,3 +1,7 @@
+extern crate encoding_rs;
+
+use encoding_rs::*;
+
 // use std::fmt;
 
 // mod part;
@@ -167,4 +171,12 @@ fn it_works() {
   // }
 
   // let hhhh = "abcdefg";
-  // println!("{:?}", &hhhh[0..2]);
+  // println!("{:?}", &hhhh[0..2]);  // let hoge = b'a' ;
+  // let mut buffer_bytes = [0u8; 8];
+  // let mut buffer: &mut str = unsafe {
+  //     std::mem::transmute(&mut buffer_bytes[..])
+  // };
+
+  // let mut decoder = UTF_8.new_decoder();
+  // decoder.decode_to_str(&[hoge], &mut buffer, true);
+  // println!("{}", buffer);

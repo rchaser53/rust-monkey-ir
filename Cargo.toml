@@ -5,6 +5,7 @@ version = "0.1.0"
 
 [dependencies]
 clap = "~2.27.0"
+encoding_rs = "0.8.4"
 lazy_static = "1.0.1"
 regex = "0.2"
 reqwest = "0.8.6"
