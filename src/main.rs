@@ -1,7 +1,3 @@
-extern crate encoding_rs;
-
-use encoding_rs::*;
-
 // use std::fmt;
 
 // mod part;
@@ -31,10 +27,7 @@ impl TempToken {
   }
 
   fn emit_temp_str(&mut self) -> String {
-    let mut decoder = UTF_8.new_decoder();
-    let mut ret_string = String::new();
-
-    decoder.decode_to_string(&self.byte_vec, &mut ret_string, false);
+    let ret_string = String::from_utf8(self.byte_vec.clone()).unwrap();
     self.byte_vec.truncate(0);
     
     ret_string
@@ -133,8 +126,6 @@ fn main() {
   ast_tokens.read("0123 456".to_string());
 
   println!("{:?}", ast_tokens);
-  // println!("{}", ast_tokens.tokens[0].value);
-
 }
 
 #[test]
@@ -192,6 +183,8 @@ fn it_works() {
   // let mut buffer: &mut str = unsafe {
   //     std::mem::transmute(&mut buffer_bytes[..])
   // };
+
+// decode_to_string
 
   // let mut decoder = UTF_8.new_decoder();
   // decoder.decode_to_str(&[hoge], &mut buffer, true);
