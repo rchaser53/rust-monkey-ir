@@ -1,3 +1,7 @@
+use std::io::{self, BufReader};
+use std::io::prelude::*;
+use std::fs::File;
+
 // use std::fmt;
 
 // mod part;
@@ -120,24 +124,29 @@ impl AstTokens {
   }
 }
 
-fn main() {
+fn read_file_to_ast_tokens(file_path: &str) -> io::Result<AstTokens> {
+  let mut f = File::open(file_path)?;
+  let mut contents = String::new();
+  f.read_to_string(&mut contents)?;
+
   let mut ast_tokens = AstTokens::new();
+  ast_tokens.read(&contents);
 
-  ast_tokens.read("0123 456");
+  Ok(ast_tokens)
+}
 
-  println!("{:?}", ast_tokens);
+fn main() {
+  println!("{:?}", read_file_to_ast_tokens("input.txt"));
 }
 
 #[test]
 fn it_works() {
   let mut ast_tokens = AstTokens::new();
-  ast_tokens.read("0123 456".to_string());
+  ast_tokens.read("0123 456");
 
   let temp_str = &ast_tokens.tokens[0].value;
-  assert!(*temp_str == "0123".to_string());
+  assert!(*temp_str == "0123");
 }
-
-// temp_char as u32 - '0' as u32
 
 
   // let mut walker = Walker::new("{afda {b  c} } ");
@@ -155,37 +164,5 @@ fn it_works() {
 
   // println!("{:?}, {:?}", num_stack.temp_str, identifier_stack.temp_str );
 
-
-  // let hoge = "konkonko";
-  // for temp_char in hoge.as_bytes() {
-  //   match temp_char {
-  //     b'k' => println!("{}", temp_char),
-  //     _ => {}
-  //   }
-  // }
-
   // let hhhh = "abcdefg";
   // println!("{:?}", &hhhh[0..2]);
-
-
-//   fn from_hex(c: u8) -> Result<u8, ()> {
-//     match c {
-//         b'0' ... b'9' => Ok(c - b'0'),
-//         b'a' ... b'f' => Ok(c - b'a' + 10),
-//         b'A' ... b'F' => Ok(c - b'A' + 10),
-//         _ => Err(())
-//     }
-  // }
-
-
-  // let hoge = b'a' ;
-  // let mut buffer_bytes = [0u8; 8];
-  // let mut buffer: &mut str = unsafe {
-  //     std::mem::transmute(&mut buffer_bytes[..])
-  // };
-
-// decode_to_string
-
-  // let mut decoder = UTF_8.new_decoder();
-  // decoder.decode_to_str(&[hoge], &mut buffer, true);
-  // println!("{}", buffer);
