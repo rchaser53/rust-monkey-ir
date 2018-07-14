@@ -89,7 +89,7 @@ impl AstTokens {
     self.num_flag = true;
   }
 
-  pub fn read(&mut self, input: String) {
+  pub fn read(&mut self, input: &str) {
     for byte in input.as_bytes() {
       match byte {
         b'0' => {
@@ -123,7 +123,7 @@ impl AstTokens {
 fn main() {
   let mut ast_tokens = AstTokens::new();
 
-  ast_tokens.read("0123 456".to_string());
+  ast_tokens.read("0123 456");
 
   println!("{:?}", ast_tokens);
 }
