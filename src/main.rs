@@ -56,8 +56,7 @@ impl AstToken {
 #[derive(Debug)]
 struct AstTokens {
   tokens: Vec<AstToken>,
-  identifier_stack: TempToken,
-  num_stack: TempToken,
+  temp_stack: TempToken,
   num_flag: bool
 }
 
@@ -65,31 +64,32 @@ impl AstTokens {
   pub fn new() -> AstTokens {
     AstTokens {
       tokens: Vec::new(),
-      identifier_stack: TempToken{ byte_vec: Vec::new() },
-      num_stack: TempToken{ byte_vec: Vec::new() },
+      temp_stack: TempToken{ byte_vec: Vec::new() },
       num_flag: true
     }
   }
 
   pub fn add_token(&mut self) {
-    let num_stack_length = self.num_stack.byte_vec.len();
-    let identifier_stack_length = self.identifier_stack.byte_vec.len();
+    let stack_length = self.temp_stack.byte_vec.len();
 
-    if 0 < num_stack_length {
-      let emit_string = self.num_stack.emit_temp_str();
+    if 0 < stack_length {
+      let emit_string = self.temp_stack.emit_temp_str();
+
+      let token = if self.num_flag == true {
+        TokenType::TokenDigit
+      } else {
+        TokenType::TokenIdentifier
+      };
+
       self.tokens.push(AstToken::new(
-        TokenType::TokenDigit,
+        token,
         emit_string
       ));
     }
+    self.refresh();
+  }
 
-    if 0 < identifier_stack_length {
-      let emit_string = self.identifier_stack.emit_temp_str();
-      self.tokens.push(AstToken::new(
-        TokenType::TokenIdentifier,
-        emit_string
-      ));
-    }
+  pub fn refresh(&mut self) {
     self.num_flag = true;
   }
 
@@ -97,20 +97,22 @@ impl AstTokens {
     for byte in input.as_bytes() {
       match byte {
         b'0' => {
-          let stack_length = self.num_stack.byte_vec.len();
+          let stack_length = self.temp_stack.byte_vec.len();
           if stack_length == 0 {
-            self.identifier_stack.add_temp_str(*byte);
             self.num_flag = false;
-          } else {
-            self.num_stack.add_temp_str(*byte);
           }
+          self.temp_stack.add_temp_str(*byte);
         },
         b'1' ... b'9' => {
-          if self.num_flag == true {
-            self.num_stack.add_temp_str(*byte);
-          } else {
-            self.identifier_stack.add_temp_str(*byte);
+          self.temp_stack.add_temp_str(*byte);
+        },
+        b'+' | b'-' | b'*' | b'/' => {
+          let stack_length = self.temp_stack.byte_vec.len();
+          if 0 < stack_length {
+            self.add_token();
           }
+          self.temp_stack.add_temp_str(*byte);
+          self.add_token();
         },
         b' ' => {
           self.add_token();
@@ -145,7 +147,7 @@ fn it_works() {
   ast_tokens.read("0123 456");
 
   let temp_str = &ast_tokens.tokens[0].value;
-  assert!(*temp_str == "0123");
+  assert!(*temp_str == "0123", "should be type Identifier when start character is 0");
 }
 
 
