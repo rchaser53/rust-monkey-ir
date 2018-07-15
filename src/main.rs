@@ -15,8 +15,8 @@ enum TokenType {
   TokenIdentifier,
   TokenDigit,
   TokenSymbol,
-  // TokenInt,
-  // TokenReturn,
+  TokenInt,
+  TokenReturn,
   TokenEof
 }
 
@@ -57,7 +57,8 @@ impl AstToken {
 struct AstTokens {
   tokens: Vec<AstToken>,
   temp_stack: TempToken,
-  num_flag: bool
+  num_flag: bool,
+  next_token: TokenType
 }
 
 impl AstTokens {
@@ -65,22 +66,32 @@ impl AstTokens {
     AstTokens {
       tokens: Vec::new(),
       temp_stack: TempToken{ byte_vec: Vec::new() },
-      num_flag: true
+      num_flag: true,
+      next_token: TokenType::TokenIdentifier
     }
   }
 
   pub fn add_token(&mut self, token: TokenType) {
     let stack_length = self.temp_stack.byte_vec.len();
+    let emit_string = self.temp_stack.emit_temp_str();
 
     if 0 < stack_length {
-      let emit_string = self.temp_stack.emit_temp_str();
+      let token = self.handle_reserved_word(&emit_string, token);
 
       self.tokens.push(AstToken::new(
         token,
-        emit_string
+        emit_string.to_owned()
       ));
     }
     self.refresh();
+  }
+
+  pub fn handle_reserved_word(&self, word: &str, token: TokenType) -> TokenType {
+    match word {
+      "int" => TokenType::TokenInt,
+      "return" => TokenType::TokenReturn,
+      _ => token,
+    }
   }
 
   pub fn add_eof_token(&mut self) {
@@ -112,14 +123,15 @@ impl AstTokens {
           }
           self.temp_stack.add_temp_str(*byte);
         },
+        b'1' ... b'9' => {
+          self.temp_stack.add_temp_str(*byte);
+        },
         b'a' ... b'z' | b'A' ... b'Z' => {
           self.num_flag = false;
           self.temp_stack.add_temp_str(*byte);
         },
-        b'1' ... b'9' => {
-          self.temp_stack.add_temp_str(*byte);
-        },
-        b'+' | b'-' | b'*' | b'/' => {
+        b'+' | b'-' | b'*' | b'/'
+        | b'{' | b'}' | b'(' | b')' => {
           let stack_length = self.temp_stack.byte_vec.len();
           if 0 < stack_length {
             let token = self.get_token_type();
@@ -128,7 +140,11 @@ impl AstTokens {
           self.temp_stack.add_temp_str(*byte);
           self.add_token(TokenType::TokenSymbol);
         },
-        b' ' => {
+        b'.' => {
+          let token = self.get_token_type();
+          self.add_token(token);
+        },
+        b' ' | b',' => {
           let token = self.get_token_type();
           self.add_token(token);
         },
