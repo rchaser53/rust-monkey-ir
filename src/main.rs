@@ -1,4 +1,4 @@
-use std::io::{self, BufReader};
+use std::io;
 use std::io::prelude::*;
 use std::fs::File;
 
@@ -14,10 +14,10 @@ use std::fs::File;
 enum TokenType {
   TokenIdentifier,
   TokenDigit,
-  // TokenSymbol,
+  TokenSymbol,
   // TokenInt,
   // TokenReturn,
-  // TokenEof
+  TokenEof
 }
 
 #[derive(Debug)]
@@ -69,17 +69,11 @@ impl AstTokens {
     }
   }
 
-  pub fn add_token(&mut self) {
+  pub fn add_token(&mut self, token: TokenType) {
     let stack_length = self.temp_stack.byte_vec.len();
 
     if 0 < stack_length {
       let emit_string = self.temp_stack.emit_temp_str();
-
-      let token = if self.num_flag == true {
-        TokenType::TokenDigit
-      } else {
-        TokenType::TokenIdentifier
-      };
 
       self.tokens.push(AstToken::new(
         token,
@@ -89,8 +83,23 @@ impl AstTokens {
     self.refresh();
   }
 
+  pub fn add_eof_token(&mut self) {
+    self.tokens.push(AstToken::new(
+      TokenType::TokenEof,
+      String::new()
+    ));
+  }
+
   pub fn refresh(&mut self) {
     self.num_flag = true;
+  }
+
+  pub fn get_token_type(&mut self) -> TokenType {
+    if self.num_flag == true {
+      TokenType::TokenDigit
+    } else {
+      TokenType::TokenIdentifier
+    }
   }
 
   pub fn read(&mut self, input: &str) {
@@ -103,26 +112,34 @@ impl AstTokens {
           }
           self.temp_stack.add_temp_str(*byte);
         },
+        b'a' ... b'z' | b'A' ... b'Z' => {
+          self.num_flag = false;
+          self.temp_stack.add_temp_str(*byte);
+        },
         b'1' ... b'9' => {
           self.temp_stack.add_temp_str(*byte);
         },
         b'+' | b'-' | b'*' | b'/' => {
           let stack_length = self.temp_stack.byte_vec.len();
           if 0 < stack_length {
-            self.add_token();
+            let token = self.get_token_type();
+            self.add_token(token);
           }
           self.temp_stack.add_temp_str(*byte);
-          self.add_token();
+          self.add_token(TokenType::TokenSymbol);
         },
         b' ' => {
-          self.add_token();
+          let token = self.get_token_type();
+          self.add_token(token);
         },
         _ => {
-          println!("koya-n");
+          panic!("{} cannot be handled.", byte);
         }
       }
     }
-    self.add_token();
+    let token = self.get_token_type();
+    self.add_token(token);
+    self.add_eof_token();
   }
 }
 
