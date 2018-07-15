@@ -58,6 +58,7 @@ struct AstTokens {
   tokens: Vec<AstToken>,
   temp_stack: TempToken,
   num_flag: bool,
+  comment_flag: bool,
   next_token: TokenType
 }
 
@@ -67,6 +68,7 @@ impl AstTokens {
       tokens: Vec::new(),
       temp_stack: TempToken{ byte_vec: Vec::new() },
       num_flag: true,
+      comment_flag: false,
       next_token: TokenType::TokenIdentifier
     }
   }
@@ -114,7 +116,8 @@ impl AstTokens {
   }
 
   pub fn read(&mut self, input: &str) {
-    for byte in input.as_bytes() {
+    let mut bytes = input.as_bytes().into_iter();
+    while let Some(byte) = bytes.next() {
       match byte {
         b'0' => {
           let stack_length = self.temp_stack.byte_vec.len();
