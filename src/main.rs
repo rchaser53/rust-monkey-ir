@@ -148,6 +148,7 @@ impl AstTokens {
           let token = self.get_token_type();
           self.add_token(token);
         },
+        b'\n' | b'\r' => {},
         _ => {
           panic!("{} cannot be handled.", byte);
         }
