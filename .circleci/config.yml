@@ -1,7 +1,10 @@
-machine:
-  services:
-    - docker
+version: 2
+jobs:
+  build:
+    working_directory: ~/workspace
+    docker:
+      - image: clux/muslrust
 
-test:
-  override:
-    - docker run -it --rm -v $(pwd):/source -w /source scorpil/rust:1.27 cargo test
+    steps:
+      - checkout
+      - run: docker run -v $PWD:/volume -t clux/muslrust cargo test
