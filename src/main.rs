@@ -58,7 +58,6 @@ struct AstTokens {
   tokens: Vec<AstToken>,
   temp_stack: TempToken,
   num_flag: bool,
-  comment_flag: bool,
   next_token: TokenType
 }
 
@@ -68,7 +67,6 @@ impl AstTokens {
       tokens: Vec::new(),
       temp_stack: TempToken{ byte_vec: Vec::new() },
       num_flag: true,
-      comment_flag: false,
       next_token: TokenType::TokenIdentifier
     }
   }
@@ -105,7 +103,6 @@ impl AstTokens {
 
   pub fn refresh(&mut self) {
     self.num_flag = true;
-    self.comment_flag = false;
   }
 
   pub fn get_token_type(&mut self) -> TokenType {
@@ -116,22 +113,20 @@ impl AstTokens {
     }
   }
 
+  pub fn consume_comment(&mut self, bytes: &mut std::slice::Iter<u8>) {
+    while let Some(byte) = bytes.next() {
+      if *byte == b'*' {
+        let next = bytes.next();
+        if next != None && *next.unwrap() == b'/' {
+          break;
+        }
+      }
+    }
+  }
+
   pub fn read(&mut self, input: &str) {
     let mut bytes = input.as_bytes().into_iter();
     while let Some(byte) = bytes.next() {
-      if self.comment_flag == true {
-        match byte {
-          b'*' => {
-            let next = bytes.next();
-            if next != None && *next.unwrap() == b'/' {
-              self.comment_flag = false;
-            }
-          },
-          _ => {},
-        };
-        continue;
-      }
-
       match byte {
         b'0' => {
           let stack_length = self.temp_stack.byte_vec.len();
@@ -155,11 +150,11 @@ impl AstTokens {
             continue;
           }
           if *next.unwrap() == b'*' {
-            self.comment_flag = true;
-            continue;
+            self.consume_comment(&mut bytes);
+          } else {
+            self.temp_stack.add_temp_str(*byte);
+            self.add_token(TokenType::TokenSymbol);
           }
-          self.temp_stack.add_temp_str(*byte);
-          self.add_token(TokenType::TokenSymbol);
         },
         b'+' | b'-' | b'{' | b'}' | b'(' | b')' | b'*' => {
           let stack_length = self.temp_stack.byte_vec.len();
