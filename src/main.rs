@@ -105,6 +105,7 @@ impl AstTokens {
 
   pub fn refresh(&mut self) {
     self.num_flag = true;
+    self.comment_flag = false;
   }
 
   pub fn get_token_type(&mut self) -> TokenType {
@@ -118,6 +119,19 @@ impl AstTokens {
   pub fn read(&mut self, input: &str) {
     let mut bytes = input.as_bytes().into_iter();
     while let Some(byte) = bytes.next() {
+      if self.comment_flag == true {
+        match byte {
+          b'*' => {
+            let next = bytes.next();
+            if next != None && *next.unwrap() == b'/' {
+              self.comment_flag = false;
+            }
+          },
+          _ => {},
+        };
+        continue;
+      }
+
       match byte {
         b'0' => {
           let stack_length = self.temp_stack.byte_vec.len();
@@ -133,8 +147,21 @@ impl AstTokens {
           self.num_flag = false;
           self.temp_stack.add_temp_str(*byte);
         },
-        b'+' | b'-' | b'*' | b'/'
-        | b'{' | b'}' | b'(' | b')' => {
+        b'/' => {
+          let next = bytes.next();
+          if next == None {
+            self.temp_stack.add_temp_str(*byte);
+            self.add_token(TokenType::TokenSymbol);
+            continue;
+          }
+          if *next.unwrap() == b'*' {
+            self.comment_flag = true;
+            continue;
+          }
+          self.temp_stack.add_temp_str(*byte);
+          self.add_token(TokenType::TokenSymbol);
+        },
+        b'+' | b'-' | b'{' | b'}' | b'(' | b')' | b'*' => {
           let stack_length = self.temp_stack.byte_vec.len();
           if 0 < stack_length {
             let token = self.get_token_type();
@@ -179,12 +206,21 @@ fn main() {
 }
 
 #[test]
-fn it_works() {
+fn normal() {
   let mut ast_tokens = AstTokens::new();
   ast_tokens.read("0123 456");
 
   let temp_str = &ast_tokens.tokens[0].value;
   assert!(*temp_str == "0123", "should be type Identifier when start character is 0");
+}
+
+#[test]
+fn comment() {
+  let mut ast_tokens = AstTokens::new();
+  ast_tokens.read("0 /* 123 */ 2");
+
+  let temp_str = &ast_tokens.tokens[1].value;
+  assert!(*temp_str == "2", "should ignore comment '123'");
 }
 
 
