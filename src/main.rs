@@ -1,238 +1,112 @@
-use std::io;
-use std::io::prelude::*;
-use std::fs::File;
+extern crate llvm_sys;
 
-// use std::fmt;
+use llvm_sys::core::*;
+use llvm_sys::target;
+use llvm_sys::analysis::{LLVMVerifyModule, LLVMVerifierFailureAction};
+use llvm_sys::execution_engine::*;
+use std::ffi::CString;
+use std::os::raw::{c_char};
 
-// mod part;
-// mod walker;
-
-// use part::*;
-// use walker::*;
-
-#[derive(Debug)]
-enum TokenType {
-  TokenIdentifier,
-  TokenDigit,
-  TokenSymbol,
-  TokenInt,
-  TokenReturn,
-  TokenEof
-}
-
-#[derive(Debug)]
-pub struct TempToken {
-  byte_vec: Vec<u8>
-}
-
-impl TempToken {
-  fn add_temp_str(&mut self, value: u8) {
-    self.byte_vec.push(value);
-  }
-
-  fn emit_temp_str(&mut self) -> String {
-    let ret_string = String::from_utf8(self.byte_vec.clone()).unwrap();
-    self.byte_vec.truncate(0);
-    
-    ret_string
-  }
-}
-
-#[derive(Debug)]
-struct AstToken {
-  kind: TokenType,
-  value: String
-}
-
-impl AstToken {
-  fn new(kind: TokenType, value: String) -> AstToken {
-    AstToken {
-      kind: kind,
-      value: value
-    }
-  }
-}
-
-#[derive(Debug)]
-struct AstTokens {
-  tokens: Vec<AstToken>,
-  temp_stack: TempToken,
-  num_flag: bool,
-  next_token: TokenType
-}
-
-impl AstTokens {
-  pub fn new() -> AstTokens {
-    AstTokens {
-      tokens: Vec::new(),
-      temp_stack: TempToken{ byte_vec: Vec::new() },
-      num_flag: true,
-      next_token: TokenType::TokenIdentifier
-    }
-  }
-
-  pub fn add_token(&mut self, token: TokenType) {
-    let stack_length = self.temp_stack.byte_vec.len();
-    let emit_string = self.temp_stack.emit_temp_str();
-
-    if 0 < stack_length {
-      let token = self.handle_reserved_word(&emit_string, token);
-
-      self.tokens.push(AstToken::new(
-        token,
-        emit_string.to_owned()
-      ));
-    }
-    self.refresh();
-  }
-
-  pub fn handle_reserved_word(&self, word: &str, token: TokenType) -> TokenType {
-    match word {
-      "int" => TokenType::TokenInt,
-      "return" => TokenType::TokenReturn,
-      _ => token,
-    }
-  }
-
-  pub fn add_eof_token(&mut self) {
-    self.tokens.push(AstToken::new(
-      TokenType::TokenEof,
-      String::new()
-    ));
-  }
-
-  pub fn refresh(&mut self) {
-    self.num_flag = true;
-  }
-
-  pub fn get_token_type(&mut self) -> TokenType {
-    if self.num_flag == true {
-      TokenType::TokenDigit
-    } else {
-      TokenType::TokenIdentifier
-    }
-  }
-
-  pub fn consume_comment(&mut self, bytes: &mut std::slice::Iter<u8>) {
-    while let Some(byte) = bytes.next() {
-      if *byte == b'*' {
-        let next = bytes.next();
-        if next != None && *next.unwrap() == b'/' {
-          break;
+/// Initialise LLVM
+///
+/// Makes sure that the parts of LLVM we are going to use are
+/// initialised before we do anything with them.
+fn initialise_llvm() {
+    unsafe {
+        if target::LLVM_InitializeNativeTarget() != 0 {
+            panic!("Could not initialise target");
         }
-      }
-    }
-  }
-
-  pub fn read(&mut self, input: &str) {
-    let mut bytes = input.as_bytes().into_iter();
-    while let Some(byte) = bytes.next() {
-      match byte {
-        b'0' => {
-          let stack_length = self.temp_stack.byte_vec.len();
-          if stack_length == 0 {
-            self.num_flag = false;
-          }
-          self.temp_stack.add_temp_str(*byte);
-        },
-        b'1' ... b'9' => {
-          self.temp_stack.add_temp_str(*byte);
-        },
-        b'a' ... b'z' | b'A' ... b'Z' => {
-          self.num_flag = false;
-          self.temp_stack.add_temp_str(*byte);
-        },
-        b'/' => {
-          let next = bytes.next();
-          if next == None {
-            self.temp_stack.add_temp_str(*byte);
-            self.add_token(TokenType::TokenSymbol);
-            continue;
-          }
-          if *next.unwrap() == b'*' {
-            self.consume_comment(&mut bytes);
-          } else {
-            self.temp_stack.add_temp_str(*byte);
-            self.add_token(TokenType::TokenSymbol);
-          }
-        },
-        b'+' | b'-' | b'{' | b'}' | b'(' | b')' | b'*' => {
-          let stack_length = self.temp_stack.byte_vec.len();
-          if 0 < stack_length {
-            let token = self.get_token_type();
-            self.add_token(token);
-          }
-          self.temp_stack.add_temp_str(*byte);
-          self.add_token(TokenType::TokenSymbol);
-        },
-        b'.' => {
-          let token = self.get_token_type();
-          self.add_token(token);
-        },
-        b' ' | b',' => {
-          let token = self.get_token_type();
-          self.add_token(token);
-        },
-        b'\n' | b'\r' => {},
-        _ => {
-          panic!("{} cannot be handled.", byte);
+        if target::LLVM_InitializeNativeAsmPrinter() != 0 {
+            panic!("Could not initialise ASM Printer");
         }
-      }
-    }
-    let token = self.get_token_type();
-    self.add_token(token);
-    self.add_eof_token();
-  }
-}
-
-fn read_file_to_ast_tokens(file_path: &str) -> io::Result<AstTokens> {
-  let mut f = File::open(file_path)?;
-  let mut contents = String::new();
-  f.read_to_string(&mut contents)?;
-
-  let mut ast_tokens = AstTokens::new();
-  ast_tokens.read(&contents);
-
-  Ok(ast_tokens)
+    }    
 }
 
 fn main() {
-  println!("{:?}", read_file_to_ast_tokens("input.txt"));
+    let llvm_error = 1;
+    let val1 = 32;
+    let val2 = 16;
+
+    initialise_llvm();
+
+    // setup our builder and module
+    let builder = unsafe { LLVMCreateBuilder() };
+    let mod_name = CString::new("my_module").unwrap();
+    let module = unsafe { LLVMModuleCreateWithName(mod_name.as_ptr()) };
+
+    // create our function prologue
+    let function_type = unsafe {
+        let mut param_types = [];
+        LLVMFunctionType(LLVMInt32Type(), param_types.as_mut_ptr(), param_types.len() as u32, 0)
+    };
+    let function_name = CString::new("main").unwrap();
+    let function = unsafe { LLVMAddFunction(module, function_name.as_ptr(), function_type) };
+    let entry_name = CString::new("entry").unwrap();
+    let entry_block = unsafe { LLVMAppendBasicBlock(function, entry_name.as_ptr()) };
+    unsafe { LLVMPositionBuilderAtEnd(builder, entry_block); }
+
+    // int a = 32
+    let a_name = CString::new("a").unwrap();
+    let a = unsafe { LLVMBuildAlloca(builder, LLVMInt32Type(), a_name.as_ptr()) };
+    unsafe { LLVMBuildStore(builder, LLVMConstInt(LLVMInt32Type(), val1, 0), a); }
+
+    // int b = 16
+    let b_name = CString::new("b").unwrap();
+    let b = unsafe { LLVMBuildAlloca(builder, LLVMInt32Type(), b_name.as_ptr()) };
+    unsafe { LLVMBuildStore(builder, LLVMConstInt(LLVMInt32Type(), val2, 0), b); }
+
+    // return a + b
+    let b_val_name = CString::new("b_val").unwrap();
+    let b_val = unsafe { LLVMBuildLoad(builder, b, b_val_name.as_ptr()) };
+    let a_val_name = CString::new("a_val").unwrap();
+    let a_val = unsafe { LLVMBuildLoad(builder, a, a_val_name.as_ptr()) };
+    let ab_val_name = CString::new("ab_val").unwrap();
+    unsafe {
+        let res = LLVMBuildAdd(builder, a_val, b_val, ab_val_name.as_ptr());
+        LLVMBuildRet(builder, res);
+    }
+
+    // verify it's all good
+    let mut error: *mut c_char = 0 as *mut c_char;
+    let ok = unsafe {
+        let buf: *mut *mut c_char = &mut error;
+        LLVMVerifyModule(module, LLVMVerifierFailureAction::LLVMReturnStatusAction, buf)
+    };
+    if ok == llvm_error {
+        let err_msg = unsafe { CString::from_raw(error).into_string().unwrap() };
+        panic!("cannot verify module '{:?}'.\nError: {}", mod_name, err_msg);
+    }
+
+    // Clean up the builder now that we are finished using it.
+    unsafe { LLVMDisposeBuilder(builder) }
+
+    // Dump the LLVM IR to stdout so we can see what we've created
+    unsafe { LLVMDumpModule(module) }
+
+    // create our exe engine
+    let mut engine: LLVMExecutionEngineRef = 0 as LLVMExecutionEngineRef;
+    let ok = unsafe {
+        error = 0 as *mut c_char;
+        let buf: *mut *mut c_char = &mut error;
+        let engine_ref: *mut LLVMExecutionEngineRef = &mut engine;
+        LLVMLinkInInterpreter();
+        LLVMCreateInterpreterForModule(engine_ref, module, buf)
+    };
+
+    if ok == llvm_error {
+        let err_msg = unsafe { CString::from_raw(error).into_string().unwrap() };
+        println!("Execution error: {}", err_msg);
+
+    }else{
+        // run the function!
+        let func_name = CString::new("main").unwrap();
+        let named_function = unsafe { LLVMGetNamedFunction(module, func_name.as_ptr()) };
+        let mut params = [];
+        let func_result = unsafe { LLVMRunFunction(engine, named_function, params.len() as u32, params.as_mut_ptr()) };
+        let result = unsafe{ LLVMGenericValueToInt(func_result, 0) };
+        println!("{} + {} = {}", val1, val2, result);
+    }
+
+    // Clean up the module after we're done with it.
+    unsafe { LLVMDisposeModule(module) }
 }
-
-#[test]
-fn normal() {
-  let mut ast_tokens = AstTokens::new();
-  ast_tokens.read("0123 456");
-
-  let temp_str = &ast_tokens.tokens[0].value;
-  assert!(*temp_str == "0123", "should be type Identifier when start character is 0");
-}
-
-#[test]
-fn comment() {
-  let mut ast_tokens = AstTokens::new();
-  ast_tokens.read("0 /* 123 */ 2");
-
-  let temp_str = &ast_tokens.tokens[1].value;
-  assert!(*temp_str == "2", "should ignore comment '123'");
-}
-
-
-  // let mut walker = Walker::new("{afda {b  c} } ");
-  // walker.walk();
-
-  // let mut chars: Vec<char> = Vec::new();
-  // let mut strs: Vec<String> = Vec::new();
-  // for part in walker.part_arena.parts.iter() {
-  //   if add_str(&mut chars, part) {
-  //     strs.push(chars.iter().collect::<String>());
-  //     chars.truncate(0);
-  //   }
-  // }
-  // println!("{:?}", strs);
-
-  // println!("{:?}, {:?}", num_stack.temp_str, identifier_stack.temp_str );
-
-  // let hhhh = "abcdefg";
-  // println!("{:?}", &hhhh[0..2]);
