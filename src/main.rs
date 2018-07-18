@@ -7,11 +7,9 @@ use llvm_sys::execution_engine::*;
 use std::ffi::CString;
 use std::os::raw::{c_char};
 
-/// Initialise LLVM
-///
 /// Makes sure that the parts of LLVM we are going to use are
 /// initialised before we do anything with them.
-fn initialise_llvm() {
+fn setup_llvm_builder() -> *mut llvm_sys::LLVMBuilder {
     unsafe {
         if target::LLVM_InitializeNativeTarget() != 0 {
             panic!("Could not initialise target");
@@ -19,18 +17,28 @@ fn initialise_llvm() {
         if target::LLVM_InitializeNativeAsmPrinter() != 0 {
             panic!("Could not initialise ASM Printer");
         }
-    }    
+    }
+
+    unsafe { LLVMCreateBuilder() }
+}
+
+fn create_variable(builder: *mut llvm_sys::LLVMBuilder, name: &str, value: u64) -> *mut llvm_sys::LLVMValue {
+    let val_name = CString::new(name).unwrap();
+    let llvm_value = unsafe {
+      LLVMBuildAlloca(builder, LLVMInt32Type(), val_name.as_ptr())
+    };
+    unsafe {
+      LLVMBuildStore(builder, LLVMConstInt(LLVMInt32Type(), value, 0), llvm_value);
+    }
+
+    llvm_value
 }
 
 fn main() {
     let llvm_error = 1;
-    let val1 = 32;
-    let val2 = 16;
 
-    initialise_llvm();
+    let builder = setup_llvm_builder();
 
-    // setup our builder and module
-    let builder = unsafe { LLVMCreateBuilder() };
     let mod_name = CString::new("my_module").unwrap();
     let module = unsafe { LLVMModuleCreateWithName(mod_name.as_ptr()) };
 
@@ -45,15 +53,8 @@ fn main() {
     let entry_block = unsafe { LLVMAppendBasicBlock(function, entry_name.as_ptr()) };
     unsafe { LLVMPositionBuilderAtEnd(builder, entry_block); }
 
-    // int a = 32
-    let a_name = CString::new("a").unwrap();
-    let a = unsafe { LLVMBuildAlloca(builder, LLVMInt32Type(), a_name.as_ptr()) };
-    unsafe { LLVMBuildStore(builder, LLVMConstInt(LLVMInt32Type(), val1, 0), a); }
-
-    // int b = 16
-    let b_name = CString::new("b").unwrap();
-    let b = unsafe { LLVMBuildAlloca(builder, LLVMInt32Type(), b_name.as_ptr()) };
-    unsafe { LLVMBuildStore(builder, LLVMConstInt(LLVMInt32Type(), val2, 0), b); }
+    let a = create_variable(builder, "a", 35);
+    let b = create_variable(builder, "b", 16);
 
     // return a + b
     let b_val_name = CString::new("b_val").unwrap();
@@ -85,7 +86,7 @@ fn main() {
 
     // create our exe engine
     let mut engine: LLVMExecutionEngineRef = 0 as LLVMExecutionEngineRef;
-    let ok = unsafe {
+    let status = unsafe {
         error = 0 as *mut c_char;
         let buf: *mut *mut c_char = &mut error;
         let engine_ref: *mut LLVMExecutionEngineRef = &mut engine;
@@ -93,10 +94,9 @@ fn main() {
         LLVMCreateInterpreterForModule(engine_ref, module, buf)
     };
 
-    if ok == llvm_error {
+    if status == llvm_error {
         let err_msg = unsafe { CString::from_raw(error).into_string().unwrap() };
         println!("Execution error: {}", err_msg);
-
     }else{
         // run the function!
         let func_name = CString::new("main").unwrap();
@@ -104,7 +104,7 @@ fn main() {
         let mut params = [];
         let func_result = unsafe { LLVMRunFunction(engine, named_function, params.len() as u32, params.as_mut_ptr()) };
         let result = unsafe{ LLVMGenericValueToInt(func_result, 0) };
-        println!("{} + {} = {}", val1, val2, result);
+        println!("{}", result);
     }
 
     // Clean up the module after we're done with it.
