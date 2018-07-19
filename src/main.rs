@@ -49,6 +49,14 @@ impl LlvmBuilder {
   }
 }
 
+impl Drop for LlvmBuilder {
+    fn drop(&mut self) {
+        unsafe {
+            LLVMDisposeBuilder(self.builder);
+        }
+    }
+}
+
 fn main() {
     let llvm_error = 1;
     
@@ -91,9 +99,6 @@ fn main() {
         let err_msg = unsafe { CString::from_raw(error).into_string().unwrap() };
         panic!("cannot verify module '{:?}'.\nError: {}", mod_name, err_msg);
     }
-
-    // Clean up the builder now that we are finished using it.
-    unsafe { LLVMDisposeBuilder(builder) }
 
     llvm_builder.dump(module);
 
