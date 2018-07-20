@@ -8,8 +8,19 @@ use llvm_sys::execution_engine::*;
 use std::ffi::CString;
 use std::os::raw::{c_char};
 
+mod llvm;
+use llvm::*;
+
 struct LlvmBuilder {
   builder: *mut LLVMBuilder
+}
+
+fn add_main_fn(module: &mut LLVMModule) -> *mut LLVMValue {
+    let mut main_args = vec![];
+    unsafe {
+        let main_type = LLVMFunctionType(int32_type(), main_args.as_mut_ptr(), 0, 0);
+        LLVMAddFunction(module, CString::new("main").unwrap().as_ptr(), main_type)
+    }
 }
 
 impl LlvmBuilder {
@@ -35,10 +46,10 @@ impl LlvmBuilder {
   fn create_variable(&mut self, name: &str, value: u64) -> *mut LLVMValue {
     let val_name = CString::new(name).unwrap();
     let llvm_value = unsafe {
-      LLVMBuildAlloca(self.builder, LLVMInt32Type(), val_name.as_ptr())
+      LLVMBuildAlloca(self.builder, int32_type(), val_name.as_ptr())
     };
     unsafe {
-      LLVMBuildStore(self.builder, LLVMConstInt(LLVMInt32Type(), value, 0), llvm_value);
+      LLVMBuildStore(self.builder, LLVMConstInt(int32_type(), value, 0), llvm_value);
     }
 
     llvm_value
@@ -68,7 +79,7 @@ fn main() {
 
     let function_type = unsafe {
         let mut param_types = [];
-        LLVMFunctionType(LLVMInt32Type(), param_types.as_mut_ptr(), param_types.len() as u32, 0)
+        LLVMFunctionType(int32_type(), param_types.as_mut_ptr(), param_types.len() as u32, 0)
     };
     let function_name = CString::new("main").unwrap();
     let function = unsafe { LLVMAddFunction(module, function_name.as_ptr(), function_type) };
