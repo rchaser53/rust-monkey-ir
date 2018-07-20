@@ -11,63 +11,6 @@ use std::os::raw::{c_char};
 mod llvm;
 use llvm::*;
 
-struct LlvmBuilder {
-  builder: *mut LLVMBuilder
-}
-
-fn add_main_fn(module: &mut LLVMModule) -> *mut LLVMValue {
-    let mut main_args = vec![];
-    unsafe {
-        let main_type = LLVMFunctionType(int32_type(), main_args.as_mut_ptr(), 0, 0);
-        LLVMAddFunction(module, CString::new("main").unwrap().as_ptr(), main_type)
-    }
-}
-
-impl LlvmBuilder {
-  fn new() -> LlvmBuilder {
-    LlvmBuilder::initialise();
-
-    LlvmBuilder {
-      builder: unsafe { LLVMCreateBuilder() }
-    }
-  }
-
-  fn initialise() {
-    unsafe {
-        if target::LLVM_InitializeNativeTarget() != 0 {
-            panic!("Could not initialise target");
-        }
-        if target::LLVM_InitializeNativeAsmPrinter() != 0 {
-            panic!("Could not initialise ASM Printer");
-        }
-    }
-  }
-
-  fn create_variable(&mut self, name: &str, value: u64) -> *mut LLVMValue {
-    let val_name = CString::new(name).unwrap();
-    let llvm_value = unsafe {
-      LLVMBuildAlloca(self.builder, int32_type(), val_name.as_ptr())
-    };
-    unsafe {
-      LLVMBuildStore(self.builder, LLVMConstInt(int32_type(), value, 0), llvm_value);
-    }
-
-    llvm_value
-  }
-
-  fn dump(&self, module: *mut LLVMModule) {
-    unsafe { LLVMDumpModule(module) }
-  }
-}
-
-impl Drop for LlvmBuilder {
-    fn drop(&mut self) {
-        unsafe {
-            LLVMDisposeBuilder(self.builder);
-        }
-    }
-}
-
 fn main() {
     let llvm_error = 1;
     
@@ -77,12 +20,7 @@ fn main() {
     let mod_name = CString::new("my_module").unwrap();
     let module = unsafe { LLVMModuleCreateWithName(mod_name.as_ptr()) };
 
-    let function_type = unsafe {
-        let mut param_types = [];
-        LLVMFunctionType(int32_type(), param_types.as_mut_ptr(), param_types.len() as u32, 0)
-    };
-    let function_name = CString::new("main").unwrap();
-    let function = unsafe { LLVMAddFunction(module, function_name.as_ptr(), function_type) };
+    let function = add_function(module, "main", &mut [], int32_type());
     let entry_name = CString::new("entry").unwrap();
     let entry_block = unsafe { LLVMAppendBasicBlock(function, entry_name.as_ptr()) };
     unsafe { LLVMPositionBuilderAtEnd(builder, entry_block); }
