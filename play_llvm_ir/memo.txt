@@ -1,0 +1,5 @@
+// c => llvmIR(xx.c => xx.ll)
+clang -c -S -emit-llvm hoge.c
+
+// execute llvmIR 
+lli hoge.ll
