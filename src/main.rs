@@ -23,16 +23,12 @@ fn main() {
     let function = add_function(module, "main", &mut [], int32_type());
     append_basic_block(builder, function, "entry");
 
-    let a = llvm_builder.create_variable("a", 35);
-    let b = llvm_builder.create_variable("b", 16);
+    let a = llvm_builder.create_variable("a", 35, int32_type());
+    let b = llvm_builder.create_variable("b", 16, int32_type());
 
-    let b_val_name = CString::new("b_val").unwrap();
-    let b_val = unsafe { LLVMBuildLoad(builder, b, b_val_name.as_ptr()) };
-    let a_val_name = CString::new("a_val").unwrap();
-    let a_val = unsafe { LLVMBuildLoad(builder, a, a_val_name.as_ptr()) };
     let ab_val_name = CString::new("ab_val").unwrap();
     unsafe {
-      let res = LLVMBuildMul(builder, a_val, b_val, ab_val_name.as_ptr());
+      let res = LLVMBuildMul(builder, a, b, ab_val_name.as_ptr());
       LLVMBuildRet(builder, res);
     }
 

@@ -38,6 +38,8 @@ pub fn emit_error(error: *mut i8) -> String {
   unsafe { CString::from_raw(error).into_string().unwrap() }
 }
 
+// pub fn load
+
 pub struct LlvmBuilder {
   pub builder: *mut LLVMBuilder
 }
@@ -62,16 +64,15 @@ impl LlvmBuilder {
     }
   }
 
-  pub fn create_variable(&mut self, name: &str, value: u64) -> *mut LLVMValue {
+  pub fn create_variable(&mut self, name: &str, value: u64, llvm_type: *mut LLVMType) -> *mut LLVMValue {
     let val_name = CString::new(name).unwrap();
     let llvm_value = unsafe {
-      LLVMBuildAlloca(self.builder, int32_type(), val_name.as_ptr())
+      LLVMBuildAlloca(self.builder, llvm_type, val_name.as_ptr())
     };
     unsafe {
-      LLVMBuildStore(self.builder, LLVMConstInt(int32_type(), value, 0), llvm_value);
+      LLVMBuildStore(self.builder, LLVMConstInt(llvm_type, value, 0), llvm_value);
     }
-
-    llvm_value
+    unsafe { LLVMBuildLoad(self.builder, llvm_value, val_name.as_ptr()) }
   }
 
   pub fn dump(&self, module: *mut LLVMModule) {
