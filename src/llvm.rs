@@ -23,6 +23,21 @@ pub fn add_function(module: *mut LLVMModule,
     }
 }
 
+pub fn append_basic_block(builder: *mut LLVMBuilder, function: *mut LLVMValue, name: &str) {
+  let entry_name = CString::new(name).unwrap();
+  let entry_block = unsafe { LLVMAppendBasicBlock(function, entry_name.as_ptr()) };
+  unsafe { LLVMPositionBuilderAtEnd(builder, entry_block); }
+}
+
+pub fn add_module(module_name: &str) -> *mut LLVMModule {
+  let mod_name = CString::new(module_name).unwrap();
+  unsafe { LLVMModuleCreateWithName(mod_name.as_ptr()) }
+}
+
+pub fn emit_error(error: *mut i8) -> String {
+  unsafe { CString::from_raw(error).into_string().unwrap() }
+}
+
 pub struct LlvmBuilder {
   pub builder: *mut LLVMBuilder
 }
