@@ -3,24 +3,20 @@ use std::ffi::CString;
 use llvm_sys::*;
 use llvm_sys::core::*;
 
-pub fn int8_type() -> *mut LLVMType {
-    unsafe { LLVMInt8Type() }
-}
-
 pub fn int32_type() -> *mut LLVMType {
-    unsafe { LLVMInt32Type() }
+  unsafe { LLVMInt32Type() }
 }
 
 pub fn add_function(module: *mut LLVMModule,
                 fn_name: &str,
                 args: &mut [*mut LLVMType],
                 ret_type: *mut LLVMType) -> *mut LLVMValue {
-    unsafe {
-        let fn_type = LLVMFunctionType(ret_type, args.as_mut_ptr(), args.len() as u32, 0);
-        let cstring = CString::new(fn_name).unwrap();
-        let ptr = cstring.as_ptr() as *mut _;
-        LLVMAddFunction(module, ptr, fn_type)
-    }
+  unsafe {
+    let fn_type = LLVMFunctionType(ret_type, args.as_mut_ptr(), args.len() as u32, 0);
+    let cstring = CString::new(fn_name).unwrap();
+    let ptr = cstring.as_ptr() as *mut _;
+    LLVMAddFunction(module, ptr, fn_type)
+  }
 }
 
 pub fn append_basic_block(builder: *mut LLVMBuilder, function: *mut LLVMValue, name: &str) {
@@ -33,12 +29,6 @@ pub fn add_module(module_name: &str) -> *mut LLVMModule {
   let mod_name = CString::new(module_name).unwrap();
   unsafe { LLVMModuleCreateWithName(mod_name.as_ptr()) }
 }
-
-pub fn emit_error(error: *mut i8) -> String {
-  unsafe { CString::from_raw(error).into_string().unwrap() }
-}
-
-// pub fn load
 
 pub struct LlvmBuilder {
   pub builder: *mut LLVMBuilder
@@ -81,9 +71,9 @@ impl LlvmBuilder {
 }
 
 impl Drop for LlvmBuilder {
-    fn drop(&mut self) {
-        unsafe {
-            LLVMDisposeBuilder(self.builder);
-        }
+  fn drop(&mut self) {
+    unsafe {
+      LLVMDisposeBuilder(self.builder);
     }
+  }
 }
