@@ -17,22 +17,15 @@ const LLVM_ERROR: i32 = 1;
 fn main() {
   let mut error = 0 as *mut c_char;
   let mut validater = Validater::new();
-
   let mut llvm_builder = LlvmBuilder::new();
-  let builder = llvm_builder.builder;
 
   let module = add_module(MODULE_NAME);
-  let function = add_function(module, "main", &mut [], int32_type());
-  append_basic_block(builder, function, "entry");
+  llvm_builder.append_basic_block(add_function(module, "main", &mut [], int32_type()), "entry");
 
   let a = llvm_builder.create_variable("a", 35, int32_type());
   let b = llvm_builder.create_variable("b", 16, int32_type());
-
-  let ab_val_name = CString::new("ab_val").unwrap();
-  unsafe {
-    let res = LLVMBuildMul(builder, a, b, ab_val_name.as_ptr());
-    LLVMBuildRet(builder, res);
-  }
+  let res = llvm_builder.multiple_variable(a, b, CString::new("ab_val").unwrap());
+  llvm_builder.return_variable(res);
 
   validater.validate(module);
   if validater.has_error {

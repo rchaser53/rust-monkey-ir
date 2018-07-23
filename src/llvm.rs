@@ -19,12 +19,6 @@ pub fn add_function(module: *mut LLVMModule,
   }
 }
 
-pub fn append_basic_block(builder: *mut LLVMBuilder, function: *mut LLVMValue, name: &str) {
-  let entry_name = CString::new(name).unwrap();
-  let entry_block = unsafe { LLVMAppendBasicBlock(function, entry_name.as_ptr()) };
-  unsafe { LLVMPositionBuilderAtEnd(builder, entry_block); }
-}
-
 pub fn add_module(module_name: &str) -> *mut LLVMModule {
   let mod_name = CString::new(module_name).unwrap();
   unsafe { LLVMModuleCreateWithName(mod_name.as_ptr()) }
@@ -54,6 +48,12 @@ impl LlvmBuilder {
     }
   }
 
+  pub fn append_basic_block(&mut self, function: *mut LLVMValue, name: &str) {
+    let entry_name = CString::new(name).unwrap();
+    let entry_block = unsafe { LLVMAppendBasicBlock(function, entry_name.as_ptr()) };
+    unsafe { LLVMPositionBuilderAtEnd(self.builder, entry_block); }
+  }
+
   pub fn create_variable(&mut self, name: &str, value: u64, llvm_type: *mut LLVMType) -> *mut LLVMValue {
     let val_name = CString::new(name).unwrap();
     let llvm_value = unsafe {
@@ -63,6 +63,18 @@ impl LlvmBuilder {
       LLVMBuildStore(self.builder, LLVMConstInt(llvm_type, value, 0), llvm_value);
     }
     unsafe { LLVMBuildLoad(self.builder, llvm_value, val_name.as_ptr()) }
+  }
+
+  pub fn multiple_variable(&mut self, var_a: *mut LLVMValue, var_b: *mut LLVMValue, c_str: CString) -> *mut LLVMValue {
+    unsafe {
+      LLVMBuildMul(self.builder, var_a, var_b, c_str.as_ptr())
+    }
+  }
+
+  pub fn return_variable(&mut self, res: *mut LLVMValue) {
+    unsafe {
+      LLVMBuildRet(self.builder, res);
+    }
   }
 
   pub fn dump(&self, module: *mut LLVMModule) {
