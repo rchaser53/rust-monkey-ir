@@ -3,7 +3,6 @@ extern crate llvm_sys;
 use llvm_sys::core::*;
 use llvm_sys::execution_engine::*;
 use std::ffi::CString;
-use std::os::raw::{c_char};
 
 mod llvm;
 use llvm::*;
@@ -12,12 +11,11 @@ mod validater;
 use validater::*;
 
 const MODULE_NAME: &'static str = "my_module";
-const LLVM_ERROR: i32 = 1;
 
 fn main() {
-  let mut error = 0 as *mut c_char;
   let mut validater = Validater::new();
   let mut llvm_builder = LlvmBuilder::new();
+  let mut engine: LLVMExecutionEngineRef = 0 as LLVMExecutionEngineRef;
 
   let module = add_module(MODULE_NAME);
   llvm_builder.append_basic_block(add_function(module, "main", &mut [], int32_type()), "entry");
@@ -34,28 +32,16 @@ fn main() {
   
   llvm_builder.dump(module);
 
-  // create our exe engine
-  let mut engine: LLVMExecutionEngineRef = 0 as LLVMExecutionEngineRef;
-  let status = unsafe {
-    error = 0 as *mut c_char;
-    let buf: *mut *mut c_char = &mut error;
-    let engine_ref: *mut LLVMExecutionEngineRef = &mut engine;
-    LLVMLinkInInterpreter();
-    LLVMCreateInterpreterForModule(engine_ref, module, buf)
-  };
+  let _ = excute_module_by_interpreter(&mut engine, module).map_err(|err_msg| {
+    panic!("Execution error: {}", err_msg);
+  });
 
-  if status == LLVM_ERROR {
-    let err_msg = unsafe { CString::from_raw(error).into_string().unwrap() };
-    println!("Execution error: {}", err_msg);
-  } else {
-    // run the function!
-    let func_name = CString::new("main").unwrap();
-    let named_function = unsafe { LLVMGetNamedFunction(module, func_name.as_ptr()) };
-    let mut params = [];
-    let func_result = unsafe { LLVMRunFunction(engine, named_function, params.len() as u32, params.as_mut_ptr()) };
-    let result = unsafe{ LLVMGenericValueToInt(func_result, 0) };
-    println!("{}", result);
-  }
+  let func_name = CString::new("main").unwrap();
+  let named_function = unsafe { LLVMGetNamedFunction(module, func_name.as_ptr()) };
+  let mut params = [];
+  let func_result = unsafe { LLVMRunFunction(engine, named_function, params.len() as u32, params.as_mut_ptr()) };
+  let result = unsafe{ LLVMGenericValueToInt(func_result, 0) };
+  println!("{}", result);
 
   // Clean up the module after we're done with it.
   unsafe { LLVMDisposeModule(module) }

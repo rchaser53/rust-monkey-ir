@@ -1,7 +1,11 @@
 use std::ffi::CString;
+use std::os::raw::{c_char};
 
 use llvm_sys::*;
 use llvm_sys::core::*;
+use llvm_sys::execution_engine::*;
+
+const LLVM_ERROR: i32 = 1;
 
 pub fn int32_type() -> *mut LLVMType {
   unsafe { LLVMInt32Type() }
@@ -17,6 +21,23 @@ pub fn add_function(module: *mut LLVMModule,
     let ptr = cstring.as_ptr() as *mut _;
     LLVMAddFunction(module, ptr, fn_type)
   }
+}
+
+// create our exe engine
+pub fn excute_module_by_interpreter(engine_ref: *mut LLVMExecutionEngineRef, module: *mut LLVMModule, ) -> Result<i32, String> {
+  let mut error = 0 as *mut c_char;
+  let status = unsafe {
+    let buf: *mut *mut c_char = &mut error;
+    LLVMLinkInInterpreter();
+    LLVMCreateInterpreterForModule(engine_ref, module, buf)
+  };
+
+  if status == LLVM_ERROR {
+    let err_msg = unsafe { CString::from_raw(error).into_string().unwrap() };
+    return Err(err_msg);
+  }
+
+  Ok(status)
 }
 
 pub fn add_module(module_name: &str) -> *mut LLVMModule {
