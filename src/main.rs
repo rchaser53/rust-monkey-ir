@@ -18,7 +18,8 @@ fn main() {
   let mut engine: LLVMExecutionEngineRef = 0 as LLVMExecutionEngineRef;
 
   let module = add_module(MODULE_NAME);
-  llvm_builder.append_basic_block(add_function(module, "main", &mut [], int32_type()), "entry");
+  let function = add_function(module, int32_type(), &mut [], "main");
+  llvm_builder.append_basic_block(function, "entry");
 
   let a = llvm_builder.create_variable("a", 35, int32_type());
   let b = llvm_builder.create_variable("b", 16, int32_type());
@@ -46,3 +47,15 @@ fn main() {
   // Clean up the module after we're done with it.
   unsafe { LLVMDisposeModule(module) }
 }
+
+// unsafe {
+//   // LLVMTypeRef param_types[] = { LLVMPointerType(LLVMInt8Type(), 0) };
+//   let mut param_types = { LLVMPointerType(LLVMInt8Type(), 0) };
+
+//   // LLVMTypeRef llvm_printf_type = LLVMFunctionType(LLVMInt32Type(), param_types, 0, true);
+//   let llvm_printf_type = LLVMFunctionType(LLVMInt32Type(), &mut param_types, 0, 0);
+
+//   // LLVMValueRef llvm_printf = LLVMAddFunction(mod, "printf", llvm_printf_type);
+//   let cstr = CString::new("printf").unwrap().as_ptr();
+//   let llvm_printf = LLVMAddFunction(module, cstr, llvm_printf_type);
+// }

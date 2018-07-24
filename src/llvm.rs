@@ -12,9 +12,9 @@ pub fn int32_type() -> *mut LLVMType {
 }
 
 pub fn add_function(module: *mut LLVMModule,
-                fn_name: &str,
-                args: &mut [*mut LLVMType],
-                ret_type: *mut LLVMType) -> *mut LLVMValue {
+                    ret_type: *mut LLVMType,
+                    args: &mut [*mut LLVMType],
+                    fn_name: &str) -> *mut LLVMValue {
   unsafe {
     let fn_type = LLVMFunctionType(ret_type, args.as_mut_ptr(), args.len() as u32, 0);
     let cstring = CString::new(fn_name).unwrap();
