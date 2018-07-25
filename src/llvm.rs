@@ -24,7 +24,7 @@ pub fn add_function(module: *mut LLVMModule,
 }
 
 // create our exe engine
-pub fn excute_module_by_interpreter(engine_ref: *mut LLVMExecutionEngineRef, module: *mut LLVMModule, ) -> Result<i32, String> {
+pub fn excute_module_by_interpreter(engine_ref: *mut LLVMExecutionEngineRef, module: *mut LLVMModule) -> Result<i32, String> {
   let mut error = 0 as *mut c_char;
   let status = unsafe {
     let buf: *mut *mut c_char = &mut error;
@@ -96,6 +96,16 @@ impl LlvmBuilder {
     unsafe {
       LLVMBuildRet(self.builder, res);
     }
+  }
+
+  pub fn run_function(&mut self, engine: *mut LLVMOpaqueExecutionEngine, named_function: *mut LLVMValue, params: &mut [*mut LLVMOpaqueGenericValue]) -> u64 {
+    let func_result = unsafe { LLVMRunFunction(engine, named_function, params.len() as u32, params.as_mut_ptr()) };
+    unsafe{ LLVMGenericValueToInt(func_result, 0) }
+  }
+
+  pub fn get_named_function(&mut self, module: *mut LLVMModule, name: &str) -> *mut LLVMValue {
+    let func_name = CString::new(name).unwrap();
+    unsafe { LLVMGetNamedFunction(module, func_name.as_ptr()) }
   }
 
   pub fn dump(&self, module: *mut LLVMModule) {

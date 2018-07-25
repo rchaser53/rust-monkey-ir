@@ -37,14 +37,12 @@ fn main() {
     panic!("Execution error: {}", err_msg);
   });
 
-  let func_name = CString::new("main").unwrap();
-  let named_function = unsafe { LLVMGetNamedFunction(module, func_name.as_ptr()) };
+  let named_function = llvm_builder.get_named_function(module, "main");
+
   let mut params = [];
-  let func_result = unsafe { LLVMRunFunction(engine, named_function, params.len() as u32, params.as_mut_ptr()) };
-  let result = unsafe{ LLVMGenericValueToInt(func_result, 0) };
+  let result = llvm_builder.run_function(engine, named_function, &mut params);
   println!("{}", result);
 
-  // Clean up the module after we're done with it.
   unsafe { LLVMDisposeModule(module) }
 }
 
