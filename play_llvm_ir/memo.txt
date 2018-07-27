@@ -6,7 +6,8 @@ lli hoge.ll
 
 
 
-
+\0A (改行?)
+https://stackoverflow.com/questions/1061753/how-can-i-implement-a-string-data-type-in-llvm
 
 ; ModuleID = 'printf.bc'
 source_filename = "my_module"
@@ -22,3 +23,15 @@ entry:
 }
 
 declare i32 @printf(...)
+
+
+
+gcc -c static-library.c
+ar r libstatic.a static-library.o
+gcc call-library.c -lstatic
+
+
+
+gcc -c static-library.c
+ar r libnyan.a static-library.o
+gcc call-library.c -lnyan
