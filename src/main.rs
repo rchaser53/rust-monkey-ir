@@ -57,3 +57,15 @@ fn main() {
 //   let cstr = CString::new("printf").unwrap().as_ptr();
 //   let llvm_printf = LLVMAddFunction(module, cstr, llvm_printf_type);
 // }
+
+
+
+
+// #[link(name="static-library", kind="static")]
+// extern{
+//   fn static_func();
+// }
+
+// fn main() {
+//   unsafe {static_func();};
+// }

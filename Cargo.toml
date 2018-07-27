@@ -1,17 +1,20 @@
 [package]
 authors = ["rchaser53 <tayoshizawa29@gmail.com>"]
+build = "build.rs"
 name = "hoge-rust"
 version = "0.1.0"
-build = "build.rs"
 
 [dependencies]
 clap = "~2.27.0"
 encoding_rs = "0.8.4"
 lazy_static = "1.0.1"
+llvm-sys = "60"
 regex = "0.2"
 reqwest = "0.8.6"
 serde = "1.0.66"
 serde_derive = "1.0.66"
 serde_json = "1.0"
 url = "1.7.0"
-llvm-sys = "60"
+
+[build-dependencies]
+gcc = "0.3.54"
