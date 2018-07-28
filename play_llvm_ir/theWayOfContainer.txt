@@ -1,0 +1,43 @@
+apt-get update
+apt-get install wget  
+
+
+
+  wget http://releases.llvm.org/3.8.0/clang%2bllvm-3.8.0-x86_64-linux-gnu-ubuntu-16.04.tar.xz
+
+
+
+$ wget https://cmake.org/files/v3.9/cmake-3.9.0.tar.gz
+$ tar xvf cmake-3.9.0.tar.gz
+$ cd cmake-3.9.0/
+$ ./configure
+$ make
+$ sudo make install
+$ export PATH="/usr/local/bin:$PATH"
+$ cmake
+
+
+export PATH="/llvm-3.8.0.src-build/bin:$PATH"
+
+http://llvm.org/docs/CMake.html
+
+$ cmake --build .
+
+
+/llvm-3.8.0.src-build/bin
+
+
+https://askubuntu.com/questions/829310/how-to-upgrade-cmake-in-ubuntu
+
+CMake Error at CMakeLists.txt:3 (cmake_minimum_required):
+CMake 3.4.3 or higher is required.  You are running version 3.4.0-rc3
+
+http://llvm.org/docs/CMake.html
+
+$ wget http://llvm.org/releases/3.8.0/llvm-3.8.0.src.tar.xz
+$ tar xvf llvm-3.8.0.src.tar.xz
+$ mkdir llvm-build && cd llvm-build
+$ cmake ../llvm-3.8.0.src
+$ cmake --build .
+$ cmake --build . --target install
+$ cmake -DCMAKE_INSTALL_PREFIX=/tmp/llvm -P cmake_install.cmake
