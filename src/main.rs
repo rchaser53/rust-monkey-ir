@@ -1,3 +1,4 @@
+extern crate libc;
 extern crate llvm_sys;
 
 use llvm_sys::core::*;

@@ -1,5 +1,4 @@
 use std::ffi::CString;
-use std::os::raw::{c_char};
 
 use llvm_sys::*;
 use llvm_sys::core::*;
@@ -25,9 +24,9 @@ pub fn add_function(module: *mut LLVMModule,
 
 // create our exe engine
 pub fn excute_module_by_interpreter(engine_ref: *mut LLVMExecutionEngineRef, module: *mut LLVMModule) -> Result<i32, String> {
-  let mut error = 0 as *mut c_char;
+  let mut error = 0 as *mut ::libc::c_char;
   let status = unsafe {
-    let buf: *mut *mut c_char = &mut error;
+    let buf: *mut *mut ::libc::c_char = &mut error;
     LLVMLinkInInterpreter();
     LLVMCreateInterpreterForModule(engine_ref, module, buf)
   };
