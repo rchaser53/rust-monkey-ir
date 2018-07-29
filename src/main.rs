@@ -62,7 +62,6 @@ fn main() {
 
 
 
-// #[link(name="static-library", kind="static")]
 // extern{
 //   fn static_func();
 // }
