@@ -80,4 +80,27 @@ fn main() {
 // let llvm_type =  LLVMArrayType(LLVMInt8Type(), 6);
 // let llvm_value = LLVMBuildAlloca(llvm_builder.builder, llvm_type, val_name.as_ptr());
 // LLVMBuildStore(llvm_builder.builder, LLVMConstString(nyan, 6, 1), llvm_value);
-// let temp_str = LLVMBuildLoad(llvm_builder.builder, llvm_value, val_name.as_ptr());
+// let temp_str = LLVMBuildLoad(llvm_builder.builder, llvm_value, val_name.as_ptr());  // unsafe {
+  //   let a = llvm_builder.create_variable("a", 35, int32_type());
+  //   let b = llvm_builder.create_variable("b", 16, int32_type());
+  //   let res = llvm_builder.multiple_variable(a, b, CString::new("ab_val").unwrap());
+  //   llvm_builder.return_variable(res);
+
+  //   validater.validate(module);
+  //   if validater.has_error {
+  //     panic!("cannot verify module '{:?}'.\nError: {}", MODULE_NAME, validater.error_message);
+  //   }
+    
+  //   let nyan = b"nyan\0".as_ptr() as *const i8;
+  //   let val_name = CString::new("nyan").unwrap();
+  //   let llvm_type =  LLVMArrayType(LLVMInt8Type(), 6);
+  //   let llvm_value = LLVMBuildAlloca(llvm_builder.builder, llvm_type, val_name.as_ptr());
+  //   LLVMBuildStore(llvm_builder.builder, LLVMConstString(nyan, 6, 1), llvm_value);
+  //   let temp_str = LLVMBuildLoad(llvm_builder.builder, llvm_value, val_name.as_ptr());
+
+  //   LLVMLinkInMCJIT();
+
+  //   let mut error = 0 as *mut ::libc::c_char;
+  //   LLVMCreateExecutionEngineForModule(&mut engine, module, &mut error);
+  //   llvm_builder.dump(module);
+
