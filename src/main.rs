@@ -69,3 +69,15 @@ fn main() {
 // fn main() {
 //   unsafe {static_func();};
 // }
+
+
+/*
+  failed to use LLVMConstString, cause cannnot use AOT
+  https://stackoverflow.com/questions/39234493/llvm-error-constant-unimplemented-for-type
+*/
+// let nyan = b"nyan\0".as_ptr() as *const i8;
+// let val_name = CString::new("nyan").unwrap();
+// let llvm_type =  LLVMArrayType(LLVMInt8Type(), 6);
+// let llvm_value = LLVMBuildAlloca(llvm_builder.builder, llvm_type, val_name.as_ptr());
+// LLVMBuildStore(llvm_builder.builder, LLVMConstString(nyan, 6, 1), llvm_value);
+// let temp_str = LLVMBuildLoad(llvm_builder.builder, llvm_value, val_name.as_ptr());
