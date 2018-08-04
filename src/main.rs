@@ -18,12 +18,19 @@
 mod lexer;
 use lexer::*;
 
+// fn parse_expression(lhs: String, min_precedence: i8) -> String {
+// }
+
 fn main() {
   let mut tokens_struct = Tokens::new();
-  tokens_struct.read("abc + 111");
-  let tokens = tokens_struct.tokens;
+  tokens_struct.read("234 + 111");
+  let mut tokens = tokens_struct.tokens;
 
-  for token in tokens.iter() {
+  let mut tokens_iter = tokens.iter();
+  while let Some(token) = tokens_iter.next() {
+    if token.kind == TokenType::TokenEof {
+      continue;
+    }
     let val = token.value.as_str();
 
     match val {
@@ -33,7 +40,9 @@ fn main() {
       "*" | "/" => {
         println!("{}, 20", val);
       },
-      _ => {}
+      _ => {
+        println!("{:?}", val.parse::<u8>());
+      }
     };
   }
 }

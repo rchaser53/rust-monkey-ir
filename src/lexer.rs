@@ -3,7 +3,7 @@ use std::io;
 use std::io::prelude::*;
 use std::fs::File;
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum TokenType {
   TokenIdentifier,
   TokenDigit,
