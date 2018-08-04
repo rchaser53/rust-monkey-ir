@@ -10,6 +10,10 @@ pub fn int32_type() -> *mut LLVMType {
   unsafe { LLVMInt32Type() }
 }
 
+pub fn int64_type() -> *mut LLVMType {
+  unsafe { LLVMInt64Type() }
+}
+
 pub fn add_function(module: *mut LLVMModule,
                     ret_type: *mut LLVMType,
                     args: &mut [*mut LLVMType],

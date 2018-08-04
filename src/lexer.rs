@@ -1,17 +1,10 @@
+use std;
 use std::io;
 use std::io::prelude::*;
 use std::fs::File;
 
-// use std::fmt;
-
-// mod part;
-// mod walker;
-
-// use part::*;
-// use walker::*;
-
 #[derive(Debug)]
-enum TokenType {
+pub enum TokenType {
   TokenIdentifier,
   TokenDigit,
   TokenSymbol,
@@ -22,7 +15,7 @@ enum TokenType {
 
 #[derive(Debug)]
 pub struct TempToken {
-  byte_vec: Vec<u8>
+  pub byte_vec: Vec<u8>
 }
 
 impl TempToken {
@@ -39,14 +32,14 @@ impl TempToken {
 }
 
 #[derive(Debug)]
-struct AstToken {
-  kind: TokenType,
-  value: String
+pub struct Token {
+  pub kind: TokenType,
+  pub value: String
 }
 
-impl AstToken {
-  fn new(kind: TokenType, value: String) -> AstToken {
-    AstToken {
+impl Token {
+  fn new(kind: TokenType, value: String) -> Token {
+    Token {
       kind: kind,
       value: value
     }
@@ -54,16 +47,16 @@ impl AstToken {
 }
 
 #[derive(Debug)]
-struct AstTokens {
-  tokens: Vec<AstToken>,
-  temp_stack: TempToken,
-  num_flag: bool,
-  next_token: TokenType
+pub struct Tokens {
+  pub tokens: Vec<Token>,
+  pub temp_stack: TempToken,
+  pub num_flag: bool,
+  pub next_token: TokenType
 }
 
-impl AstTokens {
-  pub fn new() -> AstTokens {
-    AstTokens {
+impl Tokens {
+  pub fn new() -> Tokens {
+    Tokens {
       tokens: Vec::new(),
       temp_stack: TempToken{ byte_vec: Vec::new() },
       num_flag: true,
@@ -78,7 +71,7 @@ impl AstTokens {
     if 0 < stack_length {
       let token = self.handle_reserved_word(&emit_string, token);
 
-      self.tokens.push(AstToken::new(
+      self.tokens.push(Token::new(
         token,
         emit_string.to_owned()
       ));
@@ -95,7 +88,7 @@ impl AstTokens {
   }
 
   pub fn add_eof_token(&mut self) {
-    self.tokens.push(AstToken::new(
+    self.tokens.push(Token::new(
       TokenType::TokenEof,
       String::new()
     ));
@@ -185,36 +178,36 @@ impl AstTokens {
   }
 }
 
-fn read_file_to_ast_tokens(file_path: &str) -> io::Result<AstTokens> {
+pub fn read_file_to_tokens(file_path: &str) -> io::Result<Tokens> {
   let mut f = File::open(file_path)?;
   let mut contents = String::new();
   f.read_to_string(&mut contents)?;
 
-  let mut ast_tokens = AstTokens::new();
-  ast_tokens.read(&contents);
+  let mut tokens = Tokens::new();
+  tokens.read(&contents);
 
-  Ok(ast_tokens)
+  Ok(tokens)
 }
 
-fn main() {
-  println!("{:?}", read_file_to_ast_tokens("input.txt"));
-}
+// fn main() {
+//   println!("{:?}", read_file_to_tokens("input.txt"));
+// }
 
 #[test]
 fn normal() {
-  let mut ast_tokens = AstTokens::new();
-  ast_tokens.read("0123 456");
+  let mut tokens = Tokens::new();
+  tokens.read("0123 456");
 
-  let temp_str = &ast_tokens.tokens[0].value;
+  let temp_str = &tokens.tokens[0].value;
   assert!(*temp_str == "0123", "should be type Identifier when start character is 0");
 }
 
 #[test]
 fn comment() {
-  let mut ast_tokens = AstTokens::new();
-  ast_tokens.read("0 /* 123 */ 2");
+  let mut tokens = Tokens::new();
+  tokens.read("0 /* 123 */ 2");
 
-  let temp_str = &ast_tokens.tokens[1].value;
+  let temp_str = &tokens.tokens[1].value;
   assert!(*temp_str == "2", "should ignore comment '123'");
 }
 
