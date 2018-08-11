@@ -21,6 +21,11 @@ entry:
   ; store i8* getelementptr inbounds ([6 x i8], [6 x i8]* @simple_value, i32 0, i32 0), i8** %aa
   ; %cc = load i8*, i8* %bb
 
+;   %temp = getelementptr inbounds [13 x i8]*  @global_str, i64 0, i64 0
+
+  %as = load i8, i8* getelementptr inbounds ([6 x i8], [6 x i8]* @simple_value, i32 0, i32 0)
+
+
   %zz = getelementptr inbounds [6 x i8], [6 x i8]* @simple_value, i32 0, i32 0
   call i32 @puts(i8* %zz)
 

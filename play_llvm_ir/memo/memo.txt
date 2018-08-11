@@ -1,0 +1,30 @@
+// c => llvmIR(xx.c => xx.ll)
+clang -c -S -emit-llvm hoge.c
+
+// execute llvmIR 
+lli hoge.ll
+
+
+
+https://stackoverflow.com/questions/1061753/how-can-i-implement-a-string-data-type-in-llvm
+
+
+
+gcc -c static-library.c
+ar r libstatic.a static-library.o
+gcc call-library.c -lstatic
+
+
+clang -c -S -emit-llvm hoge.c
+
+
+gcc -c static-library.c
+ar r libnyan.a static-library.o
+gcc call-library.c -lnyan
+
+
+clang -g `llvm-config --cflags` -c main.c temp.c
+clang++ main.o temp.o `llvm-config --cxxflags --ldflags --libs core executionengine mcjit interpreter analysis native bitwriter --system-libs` -o main
+
+
+clang++ main.o `llvm-config --cxxflags --ldflags --libs core executionengine mcjit interpreter analysis native bitwriter --system-libs` -o main
