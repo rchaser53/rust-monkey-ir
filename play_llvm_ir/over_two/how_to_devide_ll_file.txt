@@ -1,0 +1,3 @@
+1. llvm-link hoge.ll hoge2.ll -o test.bc
+2. llc -filetype=obj test.bc
+3. gcc test.o -o test.out

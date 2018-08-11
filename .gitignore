@@ -1,3 +1,9 @@
-
 /target
 **/*.rs.bk
+
+
+**/*.ll
+*.out
+
+!hoge.ll
+!hoge2.ll
