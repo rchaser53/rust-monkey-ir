@@ -49,15 +49,21 @@ pub fn add_module(module_name: &str) -> *mut LLVMModule {
 }
 
 pub struct LlvmBuilder {
-  pub builder: *mut LLVMBuilder
+  pub builder: *mut LLVMBuilder,
+  pub context: *mut LLVMContext
 }
 
 impl LlvmBuilder {
   pub fn new() -> LlvmBuilder {
     LlvmBuilder::initialise();
 
-    LlvmBuilder {
-      builder: unsafe { LLVMCreateBuilder() }
+    unsafe {
+      let context = LLVMGetGlobalContext();
+
+      LlvmBuilder {
+        builder: LLVMCreateBuilder(),
+        context: context
+      }
     }
   }
 

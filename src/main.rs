@@ -1,86 +1,133 @@
-mod lexer;
-use lexer::*;
-
-fn get_precedence(val: &str) -> i32 {
-  match val {
-    "+" | "-" => {
-      10
-    },
-    "*" | "/" => {
-      20
-    },
-    _ => {
-      0
-    }
-  }
-}
+extern crate libc;
+extern crate llvm_sys;
 
 
-// parse_expression ()
-//     return parse_expression_1 (parse_primary (), 0)
-// parse_expression_1 (lhs, min_precedence)
-//     lookahead := peek next token
-//     while lookahead is a binary operator whose precedence is >= min_precedence
-//         op := lookahead
-//         advance to next token
-//         rhs := parse_primary ()
-//         lookahead := peek next token
-//         while lookahead is a binary operator whose precedence is greater
-//                  than op's, or a right-associative operator
-//                  whose precedence is equal to op's
-//             rhs := parse_expression_1 (rhs, lookahead's precedence)
-//             lookahead := peek next token
-//         lhs := the result of applying op with operands lhs and rhs
-//     return lhs
+use llvm_sys::LLVMIntPredicate;
+use llvm_sys::core::*;
+use llvm_sys::prelude::*;
+use llvm_sys::execution_engine::*;
+use std::ffi::CString;
 
+mod llvm;
+use llvm::*;
 
-fn parse_expression(tokens: &mut std::slice::Iter<Token>, lhs: i32, min_precedence: i32) -> i32 {
-  if let Some(token) = tokens.next() {
-    let val = token.value.as_str();
-    let mut precedence = get_precedence(val);
+mod validater;
+use validater::*;
 
-    while precedence <= min_precedence {
-      if let Some(next_token) = tokens.next() {
-        let next_val = next_token.value.as_str();
-        precedence = get_precedence(val);
-      } else {
-        return lhs;
-      }
-    }
-  } else {
-    return lhs;
-  }
-
-  return 12;
-}
-
+const MODULE_NAME: &'static str = "my_module";
 
 fn main() {
-  let mut tokens_struct = Tokens::new();
-  tokens_struct.read("234 + 111");
-  let mut tokens = tokens_struct.tokens;
+  let mut validater = Validater::new();
+  let mut llvm_builder = LlvmBuilder::new();
+  let mut engine: LLVMExecutionEngineRef = 0 as LLVMExecutionEngineRef;
 
-  let mut tokens_iter: std::slice::Iter<Token> = tokens.iter();
-  let token = tokens_iter.next().unwrap();
+  unsafe {
+    let module = add_module(MODULE_NAME);
+    let function = add_function(module, int32_type(), &mut [], "main");
+    llvm_builder.append_basic_block(function, "entry");
 
-  let mut precedence = {
-    get_precedence(token.value.as_str())
-  };
-  let mut int_value = token.value.parse::<i32>().unwrap();
+    let a = llvm_builder.create_variable("a", 35, int32_type());
+    let b = llvm_builder.create_variable("b", 16, int32_type());
+    let res = llvm_builder.multiple_variable(a, b, CString::new("ab_val").unwrap());
 
-  let aaa = parse_expression(&mut tokens_iter, int_value, precedence);
+    let left_block = LLVMAppendBasicBlockInContext(llvm_builder.context, function, CString::new("left").unwrap().as_ptr());
+    let right_block = LLVMAppendBasicBlockInContext(llvm_builder.context, function, CString::new("right").unwrap().as_ptr());
 
-  println!("{}", aaa);
+    LLVMBuildCondBr(llvm_builder.builder, is_cmp_int(&mut llvm_builder, LLVMIntPredicate::LLVMIntEQ, 1, 1), left_block, right_block);
+
+    LLVMPositionBuilderAtEnd(llvm_builder.builder, left_block);
+
+    LLVMBuildBr(llvm_builder.builder, right_block);
+    LLVMPositionBuilderAtEnd(llvm_builder.builder, right_block);
+
+    llvm_builder.return_variable(res);
+
+    validater.validate(module);
+    if validater.has_error {
+      panic!("cannot verify module '{:?}'.\nError: {}", MODULE_NAME, validater.error_message);
+    }
+    
+    llvm_builder.dump(module);
+
+    let _ = excute_module_by_interpreter(&mut engine, module).map_err(|err_msg| {
+      panic!("Execution error: {}", err_msg);
+    });
+
+    let named_function = llvm_builder.get_named_function(module, "main");
+
+    let mut params = [];
+    let result = llvm_builder.run_function(engine, named_function, &mut params);
+    println!("{}", result);
+
+
+    LLVMDisposeModule(module)
+  }
 }
 
+fn is_cmp_int(ls: &mut LlvmBuilder, cmp: LLVMIntPredicate, lhs_val: u64, rhs_val: u64) -> LLVMValueRef {
+  unsafe {
+    let lhs = LLVMConstInt(LLVMInt32Type(), lhs_val, 0);
+    let rhs = LLVMConstInt(LLVMInt32Type(), rhs_val, 0);
+    LLVMBuildICmp(ls.builder, cmp, lhs, rhs, CString::new("").unwrap().as_ptr())
+  }
+}
 
+  // LLVMBuildCondBr(builder, is_cmp_int(ls, LLVMIntEQ, 3, 4), left_block, right_block);
 
+// unsafe {
+//   // LLVMTypeRef param_types[] = { LLVMPointerType(LLVMInt8Type(), 0) };
+//   let mut param_types = { LLVMPointerType(LLVMInt8Type(), 0) };
 
+//   // LLVMTypeRef llvm_printf_type = LLVMFunctionType(LLVMInt32Type(), param_types, 0, true);
+//   let llvm_printf_type = LLVMFunctionType(LLVMInt32Type(), &mut param_types, 0, 0);
 
-// fn nyan() -> Result<String, String> {
-//   Ok("abc".to_string())
-//   // Err("aa".to_string())
+//   // LLVMValueRef llvm_printf = LLVMAddFunction(mod, "printf", llvm_printf_type);
+//   let cstr = CString::new("printf").unwrap().as_ptr();
+//   let llvm_printf = LLVMAddFunction(module, cstr, llvm_printf_type);
 // }
-// if let Ok(ho) = nyan() {
-//   println!("{}", ho);
+
+
+
+
+// extern{
+//   fn static_func();
 // }
+
+// fn main() {
+//   unsafe {static_func();};
+// }
+
+
+/*
+  failed to use LLVMConstString, cause cannnot use AOT
+  https://stackoverflow.com/questions/39234493/llvm-error-constant-unimplemented-for-type
+*/
+// let nyan = b"nyan\0".as_ptr() as *const i8;
+// let val_name = CString::new("nyan").unwrap();
+// let llvm_type =  LLVMArrayType(LLVMInt8Type(), 6);
+// let llvm_value = LLVMBuildAlloca(llvm_builder.builder, llvm_type, val_name.as_ptr());
+// LLVMBuildStore(llvm_builder.builder, LLVMConstString(nyan, 6, 1), llvm_value);
+// let temp_str = LLVMBuildLoad(llvm_builder.builder, llvm_value, val_name.as_ptr());  // unsafe {
+  //   let a = llvm_builder.create_variable("a", 35, int32_type());
+  //   let b = llvm_builder.create_variable("b", 16, int32_type());
+  //   let res = llvm_builder.multiple_variable(a, b, CString::new("ab_val").unwrap());
+  //   llvm_builder.return_variable(res);
+
+  //   validater.validate(module);
+  //   if validater.has_error {
+  //     panic!("cannot verify module '{:?}'.\nError: {}", MODULE_NAME, validater.error_message);
+  //   }
+    
+  //   let nyan = b"nyan\0".as_ptr() as *const i8;
+  //   let val_name = CString::new("nyan").unwrap();
+  //   let llvm_type =  LLVMArrayType(LLVMInt8Type(), 6);
+  //   let llvm_value = LLVMBuildAlloca(llvm_builder.builder, llvm_type, val_name.as_ptr());
+  //   LLVMBuildStore(llvm_builder.builder, LLVMConstString(nyan, 6, 1), llvm_value);
+  //   let temp_str = LLVMBuildLoad(llvm_builder.builder, llvm_value, val_name.as_ptr());
+
+  //   LLVMLinkInMCJIT();
+
+  //   let mut error = 0 as *mut ::libc::c_char;
+  //   LLVMCreateExecutionEngineForModule(&mut engine, module, &mut error);
+  //   llvm_builder.dump(module);
+
