@@ -15,12 +15,6 @@ use validater::*;
 
 const MODULE_NAME: &'static str = "my_module";
 
-  unsafe {
-    let lhs = LLVMConstInt(LLVMInt32Type(), lhs_val, 0);
-    let rhs = LLVMConstInt(LLVMInt32Type(), rhs_val, 0);
-    LLVMBuildICmp(ls.builder, cmp, lhs, rhs, CString::new("").unwrap().as_ptr())
-  }
-
 fn main() {  
   let mut validater = Validater::new();
   let mut llvm_builder = LlvmBuilder::new();
