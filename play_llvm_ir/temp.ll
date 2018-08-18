@@ -6,21 +6,24 @@ target datalayout = "e-m:o-i64:64-f80:128-n8:16:32:64-S128"
 
 define i32 @main(i32) {
 entry:
-  %ret_val = alloca i32
-  store i32 11, i32* %ret_val
+  %pre_i = alloca i32, align 4
+  store i32 0, i32* %pre_i
 
-  %cond = icmp eq i32 1, 1
-  br i1 %cond, label %left, label %right
+  br label %start
+
+start:
+  %i = load i32, i32* %pre_i
+  %aaa = add nsw i32 %i, 1
+  store i32 %aaa, i32* %pre_i
+
+  %cond = icmp ugt i32 %aaa, 3
+  br i1 %cond, label %right, label %left
 
 left:                                             ; preds = %entry
-  store i32 22, i32* %ret_val
-  br label %right
+  %1 = call i32 (...) @printf(i8* getelementptr inbounds ([8 x i8], [8 x i8]* @0, i32 0, i32 0), i32 %aaa)
+  br label %start
 
 right:                                            ; preds = %left, %entry
-  %ret_val1 = load i32, i32* %ret_val
-  ; %aa = call i32 @ho(i32 1, i32 2)
-  ; %1 = call i32 (...) @printf(i8* getelementptr inbounds ([8 x i8], [8 x i8]* @0, i32 0, i32 0), i32 %aa)
-  %1 = call i32 (...) @printf(i8* getelementptr inbounds ([8 x i8], [8 x i8]* @0, i32 0, i32 0), i32 %ret_val1)
   ret i32 0
 }
 
