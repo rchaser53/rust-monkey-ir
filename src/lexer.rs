@@ -189,10 +189,6 @@ pub fn read_file_to_tokens(file_path: &str) -> io::Result<Tokens> {
   Ok(tokens)
 }
 
-// fn main() {
-//   println!("{:?}", read_file_to_tokens("input.txt"));
-// }
-
 #[test]
 fn normal() {
   let mut tokens = Tokens::new();
