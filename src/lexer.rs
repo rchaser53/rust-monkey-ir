@@ -10,7 +10,8 @@ pub enum TokenType {
   TokenSymbol,
   TokenInt,
   TokenReturn,
-  TokenEof
+  TokenEof,
+  TokenComma,
 }
 
 #[derive(Debug)]
@@ -47,36 +48,30 @@ impl Token {
 }
 
 #[derive(Debug)]
-pub struct Lexer {
-  pub tokens: Vec<Token>,
+pub struct Lexer<'a> {
+  pub bytes: std::slice::Iter<'a, u8>,
   pub temp_stack: TempToken,
   pub num_flag: bool,
-  pub next_token: TokenType
+  pub next_token: TokenType,
 }
 
-impl Lexer {
-  pub fn new() -> Lexer {
+impl <'a>Lexer<'a> {
+  pub fn new(input: &'a str) -> Lexer {
+    let bytes = input.as_bytes().into_iter();
     Lexer {
-      tokens: Vec::new(),
+      bytes: bytes,
       temp_stack: TempToken{ byte_vec: Vec::new() },
       num_flag: true,
-      next_token: TokenType::TokenIdentifier
+      next_token: TokenType::TokenIdentifier,
     }
   }
 
-  pub fn add_token(&mut self, token: TokenType) {
-    let stack_length = self.temp_stack.byte_vec.len();
+  pub fn create_token(&mut self, token: TokenType) -> Token {
     let emit_string = self.temp_stack.emit_temp_str();
-
-    if 0 < stack_length {
-      let token = self.handle_reserved_word(&emit_string, token);
-
-      self.tokens.push(Token::new(
-        token,
-        emit_string.to_owned()
-      ));
-    }
-    self.refresh();
+    Token::new(
+      self.handle_reserved_word(&emit_string, token),
+      emit_string.to_owned()
+    )
   }
 
   pub fn handle_reserved_word(&self, word: &str, token: TokenType) -> TokenType {
@@ -87,16 +82,12 @@ impl Lexer {
     }
   }
 
-  pub fn add_eof_token(&mut self) {
-    self.tokens.push(Token::new(
-      TokenType::TokenEof,
-      String::new()
-    ));
-  }
-
-  pub fn refresh(&mut self) {
-    self.num_flag = true;
-  }
+  // pub fn add_eof_token(&mut self) {
+  //   self.tokens.push(Token::new(
+  //     TokenType::TokenEof,
+  //     String::new()
+  //   ));
+  // }
 
   pub fn get_token_type(&mut self) -> TokenType {
     if self.num_flag == true {
@@ -106,10 +97,10 @@ impl Lexer {
     }
   }
 
-  pub fn consume_comment(&mut self, bytes: &mut std::slice::Iter<u8>) {
-    while let Some(byte) = bytes.next() {
+  pub fn consume_comment(&mut self) {
+    while let Some(byte) = self.bytes.next() {
       if *byte == b'*' {
-        let next = bytes.next();
+        let next = self.bytes.next();
         if next != None && *next.unwrap() == b'/' {
           break;
         }
@@ -117,9 +108,9 @@ impl Lexer {
     }
   }
 
-  pub fn read(&mut self, input: &str) {
-    let mut bytes = input.as_bytes().into_iter();
-    while let Some(byte) = bytes.next() {
+  pub fn next_token(&mut self) -> Token {
+    let mut ret_val: Token = self.create_token(TokenType::TokenSymbol);
+    while let Some(byte) = self.bytes.next() {
       match byte {
         b'0' => {
           let stack_length = self.temp_stack.byte_vec.len();
@@ -136,73 +127,83 @@ impl Lexer {
           self.temp_stack.add_temp_str(*byte);
         },
         b'/' => {
-          let next = bytes.next();
-          if next == None {
-            self.temp_stack.add_temp_str(*byte);
-            self.add_token(TokenType::TokenSymbol);
-            continue;
-          }
+          let next = self.bytes.next();
+          // if next == None {
+          //   self.temp_stack.add_temp_str(*byte);
+          //   ret_val = self.create_token(TokenType::TokenSymbol);
+          //   continue;
+          // }
           if *next.unwrap() == b'*' {
-            self.consume_comment(&mut bytes);
+            self.consume_comment();
           } else {
             self.temp_stack.add_temp_str(*byte);
-            self.add_token(TokenType::TokenSymbol);
+            ret_val = self.create_token(TokenType::TokenSymbol);
+            break;
           }
         },
         b'+' | b'-' | b'{' | b'}' | b'(' | b')' | b'*' => {
           let stack_length = self.temp_stack.byte_vec.len();
           if 0 < stack_length {
             let token = self.get_token_type();
-            self.add_token(token);
+            ret_val = self.create_token(token);
+            break;
           }
           self.temp_stack.add_temp_str(*byte);
-          self.add_token(TokenType::TokenSymbol);
+          ret_val = self.create_token(TokenType::TokenSymbol);
+          break;
         },
         b'.' => {
           let token = self.get_token_type();
-          self.add_token(token);
+          ret_val = self.create_token(token);
+          break;
         },
-        b' ' | b',' => {
+        b',' => {
+          ret_val = self.create_token(TokenType::TokenComma);
+          break;
+        },
+        b' ' => {
           let token = self.get_token_type();
-          self.add_token(token);
+          ret_val = self.create_token(token);
         },
-        b'\n' | b'\r' => {},
+        b'\n' | b'\r' => {
+          println!("{:?}", byte);
+        },
         _ => {
           panic!("{} cannot be handled.", byte);
         }
       }
     }
-    let token = self.get_token_type();
-    self.add_token(token);
-    self.add_eof_token();
+    println!("kuru");
+    ret_val
   }
 }
 
-pub fn read_file_to_tokens(file_path: &str) -> io::Result<Vec<Token>> {
-  let mut f = File::open(file_path)?;
-  let mut contents = String::new();
-  f.read_to_string(&mut contents)?;
+// pub fn read_file_to_tokens(file_path: &str) -> io::Result<Vec<Token>> {
+//   let mut f = File::open(file_path)?;
+//   let mut contents = String::new();
+//   f.read_to_string(&mut contents)?;
 
-  let mut lexer = Lexer::new();
-  lexer.read(&contents);
+//   let mut lexer = Lexer::new();
+//   lexer.read(&contents);
 
-  Ok(lexer.tokens)
-}
+//   Ok(lexer.tokens)
+// }
 
 #[test]
 fn normal() {
-  let mut lexer = Lexer::new();
-  lexer.read("0123 456");
+  let mut lexer = Lexer::new("0123 456");
+  let first = lexer.next_token().value;
+  assert!(first == "0123", "{:?} an incorrect value.", first);
 
-  let temp_str = &lexer.tokens[0].value;
-  assert!(*temp_str == "0123", "should be type Identifier when start character is 0");
+  let second = lexer.next_token().value;
+  assert!(second == "456", "{:?} an incorrect value.", second);
 }
 
-#[test]
-fn comment() {
-  let mut lexer = Lexer::new();
-  lexer.read("0 /* 123 */ 2");
+// #[test]
+// fn comment() {
+//   let mut lexer = Lexer::new();
+//   lexer.read("0 /* 123 */ 2");
 
-  let temp_str = &lexer.tokens[1].value;
-  assert!(*temp_str == "2", "should ignore comment '123'");
-}
+//   let temp_str = &lexer.tokens[1].value;
+//   assert!(*temp_str == "2", "should ignore comment '123'");
+// }
