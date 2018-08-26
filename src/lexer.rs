@@ -47,16 +47,16 @@ impl Token {
 }
 
 #[derive(Debug)]
-pub struct Tokens {
+pub struct Lexer {
   pub tokens: Vec<Token>,
   pub temp_stack: TempToken,
   pub num_flag: bool,
   pub next_token: TokenType
 }
 
-impl Tokens {
-  pub fn new() -> Tokens {
-    Tokens {
+impl Lexer {
+  pub fn new() -> Lexer {
+    Lexer {
       tokens: Vec::new(),
       temp_stack: TempToken{ byte_vec: Vec::new() },
       num_flag: true,
@@ -178,50 +178,31 @@ impl Tokens {
   }
 }
 
-pub fn read_file_to_tokens(file_path: &str) -> io::Result<Tokens> {
+pub fn read_file_to_tokens(file_path: &str) -> io::Result<Vec<Token>> {
   let mut f = File::open(file_path)?;
   let mut contents = String::new();
   f.read_to_string(&mut contents)?;
 
-  let mut tokens = Tokens::new();
-  tokens.read(&contents);
+  let mut lexer = Lexer::new();
+  lexer.read(&contents);
 
-  Ok(tokens)
+  Ok(lexer.tokens)
 }
 
 #[test]
 fn normal() {
-  let mut tokens = Tokens::new();
-  tokens.read("0123 456");
+  let mut lexer = Lexer::new();
+  lexer.read("0123 456");
 
-  let temp_str = &tokens.tokens[0].value;
+  let temp_str = &lexer.tokens[0].value;
   assert!(*temp_str == "0123", "should be type Identifier when start character is 0");
 }
 
 #[test]
 fn comment() {
-  let mut tokens = Tokens::new();
-  tokens.read("0 /* 123 */ 2");
+  let mut lexer = Lexer::new();
+  lexer.read("0 /* 123 */ 2");
 
-  let temp_str = &tokens.tokens[1].value;
+  let temp_str = &lexer.tokens[1].value;
   assert!(*temp_str == "2", "should ignore comment '123'");
 }
-
-
-  // let mut walker = Walker::new("{afda {b  c} } ");
-  // walker.walk();
-
-  // let mut chars: Vec<char> = Vec::new();
-  // let mut strs: Vec<String> = Vec::new();
-  // for part in walker.part_arena.parts.iter() {
-  //   if add_str(&mut chars, part) {
-  //     strs.push(chars.iter().collect::<String>());
-  //     chars.truncate(0);
-  //   }
-  // }
-  // println!("{:?}", strs);
-
-  // println!("{:?}, {:?}", num_stack.temp_str, identifier_stack.temp_str );
-
-  // let hhhh = "abcdefg";
-  // println!("{:?}", &hhhh[0..2]);
