@@ -47,6 +47,12 @@ impl Token {
   }
 }
 
+impl PartialEq for Token {
+  fn eq(&self, other: &Token) -> bool {
+      self.kind == other.kind && self.value == other.value
+  }
+}
+
 #[derive(Debug)]
 pub struct Lexer<'a> {
   pub bytes: std::slice::Iter<'a, u8>,
@@ -173,7 +179,6 @@ impl <'a>Lexer<'a> {
         }
       }
     }
-    println!("kuru");
     ret_val
   }
 }
@@ -192,11 +197,11 @@ impl <'a>Lexer<'a> {
 #[test]
 fn normal() {
   let mut lexer = Lexer::new("0123 456");
-  let first = lexer.next_token().value;
-  assert!(first == "0123", "{:?} an incorrect value.", first);
+  let first = lexer.next_token();
+  assert!(first == Token::new(TokenType::TokenIdentifier, "0123".to_string()), "{:?} an incorrect value.", first);
 
-  let second = lexer.next_token().value;
-  assert!(second == "456", "{:?} an incorrect value.", second);
+  let second = lexer.next_token();
+  assert!(second == Token::new(TokenType::TokenDigit, "456".to_string()), "{:?} an incorrect value.", second);
 }
 
 // #[test]
