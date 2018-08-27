@@ -6,6 +6,8 @@ pub enum TokenType {
   TokenInt,
   TokenReturn,
   TokenEof,
+  TokenLet,
+  TokenAssign,
 }
 
 #[derive(Debug)]
@@ -135,7 +137,7 @@ impl <'a>Lexer<'a> {
     )
   }
 
-  pub fn next_token(&mut self) -> Token {
+  pub fn next_token(&mut self) -> Option<Token> {
     let mut ret_val: Token = self.create_eof_token();
     loop {
       if let Some(byte) = self.get_next_char() {
@@ -182,59 +184,62 @@ impl <'a>Lexer<'a> {
         }
 
       }
+       else {
+        return None;
+      }
     }
-    ret_val
+    Some(ret_val)
   }
 }
 
 #[test]
 fn digit() {
   let mut lexer = Lexer::new("123 456");
-  let first = lexer.next_token();
+  let first = lexer.next_token().unwrap();
   assert!(first == Token::new(TokenType::TokenDigit, "123".to_string()), "{:?} an incorrect value.", first);
 
-  let second = lexer.next_token();
+  let second = lexer.next_token().unwrap();
   assert!(second == Token::new(TokenType::TokenDigit, "456".to_string()), "{:?} an incorrect value.", second);
 }
 
 #[test]
 fn identifier() {
   let mut lexer = Lexer::new("123 abc 45d6");
-  let first = lexer.next_token();
+  let first = lexer.next_token().unwrap();
   assert!(first == Token::new(TokenType::TokenDigit, "123".to_string()), "{:?} an incorrect value.", first);
 
-  let second = lexer.next_token();
+  let second = lexer.next_token().unwrap();
   assert!(second == Token::new(TokenType::TokenIdentifier, "abc".to_string()), "{:?} an incorrect value.", second);
 
-  let third = lexer.next_token();
+  let third = lexer.next_token().unwrap();
   assert!(third == Token::new(TokenType::TokenIdentifier, "45d6".to_string()), "{:?} an incorrect value.", third);
 }
 
 #[test]
 fn comment() {
   let mut lexer = Lexer::new("0 /* 123 */ 2");
-  let first = lexer.next_token();
+  let first = lexer.next_token().unwrap();
   assert!(first == Token::new(TokenType::TokenDigit, "0".to_string()), "{:?} an incorrect value.", first);
 
-  let second = lexer.next_token();
+  let second = lexer.next_token().unwrap();
   assert!(second == Token::new(TokenType::TokenDigit, "2".to_string()), "{:?} an incorrect value.", second);
 }
 
 #[test]
 fn division_multiple() {
   let mut lexer = Lexer::new("1 / 323 * 3 / 2");
-  let first = lexer.next_token();
+  let first = lexer.next_token().unwrap();
   assert!(first == Token::new(TokenType::TokenDigit, "1".to_string()), "{:?} an incorrect value.", first);
 
-  let second = lexer.next_token();
+  let second = lexer.next_token().unwrap();
   assert!(second == Token::new(TokenType::TokenSymbol, "/".to_string()), "{:?} an incorrect value.", second);
 
-  let third = lexer.next_token();
+  let third = lexer.next_token().unwrap();
   assert!(third == Token::new(TokenType::TokenDigit, "323".to_string()), "{:?} an incorrect value.", third);
 
-  let forth = lexer.next_token();
+  let forth = lexer.next_token().unwrap();
   assert!(forth == Token::new(TokenType::TokenSymbol, "*".to_string()), "{:?} an incorrect value.", forth);
 
-  let fifth = lexer.next_token();
+  let fifth = lexer.next_token().unwrap();
   assert!(fifth == Token::new(TokenType::TokenDigit, "3".to_string()), "{:?} an incorrect value.", fifth);
 }
