@@ -1,8 +1,3 @@
-use std;
-use std::io;
-use std::io::prelude::*;
-use std::fs::File;
-
 #[derive(Debug, PartialEq)]
 pub enum TokenType {
   TokenIdentifier,
@@ -11,24 +6,6 @@ pub enum TokenType {
   TokenInt,
   TokenReturn,
   TokenEof,
-}
-
-#[derive(Debug)]
-pub struct TempToken {
-  pub byte_vec: Vec<u8>
-}
-
-impl TempToken {
-  fn add_temp_str(&mut self, value: u8) {
-    self.byte_vec.push(value);
-  }
-
-  fn emit_temp_str(&mut self) -> String {
-    let ret_string = String::from_utf8(self.byte_vec.clone()).unwrap();
-    self.byte_vec.truncate(0);
-    
-    ret_string
-  }
 }
 
 #[derive(Debug)]
@@ -55,10 +32,7 @@ impl PartialEq for Token {
 #[derive(Debug)]
 pub struct Lexer<'a> {
   pub bytes: &'a [u8],
-  pub temp_stack: TempToken,
-  pub num_flag: bool,
   pub position: usize,
-  pub next_token: TokenType,
 }
 
 impl <'a>Lexer<'a> {
@@ -66,18 +40,14 @@ impl <'a>Lexer<'a> {
     let bytes = input.as_bytes();
     Lexer {
       bytes: bytes,
-      temp_stack: TempToken{ byte_vec: Vec::new() },
-      num_flag: true,
       position: 0,
-      next_token: TokenType::TokenIdentifier,
     }
   }
 
-  pub fn create_token(&mut self, token: TokenType) -> Token {
-    let emit_string = self.temp_stack.emit_temp_str();
+  pub fn create_eof_token(&mut self) -> Token {
     Token::new(
-      self.handle_reserved_word(&emit_string, token),
-      emit_string.to_owned()
+      TokenType::TokenEof,
+      String::new()
     )
   }
 
@@ -89,26 +59,11 @@ impl <'a>Lexer<'a> {
     }
   }
 
-  // pub fn add_eof_token(&mut self) {
-  //   self.tokens.push(Token::new(
-  //     TokenType::TokenEof,
-  //     String::new()
-  //   ));
-  // }
-
   pub fn get_next_char(&mut self) -> Option<u8> {
     if self.position < self.bytes.len() {
       return Some(self.bytes[self.position]);
     }
     None
-  }
-
-  pub fn get_token_type(&mut self) -> TokenType {
-    if self.num_flag == true {
-      TokenType::TokenDigit
-    } else {
-      TokenType::TokenIdentifier
-    }
   }
 
   pub fn consume_comment(&mut self) {
@@ -181,7 +136,7 @@ impl <'a>Lexer<'a> {
   }
 
   pub fn next_token(&mut self) -> Token {
-    let mut ret_val: Token = self.create_token(TokenType::TokenSymbol);
+    let mut ret_val: Token = self.create_eof_token();
     loop {
       if let Some(byte) = self.get_next_char() {
         self.position += 1;
@@ -226,10 +181,6 @@ impl <'a>Lexer<'a> {
           break;
         }
 
-      } else {
-        let token = self.get_token_type();
-        ret_val = self.create_token(token);
-        break;
       }
     }
     ret_val
