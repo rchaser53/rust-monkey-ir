@@ -55,19 +55,21 @@ impl PartialEq for Token {
 
 #[derive(Debug)]
 pub struct Lexer<'a> {
-  pub bytes: std::slice::Iter<'a, u8>,
+  pub bytes: &'a [u8],
   pub temp_stack: TempToken,
   pub num_flag: bool,
+  pub position: usize,
   pub next_token: TokenType,
 }
 
 impl <'a>Lexer<'a> {
   pub fn new(input: &'a str) -> Lexer {
-    let bytes = input.as_bytes().into_iter();
+    let bytes = input.as_bytes();
     Lexer {
       bytes: bytes,
       temp_stack: TempToken{ byte_vec: Vec::new() },
       num_flag: true,
+      position: 0,
       next_token: TokenType::TokenIdentifier,
     }
   }
@@ -95,6 +97,18 @@ impl <'a>Lexer<'a> {
   //   ));
   // }
 
+  pub fn see_next_char(&mut self) -> Option<u8> {
+    if self.bytes.len() < self.position {
+      return Some(self.bytes[self.position]);
+    }
+    None
+  }
+
+  pub fn get_next_char(&mut self) -> Option<u8> {
+    self.position += 1;
+    self.see_next_char()
+  }
+
   pub fn get_token_type(&mut self) -> TokenType {
     if self.num_flag == true {
       TokenType::TokenDigit
@@ -104,10 +118,13 @@ impl <'a>Lexer<'a> {
   }
 
   pub fn consume_comment(&mut self) {
-    while let Some(byte) = self.bytes.next() {
-      if *byte == b'*' {
-        let next = self.bytes.next();
-        if next != None && *next.unwrap() == b'/' {
+    while let Some(byte) = self.get_next_char() {
+      if byte == b'*' {
+        if let Some(next) = self.see_next_char() {
+          if next == b'/' {
+            break;
+          }
+        } else {
           break;
         }
       }
@@ -116,36 +133,38 @@ impl <'a>Lexer<'a> {
 
   pub fn next_token(&mut self) -> Token {
     let mut ret_val: Token = self.create_token(TokenType::TokenSymbol);
-    while let Some(byte) = self.bytes.next() {
+    while let Some(byte) = self.get_next_char() {
       match byte {
         b'0' => {
           let stack_length = self.temp_stack.byte_vec.len();
           if stack_length == 0 {
             self.num_flag = false;
           }
-          self.temp_stack.add_temp_str(*byte);
+          self.temp_stack.add_temp_str(byte);
         },
         b'1' ... b'9' => {
-          self.temp_stack.add_temp_str(*byte);
+          self.temp_stack.add_temp_str(byte);
         },
         b'a' ... b'z' | b'A' ... b'Z' => {
           self.num_flag = false;
-          self.temp_stack.add_temp_str(*byte);
+          self.temp_stack.add_temp_str(byte);
         },
         b'/' => {
-          let next = self.bytes.next();
+          // let next = ;
           // if next == None {
           //   self.temp_stack.add_temp_str(*byte);
           //   ret_val = self.create_token(TokenType::TokenSymbol);
           //   continue;
           // }
-          if *next.unwrap() == b'*' {
-            self.consume_comment();
-          } else {
-            self.temp_stack.add_temp_str(*byte);
-            ret_val = self.create_token(TokenType::TokenSymbol);
-            break;
+          if let Some(next) = self.get_next_char() {
+            if next == b'*' {
+              self.consume_comment();
+            } else {
+              self.temp_stack.add_temp_str(byte);
+              ret_val = self.create_token(TokenType::TokenSymbol);
+            }
           }
+          break;
         },
         b'+' | b'-' | b'{' | b'}' | b'(' | b')' | b'*' => {
           let stack_length = self.temp_stack.byte_vec.len();
@@ -154,7 +173,7 @@ impl <'a>Lexer<'a> {
             ret_val = self.create_token(token);
             break;
           }
-          self.temp_stack.add_temp_str(*byte);
+          self.temp_stack.add_temp_str(byte);
           ret_val = self.create_token(TokenType::TokenSymbol);
           break;
         },
