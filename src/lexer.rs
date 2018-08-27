@@ -11,7 +11,6 @@ pub enum TokenType {
   TokenInt,
   TokenReturn,
   TokenEof,
-  TokenComma,
 }
 
 #[derive(Debug)]
@@ -119,6 +118,7 @@ impl <'a>Lexer<'a> {
         if byte == b'*' {
           if let Some(next) = self.get_next_char() {
             if next == b'/' {
+              self.position += 1;
               break;
             }
           } else {
@@ -131,16 +131,11 @@ impl <'a>Lexer<'a> {
     }
   }
 
-  
-
-  pub fn consume_number(&mut self, first_byte: u8) -> Token {
+  pub fn consumue_character(&mut self, first_byte: u8, mut num_flag: bool) -> Token {
     let mut temp_vec: Vec<u8> = Vec::new();
     temp_vec.push(first_byte);
-
-    let mut num_flag = true;
     loop {
       if let Some(byte) = self.get_next_char() {
-
 
         let break_flg = match byte {
           b'0' ... b'9' => {
@@ -192,62 +187,34 @@ impl <'a>Lexer<'a> {
         self.position += 1;
         let flag = match byte {
           b'0' ... b'9' => {
-            ret_val = self.consume_number(byte);
+            ret_val = self.consumue_character(byte, true);
             true
           },
           b'a' ... b'z' | b'A' ... b'Z' => {
-            self.num_flag = false;
-            self.temp_stack.add_temp_str(byte);
-            false
+            ret_val = self.consumue_character(byte, false);
+            true
           },
           b'/' => {
-            // let next = ;
-            // if next == None {
-            //   self.temp_stack.add_temp_str(*byte);
-            //   ret_val = self.create_token(TokenType::TokenSymbol);
-            //   continue;
-            // }
+            let mut flag = false;
             if let Some(next) = self.get_next_char() {
               if next == b'*' {
                 self.position += 1;
                 self.consume_comment();
               } else {
-                self.temp_stack.add_temp_str(byte);
-                ret_val = self.create_token(TokenType::TokenSymbol);
+                ret_val = self.create_token_by_value(TokenType::TokenSymbol, vec![byte]);
+                flag = true;
               }
             } else {
-              self.temp_stack.add_temp_str(byte);
-              ret_val = self.create_token(TokenType::TokenSymbol);
+              ret_val = self.create_token_by_value(TokenType::TokenSymbol, vec![byte]);
+              flag = true;
             }
+            flag
+          },
+          b',' | b'.' | b'+' | b'-' | b'{' | b'}' | b'(' | b')' | b'*' => {
+            ret_val = self.create_token_by_value(TokenType::TokenSymbol, vec![byte]);
             true
           },
-          b'+' | b'-' | b'{' | b'}' | b'(' | b')' | b'*' => {
-            let stack_length = self.temp_stack.byte_vec.len();
-            if 0 < stack_length {
-              let token = self.get_token_type();
-              ret_val = self.create_token(token);
-            } else {
-              self.temp_stack.add_temp_str(byte);
-              ret_val = self.create_token(TokenType::TokenSymbol);
-            }
-            true
-          },
-          b'.' => {
-            let token = self.get_token_type();
-            ret_val = self.create_token(token);
-            true
-          },
-          b',' => {
-            ret_val = self.create_token(TokenType::TokenComma);
-            true
-          },
-          b' ' => {
-            // let token = self.get_token_type();
-            // ret_val = self.create_token(token);
-            false
-          },
-          b'\n' | b'\r' => {
-            println!("{:?}", byte);
+          b'\n' | b'\r' | b' ' => {
             false
           },
           _ => {
@@ -269,19 +236,8 @@ impl <'a>Lexer<'a> {
   }
 }
 
-// pub fn read_file_to_tokens(file_path: &str) -> io::Result<Vec<Token>> {
-//   let mut f = File::open(file_path)?;
-//   let mut contents = String::new();
-//   f.read_to_string(&mut contents)?;
-
-//   let mut lexer = Lexer::new();
-//   lexer.read(&contents);
-
-//   Ok(lexer.tokens)
-// }
-
 #[test]
-fn normal() {
+fn digit() {
   let mut lexer = Lexer::new("123 456");
   let first = lexer.next_token();
   assert!(first == Token::new(TokenType::TokenDigit, "123".to_string()), "{:?} an incorrect value.", first);
@@ -290,12 +246,44 @@ fn normal() {
   assert!(second == Token::new(TokenType::TokenDigit, "456".to_string()), "{:?} an incorrect value.", second);
 }
 
-// #[test]
-// fn comment() {
-//   let mut lexer = Lexer::new("0 /* 123 */ 2");
-//   let first = lexer.next_token();
-//   assert!(first == Token::new(TokenType::TokenDigit, "0".to_string()), "{:?} an incorrect value.", first);
+#[test]
+fn identifier() {
+  let mut lexer = Lexer::new("123 abc 45d6");
+  let first = lexer.next_token();
+  assert!(first == Token::new(TokenType::TokenDigit, "123".to_string()), "{:?} an incorrect value.", first);
 
-//   let second = lexer.next_token();
-//   assert!(second == Token::new(TokenType::TokenDigit, "2".to_string()), "{:?} an incorrect value.", second);
-// }
+  let second = lexer.next_token();
+  assert!(second == Token::new(TokenType::TokenIdentifier, "abc".to_string()), "{:?} an incorrect value.", second);
+
+  let third = lexer.next_token();
+  assert!(third == Token::new(TokenType::TokenIdentifier, "45d6".to_string()), "{:?} an incorrect value.", third);
+}
+
+#[test]
+fn comment() {
+  let mut lexer = Lexer::new("0 /* 123 */ 2");
+  let first = lexer.next_token();
+  assert!(first == Token::new(TokenType::TokenDigit, "0".to_string()), "{:?} an incorrect value.", first);
+
+  let second = lexer.next_token();
+  assert!(second == Token::new(TokenType::TokenDigit, "2".to_string()), "{:?} an incorrect value.", second);
+}
+
+#[test]
+fn division_multiple() {
+  let mut lexer = Lexer::new("1 / 323 * 3 / 2");
+  let first = lexer.next_token();
+  assert!(first == Token::new(TokenType::TokenDigit, "1".to_string()), "{:?} an incorrect value.", first);
+
+  let second = lexer.next_token();
+  assert!(second == Token::new(TokenType::TokenSymbol, "/".to_string()), "{:?} an incorrect value.", second);
+
+  let third = lexer.next_token();
+  assert!(third == Token::new(TokenType::TokenDigit, "323".to_string()), "{:?} an incorrect value.", third);
+
+  let forth = lexer.next_token();
+  assert!(forth == Token::new(TokenType::TokenSymbol, "*".to_string()), "{:?} an incorrect value.", forth);
+
+  let fifth = lexer.next_token();
+  assert!(fifth == Token::new(TokenType::TokenDigit, "3".to_string()), "{:?} an incorrect value.", fifth);
+}
