@@ -97,16 +97,11 @@ impl <'a>Lexer<'a> {
   //   ));
   // }
 
-  pub fn see_next_char(&mut self) -> Option<u8> {
-    if self.bytes.len() < self.position {
+  pub fn get_next_char(&mut self) -> Option<u8> {
+    if self.position < self.bytes.len() {
       return Some(self.bytes[self.position]);
     }
     None
-  }
-
-  pub fn get_next_char(&mut self) -> Option<u8> {
-    self.position += 1;
-    self.see_next_char()
   }
 
   pub fn get_token_type(&mut self) -> TokenType {
@@ -118,84 +113,156 @@ impl <'a>Lexer<'a> {
   }
 
   pub fn consume_comment(&mut self) {
-    while let Some(byte) = self.get_next_char() {
-      if byte == b'*' {
-        if let Some(next) = self.see_next_char() {
-          if next == b'/' {
+    loop {
+      if let Some(byte) = self.get_next_char() {
+        self.position += 1;
+        if byte == b'*' {
+          if let Some(next) = self.get_next_char() {
+            if next == b'/' {
+              break;
+            }
+          } else {
             break;
           }
-        } else {
-          break;
         }
+      } else {
+        break;
       }
     }
   }
 
+  
+
+  pub fn consume_number(&mut self, first_byte: u8) -> Token {
+    let mut temp_vec: Vec<u8> = Vec::new();
+    temp_vec.push(first_byte);
+
+    let mut num_flag = true;
+    loop {
+      if let Some(byte) = self.get_next_char() {
+
+
+        let break_flg = match byte {
+          b'0' ... b'9' => {
+            self.position += 1;
+            temp_vec.push(byte);
+            false
+          },
+          b'a' ... b'z' | b'A' ... b'Z' => {
+            self.position += 1;
+            temp_vec.push(byte);
+            num_flag = false;
+            false
+          }
+          _ => {
+            true
+          }
+        };
+
+        if break_flg == true {
+          break;
+        }
+
+      } else {
+        break;
+      }
+    }
+
+    let token_type = if num_flag == true {
+      TokenType::TokenDigit
+    } else {
+      TokenType::TokenIdentifier
+    };
+
+    self.create_token_by_value(token_type, temp_vec)
+  }
+
+  pub fn create_token_by_value(&mut self, token: TokenType, value_vec: Vec<u8>) -> Token {
+    let ret_string = String::from_utf8(value_vec).unwrap();
+    Token::new(
+      self.handle_reserved_word(&ret_string, token),
+      ret_string.to_owned()
+    )
+  }
+
   pub fn next_token(&mut self) -> Token {
     let mut ret_val: Token = self.create_token(TokenType::TokenSymbol);
-    while let Some(byte) = self.get_next_char() {
-      match byte {
-        b'0' => {
-          let stack_length = self.temp_stack.byte_vec.len();
-          if stack_length == 0 {
+    loop {
+      if let Some(byte) = self.get_next_char() {
+        self.position += 1;
+        let flag = match byte {
+          b'0' ... b'9' => {
+            ret_val = self.consume_number(byte);
+            true
+          },
+          b'a' ... b'z' | b'A' ... b'Z' => {
             self.num_flag = false;
-          }
-          self.temp_stack.add_temp_str(byte);
-        },
-        b'1' ... b'9' => {
-          self.temp_stack.add_temp_str(byte);
-        },
-        b'a' ... b'z' | b'A' ... b'Z' => {
-          self.num_flag = false;
-          self.temp_stack.add_temp_str(byte);
-        },
-        b'/' => {
-          // let next = ;
-          // if next == None {
-          //   self.temp_stack.add_temp_str(*byte);
-          //   ret_val = self.create_token(TokenType::TokenSymbol);
-          //   continue;
-          // }
-          if let Some(next) = self.get_next_char() {
-            if next == b'*' {
-              self.consume_comment();
+            self.temp_stack.add_temp_str(byte);
+            false
+          },
+          b'/' => {
+            // let next = ;
+            // if next == None {
+            //   self.temp_stack.add_temp_str(*byte);
+            //   ret_val = self.create_token(TokenType::TokenSymbol);
+            //   continue;
+            // }
+            if let Some(next) = self.get_next_char() {
+              if next == b'*' {
+                self.position += 1;
+                self.consume_comment();
+              } else {
+                self.temp_stack.add_temp_str(byte);
+                ret_val = self.create_token(TokenType::TokenSymbol);
+              }
             } else {
               self.temp_stack.add_temp_str(byte);
               ret_val = self.create_token(TokenType::TokenSymbol);
             }
-          }
-          break;
-        },
-        b'+' | b'-' | b'{' | b'}' | b'(' | b')' | b'*' => {
-          let stack_length = self.temp_stack.byte_vec.len();
-          if 0 < stack_length {
+            true
+          },
+          b'+' | b'-' | b'{' | b'}' | b'(' | b')' | b'*' => {
+            let stack_length = self.temp_stack.byte_vec.len();
+            if 0 < stack_length {
+              let token = self.get_token_type();
+              ret_val = self.create_token(token);
+            } else {
+              self.temp_stack.add_temp_str(byte);
+              ret_val = self.create_token(TokenType::TokenSymbol);
+            }
+            true
+          },
+          b'.' => {
             let token = self.get_token_type();
             ret_val = self.create_token(token);
-            break;
+            true
+          },
+          b',' => {
+            ret_val = self.create_token(TokenType::TokenComma);
+            true
+          },
+          b' ' => {
+            // let token = self.get_token_type();
+            // ret_val = self.create_token(token);
+            false
+          },
+          b'\n' | b'\r' => {
+            println!("{:?}", byte);
+            false
+          },
+          _ => {
+            panic!("{} cannot be handled.", byte);
           }
-          self.temp_stack.add_temp_str(byte);
-          ret_val = self.create_token(TokenType::TokenSymbol);
+        };
+
+        if flag == true {
           break;
-        },
-        b'.' => {
-          let token = self.get_token_type();
-          ret_val = self.create_token(token);
-          break;
-        },
-        b',' => {
-          ret_val = self.create_token(TokenType::TokenComma);
-          break;
-        },
-        b' ' => {
-          let token = self.get_token_type();
-          ret_val = self.create_token(token);
-        },
-        b'\n' | b'\r' => {
-          println!("{:?}", byte);
-        },
-        _ => {
-          panic!("{} cannot be handled.", byte);
         }
+
+      } else {
+        let token = self.get_token_type();
+        ret_val = self.create_token(token);
+        break;
       }
     }
     ret_val
@@ -215,9 +282,9 @@ impl <'a>Lexer<'a> {
 
 #[test]
 fn normal() {
-  let mut lexer = Lexer::new("0123 456");
+  let mut lexer = Lexer::new("123 456");
   let first = lexer.next_token();
-  assert!(first == Token::new(TokenType::TokenIdentifier, "0123".to_string()), "{:?} an incorrect value.", first);
+  assert!(first == Token::new(TokenType::TokenDigit, "123".to_string()), "{:?} an incorrect value.", first);
 
   let second = lexer.next_token();
   assert!(second == Token::new(TokenType::TokenDigit, "456".to_string()), "{:?} an incorrect value.", second);
@@ -225,9 +292,10 @@ fn normal() {
 
 // #[test]
 // fn comment() {
-//   let mut lexer = Lexer::new();
-//   lexer.read("0 /* 123 */ 2");
+//   let mut lexer = Lexer::new("0 /* 123 */ 2");
+//   let first = lexer.next_token();
+//   assert!(first == Token::new(TokenType::TokenDigit, "0".to_string()), "{:?} an incorrect value.", first);
 
-//   let temp_str = &lexer.tokens[1].value;
-//   assert!(*temp_str == "2", "should ignore comment '123'");
+//   let second = lexer.next_token();
+//   assert!(second == Token::new(TokenType::TokenDigit, "2".to_string()), "{:?} an incorrect value.", second);
 // }
