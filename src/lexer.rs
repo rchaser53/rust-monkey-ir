@@ -1,4 +1,4 @@
-#[derive(Debug, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum TokenType {
   TokenIdentifier,
   TokenDigit,
@@ -10,7 +10,7 @@ pub enum TokenType {
   TokenAssign,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Token {
   pub kind: TokenType,
   pub value: String

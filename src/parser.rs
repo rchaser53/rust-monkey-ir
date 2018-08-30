@@ -1,19 +1,31 @@
-mod lexer;
 use lexer::*;
 
+#[derive(Clone)]
 struct Node {}
 impl Node {
-  token_literal(&mut self) -> String {
+  pub fn token_literal(&mut self) -> String {
     "".to_string()
   }
 }
 
-struct Statement {
-  node: Node
+pub trait Statement {
+  fn statement_node(&mut self) -> Node {
+    Node{}
+  }
+
+  fn token_literal(&mut self) -> String {
+    String::new()
+  }
 }
-impl Statement {
-  statement_node(&mut self) -> Node {
-    self.node
+
+struct LetStatement {
+  token: Token,
+  value: Expression,
+  name: Identifier,
+}
+impl Statement for LetStatement {
+  fn token_literal(&mut self) -> String {
+    self.token.value.to_string()
   }
 }
 
@@ -21,13 +33,13 @@ struct Expression {
   node: Node
 }
 impl Expression {
-  expression_node(&mut self) -> Node {
-    self.node
+  pub fn expression_node(&mut self) -> Node {
+    self.node.clone()
   }
 }
 
 struct Program {
-  statements: Vec<Statement>
+  statements: Vec<Box<Statement>>
 }
 impl Program {
   pub fn token_literal(&mut self) -> String {
@@ -39,43 +51,28 @@ impl Program {
   }
 }
 
-struct LetStatement {
-  token: TokenType,
-  value: Expression,
-  name: Identifier,
-}
-impl LetStatement {
-  pub fn statement_node() {}
-
-  pub fn token_literal(&mut self) -> String {
-    // return self.token.literal
-    self.token.value
-  }
-}
-
 struct Identifier {
-  token: TokenType,
+  token: Token,
   value: String,
 }
 
 impl Identifier {
   pub fn expression_node() {}
   pub fn token_literal(&mut self) -> String {
-    // return self.token.literal
-    self.token.value
+    self.token.value.to_string()
   }
 }
 
-struct Parser {
-  l: Lexer,
-  cur_token: Token,
-  peek_token: Token,
+struct Parser<'a> {
+  pub l: &'a  mut Lexer<'a>,
+  pub cur_token: Option<Token>,
+  pub peek_token: Option<Token>,
 }
 
-impl Parser {
-  pub fn New(l: lexer) -> Parser {
-    let peek_token = lexer.next_token();
-    let current_token = lexer.next_token();
+impl <'a>Parser<'a> {
+  pub fn new(l: &'a mut Lexer<'a>) -> Parser<'a> {
+    let peek_token = l.next_token();
+    let current_token = l.next_token();
 
     Parser{
       l: l,
@@ -84,8 +81,10 @@ impl Parser {
     }
   }
 
-  pub next_token(&mut self) {
-    self.cur_token = self.peek_token;
+  pub fn next_token(&mut self) {
+    self.cur_token = {
+      self.peek_token.clone()
+    };
     self.peek_token = self.l.next_token();
   }
 
@@ -98,48 +97,81 @@ impl Parser {
       if let Some(stmt) = self.parse_statement() {
         program.statements.push(stmt);
       }
-      p.next_token();
+      self.next_token();
     }
     program
   }
 
-  pub fn parse_statement() -> Option<Statement> {
-    match p.cur_token.type {
-      token.LET => {
-        Some(p.parse_let_statement())
-      },
-      _ => {
-        None
+  pub fn parse_statement(&mut self) -> Option<Box<Statement>> {
+    if let Some(token) = &self.cur_token.clone() {
+      return match token.kind {
+        TokenType::TokenLet => {
+          self.parse_let_statement()
+        },
+        _ => {
+          None
+        }
       }
-    }
-  }
-
-  pub fn parse_let_statement(&mut self) -> Option<LetStatement> {
-    let mut stmt := LetStatement{
-      token: self.cur_token.clone()
-    };
-
-    if self.expect_peek(TokenType::Identifier) == false {
+    } else {
       return None;
     }
-    stmt.name = Identifier{
-      token: self.cur_token.clone(),
-      value: p.cur_token.value,
+
+  }
+
+  pub fn parse_let_statement(&mut self) -> Option<Box<Statement>> {
+    let mut stmt = {
+      match &self.cur_token {
+        Some(token) => {
+          LetStatement{
+            token: token.clone(),
+            value: Expression{ node: Node{} },
+            name: Identifier{
+              token: token.clone(),
+              value: token.clone().value,
+            },
+          }
+        },
+        None => {
+          return None;
+        }
+      }
     };
-    
-    // TODO: セミコロンに遭遇するまで式を読み飛ばしてしまっている for !p.curTokenIs(token.SEMICOLON) {
-    if self.expect_peek(TokenType::ASSIGN) == false {
-      return self.next_token();
+
+
+    // let mut stmt = LetStatement{ token: self.cur_token.unwrap().clone() };
+    if self.expect_peek(TokenType::TokenIdentifier) == false {
+      return None;
     }
-    stmt
+    
+    if let Some(token) = &self.cur_token.clone() {
+      let token_clone = token.clone();
+      stmt.name = Identifier{
+        token: token.clone(),
+        value: token_clone.value,
+      };
+
+      // TODO: セミコロンに遭遇するまで式を読み飛ばしてしまっている for !p.curTokenIs(token.SEMICOLON) {
+      if self.expect_peek(TokenType::TokenAssign) == false {
+        self.next_token();
+      }
+      return Some(Box::new(stmt));
+    }
+
+    None
   }
 
-  pub fn cur_token_is(&mut self, t: TokenType) -> bool {
-    self.cur_token.type == t
+  pub fn cur_token_is(&self, t: TokenType) -> bool {
+    if let Some(token) = &self.cur_token {
+      return token.kind == t;
+    }
+    false
   }
 
-  pub fn peek_token_is(&mut self, t: TokenType) -> bool {
-    self.peek_token.type == t
+  pub fn peek_token_is(&self, t: TokenType) -> bool {
+    if let Some(token) = &self.peek_token {
+      return token.kind == t;
+    }
+    false
   }
 
   pub fn expect_peek(&mut self, t: TokenType) -> bool {
@@ -150,4 +182,12 @@ impl Parser {
       return false;
     }
   }
+}
+
+#[test]
+fn digit() {
+  let mut lexer = Lexer::new("let abc = 456");
+  let mut parser = Parser::new(&mut lexer);
+
+  assert!(true, "nya-n");
 }
