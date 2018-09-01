@@ -1,5 +1,4 @@
 use std::fmt;
-use std::any::Any;
 use lexer::*;
 
 #[derive(Debug, Clone)]
@@ -151,26 +150,34 @@ impl <'a>Parser<'a> {
       }
     };
 
-    // let mut stmt = LetStatement{ token: self.cur_token.unwrap().clone() };
     if self.expect_peek(TokenType::TokenIdentifier) == false {
       return None;
     }
     
     if let Some(token) = &self.cur_token.clone() {
       let token_clone = token.clone();
-      stmt.name = Identifier{
+      stmt.name = Identifier {
         token: token.clone(),
         value: token_clone.value,
       };
 
-      // TODO: セミコロンに遭遇するまで式を読み飛ばしてしまっている for !p.curTokenIs(token.SEMICOLON) {
       if self.expect_peek(TokenType::TokenAssign) == false {
+        return None;
+      }
+
+      // TODO
+      self.next_token();
+      while let Some(_) = &self.cur_token.clone() {
         self.next_token();
       }
+
       return Some(Box::new(stmt));
     }
-
     None
+  }
+
+  pub fn peek_error(&self, t: TokenType) {
+    println!("expected next token to be {:?} instead", t);
   }
 
   pub fn cur_token_is(&self, t: TokenType) -> bool {
@@ -180,18 +187,19 @@ impl <'a>Parser<'a> {
     false
   }
 
-  pub fn peek_token_is(&self, t: TokenType) -> bool {
+  pub fn peek_token_is(&self, t: &TokenType) -> bool {
     if let Some(token) = &self.peek_token {
-      return token.kind == t;
+      return token.kind == *t;
     }
     false
   }
 
   pub fn expect_peek(&mut self, t: TokenType) -> bool {
-    if self.peek_token_is(t) {
+    if self.peek_token_is(&t) {
       self.next_token();
       return true;
     } else {
+      self.peek_error(t);
       return false;
     }
   }
@@ -202,5 +210,5 @@ fn digit() {
   let mut lexer = Lexer::new("let abc = 456");
   let mut parser = Parser::new(&mut lexer);
 
-  assert!(true, "nya-n");
+  parser.parse_program();
 }
