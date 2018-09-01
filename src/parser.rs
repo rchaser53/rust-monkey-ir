@@ -1,7 +1,11 @@
 use std::fmt;
 use lexer::*;
 
-#[derive(Debug, Clone)]
+macro_rules! write_string {
+  ($w:expr) => ( $w.to_string() );
+}
+
+#[derive(Debug, PartialEq, Clone)]
 struct Node {}
 impl Node {
   pub fn token_literal(&mut self) -> String {
@@ -27,11 +31,11 @@ impl Statement for LetStatement {
   }
 
   fn token_literal(&self) -> String {
-    self.token.value.to_string()
+    write_string!(self.token.value)
   }
 
   fn emit_debug_info(&self) -> String {
-    format!("{:?} {:?} {:?}", self.token, self.value, self.name).to_string()
+    write_string!(format!("{:?} {:?} {:?}", self.token, self.value, self.name))
   }
 }
 
@@ -53,7 +57,7 @@ impl Program {
      if self.statements.len() > 0 {
       self.statements[0].token_literal()
     } else {
-      "".to_string()
+      write_string!("")
     }
   }
 }
@@ -74,7 +78,7 @@ struct Identifier {
 impl Identifier {
   pub fn expression_node() {}
   pub fn token_literal(&mut self) -> String {
-    self.token.value.to_string()
+    write_string!(self.token.value)
   }
 }
 
