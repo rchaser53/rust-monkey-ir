@@ -11,12 +11,17 @@ impl Node {
   pub fn token_literal(&mut self) -> String {
     String::new()
   }
+
+  pub fn string(&self) -> String {
+    String::new()
+  }
 }
 
 pub trait Statement {
   fn statement_node(&self) -> Node;
   fn token_literal(&self) -> String;
   fn emit_debug_info(&self) -> String;
+  fn string(&self) -> String;
 }
 
 #[derive(Clone)]
@@ -37,6 +42,10 @@ impl Statement for LetStatement {
   fn emit_debug_info(&self) -> String {
     write_string!(format!("{:?} {:?} {:?}", self.token, self.value, self.name))
   }
+
+  fn string(&self) -> String {
+    ("let".to_owned() + &self.name.value + " = " + &self.value.string()).to_string()
+  }
 }
 #[derive(Clone)]
 struct ReturnStatement {
@@ -55,15 +64,45 @@ impl Statement for ReturnStatement {
   fn emit_debug_info(&self) -> String {
     write_string!(format!("{:?} {:?}", self.token, self.return_value))
   }
+
+  fn string(&self) -> String {
+    ("return".to_owned() + &self.return_value.string()).to_string()
+  }
 }
+
+
+#[derive(Clone)]
+struct ExpressionStatement {
+  token: Token,
+  expression: Expression,
+}
+impl Statement for ExpressionStatement {
+  fn statement_node(&self) -> Node {
+    Node{}
+  }
+
+  fn token_literal(&self) -> String {
+    write_string!(self.token.value)
+  }
+
+  fn emit_debug_info(&self) -> String {
+    write_string!(format!("{:?} {:?}", self.token, self.expression))
+  }
+
+  fn string(&self) -> String {
+    self.expression.string()
+  }
 
 #[derive(Debug, Clone)]
 pub struct Expression {
   node: Node
-}
 impl Expression {
   pub fn expression_node(&mut self) -> Node {
     self.node.clone()
+  }
+
+  pub fn string(&self) -> String {
+    self.node.string()
   }
 }
 
@@ -77,6 +116,11 @@ impl Program {
     } else {
       write_string!("")
     }
+  }
+
+  pub fn string(&mut self) -> String {
+    let a: Vec<String> = self.statements.iter().map(|s| s.string()).collect();
+    a.join("")
   }
 }
 
@@ -98,6 +142,11 @@ impl Identifier {
   pub fn token_literal(&mut self) -> String {
     write_string!(self.token.value)
   }
+
+  pub fn string(&self) -> String {
+    self.value.to_string()
+  }
+}
 }
 
 pub struct Parser<'a> {
