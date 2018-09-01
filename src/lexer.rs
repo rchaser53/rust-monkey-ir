@@ -171,6 +171,10 @@ impl <'a>Lexer<'a> {
             ret_val = self.create_token_by_value(TokenType::TokenSymbol, vec![byte]);
             true
           },
+          b'=' => {
+            ret_val = self.create_token_by_value(TokenType::TokenAssign, vec![byte]);
+            true
+          },
           b'\n' | b'\r' | b' ' => {
             false
           },
