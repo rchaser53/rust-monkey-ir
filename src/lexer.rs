@@ -8,6 +8,8 @@ pub enum TokenType {
   TokenEof,
   TokenLet,
   TokenAssign,
+  TokenColon,
+  TokenSemicolon,
 }
 
 #[derive(Debug, Clone)]
@@ -55,6 +57,7 @@ impl <'a>Lexer<'a> {
 
   pub fn handle_reserved_word(&self, word: &str, token: TokenType) -> TokenType {
     match word {
+      "let" => TokenType::TokenLet,
       "int" => TokenType::TokenInt,
       "return" => TokenType::TokenReturn,
       _ => token,
@@ -169,6 +172,14 @@ impl <'a>Lexer<'a> {
           },
           b',' | b'.' | b'+' | b'-' | b'{' | b'}' | b'(' | b')' | b'*' => {
             ret_val = self.create_token_by_value(TokenType::TokenSymbol, vec![byte]);
+            true
+          },
+          b':' => {
+            ret_val = self.create_token_by_value(TokenType::TokenColon, vec![byte]);
+            true
+          },
+          b';' => {
+            ret_val = self.create_token_by_value(TokenType::TokenSemicolon, vec![byte]);
             true
           },
           b'=' => {
