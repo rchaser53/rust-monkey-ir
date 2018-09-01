@@ -1,5 +1,3 @@
-use std::collections::HashMap;
-
 use lexer::lexer::*;
 use lexer::token::*;
 
@@ -13,7 +11,7 @@ pub struct Parser<'a> {
   pub l: &'a  mut Lexer<'a>,
   pub cur_token: Option<Token>,
   pub peek_token: Option<Token>,
-
+  pub errors: Vec<String>,
   // pub prefix_parse_fns: HashMap<TokenType, prefix_parse_fn>,
   // pub infix_parse_fns: HashMap<TokenType, infix_parse_fn>,
 }
@@ -27,6 +25,7 @@ impl <'a>Parser<'a> {
       l: l,
       cur_token: current_token,
       peek_token: peek_token,
+      errors: Vec::new(),
     }
   }
 
@@ -47,6 +46,11 @@ impl <'a>Parser<'a> {
       }
       self.next_token();
     }
+
+    if self.errors.len() > 0 {
+      self.emit_error();
+    }
+
     program
   }
 
@@ -158,8 +162,6 @@ impl <'a>Parser<'a> {
     return Some(Box::new(stmt));
   }
 
-  pub fn peek_error(&self, t: TokenType) {
-    println!("expected next token to be {:?} instead", t);
   }
 
   pub fn cur_token_is(&self, t: TokenType) -> bool {
@@ -185,7 +187,19 @@ impl <'a>Parser<'a> {
       return false;
     }
   }
-// infixParseFn func(ast.Expression) ast.Expression
+  pub fn emit_error(&self) {
+    for error in self.errors.iter() {
+      println!("{}", error);
+    }
+  }
+
+  pub fn peek_error(&mut self, t: TokenType) {
+    self.errors.push(format!("expected next token to be {:?} instead", t));
+  }
+
+  pub fn no_prefix_parse_fn_error(&mut self, t: TokenType) {
+    self.errors.push(format!("no prefix parse function for {:?} found", t));
+  }
 }
 
 /* below the test implementation */
