@@ -38,6 +38,24 @@ impl Statement for LetStatement {
     write_string!(format!("{:?} {:?} {:?}", self.token, self.value, self.name))
   }
 }
+#[derive(Clone)]
+struct ReturnStatement {
+  token: Token,
+  return_value: Expression,
+}
+impl Statement for ReturnStatement {
+  fn statement_node(&self) -> Node {
+    Node{}
+  }
+
+  fn token_literal(&self) -> String {
+    write_string!(self.token.value)
+  }
+
+  fn emit_debug_info(&self) -> String {
+    write_string!(format!("{:?} {:?}", self.token, self.return_value))
+  }
+}
 
 #[derive(Debug, Clone)]
 pub struct Expression {
@@ -126,6 +144,9 @@ impl <'a>Parser<'a> {
         TokenType::TokenLet => {
           self.parse_let_statement()
         },
+        TokenType::TokenReturn => {
+          self.parse_return_statement()
+        },
         _ => {
           None
         }
@@ -140,7 +161,7 @@ impl <'a>Parser<'a> {
       match &self.cur_token {
         Some(token) => {
           LetStatement{
-            token: token.clone(),
+            token: Token{ kind: TokenType::TokenLet, value: write_string!("let") },
             value: Expression{ node: Node{} },
             name: Identifier{
               token: token.clone(),
@@ -177,6 +198,29 @@ impl <'a>Parser<'a> {
       return Some(Box::new(stmt));
     }
     None
+  }
+
+  pub fn parse_return_statement(&mut self) -> Option<Box<Statement>> {
+    let stmt = {
+      match &self.cur_token {
+        Some(token) => {
+          ReturnStatement{
+            token: token.clone(),
+            return_value: Expression{ node: Node{} },
+          }
+        },
+        None => {
+          return None;
+        }
+      }
+    };
+
+    // TODO this implementation skip nodes until semicolon
+    while self.cur_token_is(TokenType::TokenSemicolon) {
+      self.next_token();
+    }
+
+    return Some(Box::new(stmt));
   }
 
   pub fn peek_error(&self, t: TokenType) {
