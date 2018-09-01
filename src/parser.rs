@@ -82,8 +82,8 @@ pub struct Parser<'a> {
 
 impl <'a>Parser<'a> {
   pub fn new(l: &'a mut Lexer<'a>) -> Parser<'a> {
-    let peek_token = l.next_token();
     let current_token = l.next_token();
+    let peek_token = l.next_token();
 
     Parser{
       l: l,
