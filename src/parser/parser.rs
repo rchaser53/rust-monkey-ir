@@ -1,158 +1,21 @@
-use std::fmt;
-use lexer::*;
+use std::collections::HashMap;
 
-macro_rules! write_string {
-  ($w:expr) => ( $w.to_string() );
-}
+use lexer::lexer::*;
+use lexer::token::*;
 
-#[derive(Debug, PartialEq, Clone)]
-struct Node {}
-impl Node {
-  pub fn token_literal(&mut self) -> String {
-    String::new()
-  }
-
-  pub fn string(&self) -> String {
-    String::new()
-  }
-}
-
-pub trait Statement {
-  fn statement_node(&self) -> Node;
-  fn token_literal(&self) -> String;
-  fn emit_debug_info(&self) -> String;
-  fn string(&self) -> String;
-}
-
-#[derive(Clone)]
-struct LetStatement {
-  token: Token,
-  value: Expression,
-  name: Identifier,
-}
-impl Statement for LetStatement {
-  fn statement_node(&self) -> Node {
-    Node{}
-  }
-
-  fn token_literal(&self) -> String {
-    write_string!(self.token.value)
-  }
-
-  fn emit_debug_info(&self) -> String {
-    write_string!(format!("{:?} {:?} {:?}", self.token, self.value, self.name))
-  }
-
-  fn string(&self) -> String {
-    ("let".to_owned() + &self.name.value + " = " + &self.value.string()).to_string()
-  }
-}
-#[derive(Clone)]
-struct ReturnStatement {
-  token: Token,
-  return_value: Expression,
-}
-impl Statement for ReturnStatement {
-  fn statement_node(&self) -> Node {
-    Node{}
-  }
-
-  fn token_literal(&self) -> String {
-    write_string!(self.token.value)
-  }
-
-  fn emit_debug_info(&self) -> String {
-    write_string!(format!("{:?} {:?}", self.token, self.return_value))
-  }
-
-  fn string(&self) -> String {
-    ("return".to_owned() + &self.return_value.string()).to_string()
-  }
-}
-
-
-#[derive(Clone)]
-struct ExpressionStatement {
-  token: Token,
-  expression: Expression,
-}
-impl Statement for ExpressionStatement {
-  fn statement_node(&self) -> Node {
-    Node{}
-  }
-
-  fn token_literal(&self) -> String {
-    write_string!(self.token.value)
-  }
-
-  fn emit_debug_info(&self) -> String {
-    write_string!(format!("{:?} {:?}", self.token, self.expression))
-  }
-
-  fn string(&self) -> String {
-    self.expression.string()
-  }
-
-#[derive(Debug, Clone)]
-pub struct Expression {
-  node: Node
-impl Expression {
-  pub fn expression_node(&mut self) -> Node {
-    self.node.clone()
-  }
-
-  pub fn string(&self) -> String {
-    self.node.string()
-  }
-}
-
-pub struct Program {
-  pub statements: Vec<Box<Statement>>
-}
-impl Program {
-  pub fn token_literal(&mut self) -> String {
-     if self.statements.len() > 0 {
-      self.statements[0].token_literal()
-    } else {
-      write_string!("")
-    }
-  }
-
-  pub fn string(&mut self) -> String {
-    let a: Vec<String> = self.statements.iter().map(|s| s.string()).collect();
-    a.join("")
-  }
-}
-
-impl fmt::Debug for Program {
-  fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-    let output: Vec<_> = self.statements.iter().map(|elem| { elem.emit_debug_info() }).collect();
-    write!(f, "{:?}", output)
-  }
-}
-
-#[derive(Debug, Clone)]
-struct Identifier {
-  pub token: Token,
-  pub value: String,
-}
-
-impl Identifier {
-  pub fn expression_node() {}
-  pub fn token_literal(&mut self) -> String {
-    write_string!(self.token.value)
-  }
-
-  pub fn string(&self) -> String {
-    self.value.to_string()
-  }
-}
-}
+use parser::node::*;
+use parser::identifier::*;
+use parser::expression::*;
+use parser::statements::*;
+use parser::program::*;
 
 pub struct Parser<'a> {
   pub l: &'a  mut Lexer<'a>,
   pub cur_token: Option<Token>,
   pub peek_token: Option<Token>,
+
+  // pub prefix_parse_fns: HashMap<TokenType, prefix_parse_fn>,
+  // pub infix_parse_fns: HashMap<TokenType, infix_parse_fn>,
 }
 
 impl <'a>Parser<'a> {
@@ -197,7 +60,7 @@ impl <'a>Parser<'a> {
           self.parse_return_statement()
         },
         _ => {
-          None
+          self.parse_expression_statement()
         }
       }
     } else {
@@ -272,6 +135,29 @@ impl <'a>Parser<'a> {
     return Some(Box::new(stmt));
   }
 
+  pub fn parse_expression_statement(&mut self) -> Option<Box<Statement>> {
+    let stmt = {
+      match &self.cur_token {
+        Some(token) => {
+          ExpressionStatement{
+            token: token.clone(),
+            expression: Expression{ node: Node{} },
+          }
+        },
+        None => {
+          return None;
+        }
+      }
+    };
+
+    // TODO this implementation skip nodes until semicolon
+    while self.cur_token_is(TokenType::TokenSemicolon) {
+      self.next_token();
+    }
+
+    return Some(Box::new(stmt));
+  }
+
   pub fn peek_error(&self, t: TokenType) {
     println!("expected next token to be {:?} instead", t);
   }
@@ -299,12 +185,38 @@ impl <'a>Parser<'a> {
       return false;
     }
   }
+// infixParseFn func(ast.Expression) ast.Expression
 }
 
-#[test]
-fn digit() {
-  let mut lexer = Lexer::new("let abc = 456");
-  let mut parser = Parser::new(&mut lexer);
+/* below the test implementation */
 
-  parser.parse_program();
+#[test]
+fn test_let_statements() {
+  let input = "
+    let x = 5;
+    let y = 10;
+    let foobar = 838383;
+  ";
+  let mut lexer = Lexer::new(input);
+  let mut parser = Parser::new(&mut lexer);
+  let program = parser.parse_program();
+
+  let results: Vec<_> = vec![
+    ( "let", "x" ),
+    ( "let", "y" ),
+    ( "let", "foobar" ),
+  ];
+
+  assert!(program.statements.len() > 2, "nya-n");
+
+  for statement in program.statements.into_iter() {
+    // test_let_statement(statement);
+  }
+}
+
+fn test_let_statement(statement: Box<Statement>, literal: String) {
+  assert!(statement.statement_node() == Node{}, "hoge");
+  assert!(statement.token_literal() == literal, "hoge");
+  assert!(statement.token_literal() == literal, "hoge");
+  assert!(statement.token_literal() == literal, "hoge");
 }
