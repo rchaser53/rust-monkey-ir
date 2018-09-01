@@ -1,4 +1,5 @@
 use std::fmt;
+use std::any::Any;
 use lexer::*;
 
 #[derive(Debug, Clone)]
@@ -10,28 +11,38 @@ impl Node {
 }
 
 pub trait Statement {
-  fn statement_node(&mut self) -> Node {
-    Node{}
-  }
-
-  fn token_literal(&self) -> String {
-    String::new()
-  }
+  fn statement_node(&self) -> Node;
+  fn token_literal(&self) -> String;
+  fn as_any(&self) -> &Any;
 }
 
-#[derive(Debug)]
+#[derive(Clone)]
 struct LetStatement {
   token: Token,
   value: Expression,
   name: Identifier,
 }
 impl Statement for LetStatement {
+  fn statement_node(&self) -> Node {
+    Node{}
+  }
+
   fn token_literal(&self) -> String {
     self.token.value.to_string()
   }
+
+  fn as_any(&self) -> &Any {
+    self
+  }
 }
 
-#[derive(Debug)]
+impl fmt::Debug for LetStatement {
+  fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    write!(f, "{:?} {:?} {:?}", self.token, self.value, self.name)
+  }
+}
+
+#[derive(Debug, Clone)]
 pub struct Expression {
   node: Node
 }
@@ -56,12 +67,20 @@ impl Program {
 
 impl fmt::Debug for Program {
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-    let output: Vec<_> = self.statements.iter().map(|elem| elem.token_literal() ).collect();
+    let output: Vec<_> = self.statements.iter()
+                              .map(|elem| {
+                                let a: &LetStatement = match elem.as_any().downcast_ref() {
+                                  Some(b) => b,
+                                  None => panic!("abc")
+                                };
+                                a
+                              }).collect();
+
     write!(f, "{:?}", output)
   }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 struct Identifier {
   pub token: Token,
   pub value: String,
@@ -103,7 +122,6 @@ impl <'a>Parser<'a> {
     let mut program = Program{
       statements: Vec::new()
     };
-    // while self.cur_token.type != token.EOF {
     while self.cur_token != None {
       if let Some(stmt) = self.parse_statement() {
         program.statements.push(stmt);
@@ -126,7 +144,6 @@ impl <'a>Parser<'a> {
     } else {
       return None;
     }
-
   }
 
   pub fn parse_let_statement(&mut self) -> Option<Box<Statement>> {
@@ -147,7 +164,6 @@ impl <'a>Parser<'a> {
         }
       }
     };
-
 
     // let mut stmt = LetStatement{ token: self.cur_token.unwrap().clone() };
     if self.expect_peek(TokenType::TokenIdentifier) == false {
