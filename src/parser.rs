@@ -6,14 +6,14 @@ use lexer::*;
 struct Node {}
 impl Node {
   pub fn token_literal(&mut self) -> String {
-    "".to_string()
+    String::new()
   }
 }
 
 pub trait Statement {
   fn statement_node(&self) -> Node;
   fn token_literal(&self) -> String;
-  fn as_any(&self) -> &Any;
+  fn emit_debug_info(&self) -> String;
 }
 
 #[derive(Clone)]
@@ -31,14 +31,8 @@ impl Statement for LetStatement {
     self.token.value.to_string()
   }
 
-  fn as_any(&self) -> &Any {
-    self
-  }
-}
-
-impl fmt::Debug for LetStatement {
-  fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-    write!(f, "{:?} {:?} {:?}", self.token, self.value, self.name)
+  fn emit_debug_info(&self) -> String {
+    format!("{:?} {:?} {:?}", self.token, self.value, self.name).to_string()
   }
 }
 
@@ -67,15 +61,7 @@ impl Program {
 
 impl fmt::Debug for Program {
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-    let output: Vec<_> = self.statements.iter()
-                              .map(|elem| {
-                                let a: &LetStatement = match elem.as_any().downcast_ref() {
-                                  Some(b) => b,
-                                  None => panic!("abc")
-                                };
-                                a
-                              }).collect();
-
+    let output: Vec<_> = self.statements.iter().map(|elem| { elem.emit_debug_info() }).collect();
     write!(f, "{:?}", output)
   }
 }
