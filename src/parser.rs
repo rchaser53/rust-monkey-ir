@@ -169,9 +169,8 @@ impl <'a>Parser<'a> {
         return None;
       }
 
-      // TODO
-      self.next_token();
-      while let Some(_) = &self.cur_token.clone() {
+      // TODO this implementation skip nodes until semicolon
+      while self.cur_token_is(TokenType::TokenSemicolon) {
         self.next_token();
       }
 
