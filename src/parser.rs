@@ -1,6 +1,7 @@
+use std::fmt;
 use lexer::*;
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 struct Node {}
 impl Node {
   pub fn token_literal(&mut self) -> String {
@@ -13,23 +14,25 @@ pub trait Statement {
     Node{}
   }
 
-  fn token_literal(&mut self) -> String {
+  fn token_literal(&self) -> String {
     String::new()
   }
 }
 
+#[derive(Debug)]
 struct LetStatement {
   token: Token,
   value: Expression,
   name: Identifier,
 }
 impl Statement for LetStatement {
-  fn token_literal(&mut self) -> String {
+  fn token_literal(&self) -> String {
     self.token.value.to_string()
   }
 }
 
-struct Expression {
+#[derive(Debug)]
+pub struct Expression {
   node: Node
 }
 impl Expression {
@@ -38,8 +41,8 @@ impl Expression {
   }
 }
 
-struct Program {
-  statements: Vec<Box<Statement>>
+pub struct Program {
+  pub statements: Vec<Box<Statement>>
 }
 impl Program {
   pub fn token_literal(&mut self) -> String {
@@ -51,9 +54,17 @@ impl Program {
   }
 }
 
+impl fmt::Debug for Program {
+  fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    let output: Vec<_> = self.statements.iter().map(|elem| elem.token_literal() ).collect();
+    write!(f, "{:?}", output)
+  }
+}
+
+#[derive(Debug)]
 struct Identifier {
-  token: Token,
-  value: String,
+  pub token: Token,
+  pub value: String,
 }
 
 impl Identifier {
@@ -63,7 +74,7 @@ impl Identifier {
   }
 }
 
-struct Parser<'a> {
+pub struct Parser<'a> {
   pub l: &'a  mut Lexer<'a>,
   pub cur_token: Option<Token>,
   pub peek_token: Option<Token>,
