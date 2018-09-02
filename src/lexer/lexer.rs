@@ -107,7 +107,7 @@ impl <'a>Lexer<'a> {
     )
   }
 
-  pub fn consume_slash(&mut self, target_token: Token, byte: u8) -> (Token, bool) {
+  pub fn consume_slash(&mut self, target_token: Token) -> (Token, bool) {
     if let Some(next) = self.get_next_char() {
       if next == b'*' {
         self.position += 1;
@@ -115,7 +115,27 @@ impl <'a>Lexer<'a> {
         return (target_token, false);
       }
     }
-    (self.create_token_by_value(TokenType::TokenSlash, vec![byte]), true)
+    (self.create_token_by_value(TokenType::TokenSlash, vec![b'/']), true)
+  }
+
+  pub fn consume_equal(&mut self) -> Token {
+    if let Some(next) = self.get_next_char() {
+      if next == b'=' {
+        self.position += 1;
+        return self.create_token_by_value(TokenType::TokenEq, vec![b'=', b'=']);
+      }
+    }
+    self.create_token_by_value(TokenType::TokenAssign, vec![b'='])
+  }
+
+  pub fn consume_ban(&mut self) -> Token {
+    if let Some(next) = self.get_next_char() {
+      if next == b'=' {
+        self.position += 1;
+        return self.create_token_by_value(TokenType::TokenNotEq, vec![b'!', b'=']);
+      }
+    }
+    self.create_token_by_value(TokenType::TokenBan, vec![b'!'])
   }
 
   pub fn next_token(&mut self) -> Option<Token> {
@@ -133,12 +153,20 @@ impl <'a>Lexer<'a> {
             true
           },
           b'/' => {
-            let (temp_ret, flag) = self.consume_slash(ret_val, byte);
+            let (temp_ret, flag) = self.consume_slash(ret_val);
             ret_val = temp_ret;
             flag
           },
           b',' | b'.' | b'+' | b'-' | b'{' | b'}' | b'(' | b')' | b'*' => {
+          b'=' => {
+            ret_val = self.consume_equal();
+            true
+          },
             ret_val = self.create_token_by_value(TokenType::TokenSymbol, vec![byte]);
+            true
+          },
+          b'!' => {
+            ret_val = self.consume_ban();
             true
           },
           b':' => {
@@ -147,10 +175,6 @@ impl <'a>Lexer<'a> {
           },
           b';' => {
             ret_val = self.create_token_by_value(TokenType::TokenSemicolon, vec![byte]);
-            true
-          },
-          b'=' => {
-            ret_val = self.create_token_by_value(TokenType::TokenAssign, vec![byte]);
             true
           },
           b'\n' | b'\r' | b' ' => {
