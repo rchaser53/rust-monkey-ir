@@ -25,6 +25,11 @@ impl <'a>Lexer<'a> {
   pub fn handle_reserved_word(&self, word: &str, token: TokenType) -> TokenType {
     match word {
       "let" => TokenType::TokenLet,
+      "fn" => TokenType::TokenFn,
+      "true" => TokenType::TokenTrue,
+      "false" => TokenType::TokenFalse,
+      "if" => TokenType::TokenIf,
+      "else" => TokenType::TokenElse,
       "return" => TokenType::TokenReturn,
       _ => token,
     }
@@ -291,5 +296,14 @@ fn gt() {
   let mut lexer = Lexer::new("123 <= 456");
   lexer_assert(lexer.next_token().unwrap(), TokenType::TokenDigit, "123");
   lexer_assert(lexer.next_token().unwrap(), TokenType::TokenLte, "<=");
+  lexer_assert(lexer.next_token().unwrap(), TokenType::TokenDigit, "456");
+}
+
+#[test]
+fn if_test() {
+  let mut lexer = Lexer::new("if 123 == 456");
+  lexer_assert(lexer.next_token().unwrap(), TokenType::TokenIf, "if");
+  lexer_assert(lexer.next_token().unwrap(), TokenType::TokenDigit, "123");
+  lexer_assert(lexer.next_token().unwrap(), TokenType::TokenEq, "==");
   lexer_assert(lexer.next_token().unwrap(), TokenType::TokenDigit, "456");
 }

@@ -3,13 +3,21 @@ pub enum TokenType {
   TokenIdentifier,
   TokenDigit,
   TokenSymbol,
-  TokenReturn,
+  
   TokenEof,
-  TokenLet,
   TokenAssign,
   TokenColon,
   TokenSemicolon,
   
+  // preserve word
+  TokenFn,              // fn
+  TokenTrue,            // true
+  TokenFalse,           // false
+  TokenIf,              // if
+  TokenElse,            // else
+  TokenLet,             // let
+  TokenReturn,          // return
+
   // for Arithmetic
   TokenEq,              // =
   TokenNotEq,           // !=
