@@ -107,6 +107,17 @@ impl <'a>Lexer<'a> {
     )
   }
 
+  pub fn consume_slash(&mut self, target_token: Token, byte: u8) -> (Token, bool) {
+    if let Some(next) = self.get_next_char() {
+      if next == b'*' {
+        self.position += 1;
+        self.consume_comment();
+        return (target_token, false);
+      }
+    }
+    (self.create_token_by_value(TokenType::TokenSlash, vec![byte]), true)
+  }
+
   pub fn next_token(&mut self) -> Option<Token> {
     let mut ret_val: Token = self.create_eof_token();
     loop {
@@ -122,19 +133,8 @@ impl <'a>Lexer<'a> {
             true
           },
           b'/' => {
-            let mut flag = false;
-            if let Some(next) = self.get_next_char() {
-              if next == b'*' {
-                self.position += 1;
-                self.consume_comment();
-              } else {
-                ret_val = self.create_token_by_value(TokenType::TokenSymbol, vec![byte]);
-                flag = true;
-              }
-            } else {
-              ret_val = self.create_token_by_value(TokenType::TokenSymbol, vec![byte]);
-              flag = true;
-            }
+            let (temp_ret, flag) = self.consume_slash(ret_val, byte);
+            ret_val = temp_ret;
             flag
           },
           b',' | b'.' | b'+' | b'-' | b'{' | b'}' | b'(' | b')' | b'*' => {
@@ -214,13 +214,13 @@ fn division_multiple() {
   assert!(first == Token::new(TokenType::TokenDigit, "1".to_string()), "{:?} an incorrect value.", first);
 
   let second = lexer.next_token().unwrap();
-  assert!(second == Token::new(TokenType::TokenSymbol, "/".to_string()), "{:?} an incorrect value.", second);
+  assert!(second == Token::new(TokenType::TokenSlash, "/".to_string()), "{:?} an incorrect value.", second);
 
   let third = lexer.next_token().unwrap();
   assert!(third == Token::new(TokenType::TokenDigit, "323".to_string()), "{:?} an incorrect value.", third);
 
   let forth = lexer.next_token().unwrap();
-  assert!(forth == Token::new(TokenType::TokenSymbol, "*".to_string()), "{:?} an incorrect value.", forth);
+  assert!(forth == Token::new(TokenType::TokenAsterisk, "*".to_string()), "{:?} an incorrect value.", forth);
 
   let fifth = lexer.next_token().unwrap();
   assert!(fifth == Token::new(TokenType::TokenDigit, "3".to_string()), "{:?} an incorrect value.", fifth);
