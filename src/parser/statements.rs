@@ -1,7 +1,6 @@
 use lexer::token::*;
 
 use parser::node::*;
-use parser::identifier::*;
 use parser::expression::*;
 
 pub trait Statement {
@@ -11,10 +10,9 @@ pub trait Statement {
   fn string(&self) -> String;
 }
 
-#[derive(Clone)]
 pub struct LetStatement {
   pub token: Token,
-  pub value: Expression,
+  pub value: Box<Expressions>,
   pub name: Identifier,
 }
 impl Statement for LetStatement {
@@ -38,7 +36,7 @@ impl Default for LetStatement {
     fn default() -> LetStatement {
       LetStatement{
         token: Token{ kind: TokenType::TokenLet, value: write_string!("let") },
-        value: Expression{ node: Node{} },
+        value: Box::new(Expression{ node: Node{} }),
         name: Identifier {
           token: Token{ kind: TokenType::TokenIdentifier, value: write_string!("empty_variable") },
           value: write_string!("empty_variable")
@@ -47,10 +45,9 @@ impl Default for LetStatement {
     }
 }
 
-#[derive(Clone)]
 pub struct ReturnStatement {
   pub token: Token,
-  pub return_value: Expression,
+  pub return_value: Box<Expressions>,
 }
 impl Statement for ReturnStatement {
   fn statement_node(&self) -> Node {
@@ -70,10 +67,9 @@ impl Statement for ReturnStatement {
   }
 }
 
-#[derive(Clone)]
 pub struct ExpressionStatement {
   pub token: Token,
-  pub expression: Expression,
+  pub expression: Box<Expressions>,
 }
 impl Statement for ExpressionStatement {
   fn statement_node(&self) -> Node {

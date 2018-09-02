@@ -3,7 +3,6 @@ use lexer::token::*;
 
 use parser::precedence::*;
 use parser::node::*;
-use parser::identifier::*;
 use parser::expression::*;
 use parser::statements::*;
 use parser::program::*;
@@ -79,7 +78,7 @@ impl <'a>Parser<'a> {
         Some(token) => {
           LetStatement{
             token: Token{ kind: TokenType::TokenLet, value: write_string!("let") },
-            value: Expression{ node: Node{} },
+            value: Box::new(Expression{ node: Node{} }),
             name: Identifier{
               token: token.clone(),
               value: token.clone().value,
@@ -123,7 +122,7 @@ impl <'a>Parser<'a> {
         Some(token) => {
           ReturnStatement{
             token: token.clone(),
-            return_value: Expression{ node: Node{} },
+            return_value: Box::new(Expression{ node: Node{} }),
           }
         },
         None => {
@@ -146,7 +145,7 @@ impl <'a>Parser<'a> {
         Some(token) => {
           ExpressionStatement{
             token: token.clone(),
-            expression: Expression{ node: Node{} },
+            expression: Box::new(Expression{ node: Node{} }),
           }
         },
         None => {
@@ -163,6 +162,81 @@ impl <'a>Parser<'a> {
     return Some(Box::new(stmt));
   }
 
+  pub fn parse_identifier(&self) -> Option<Box<Expressions>> {
+    if let Some(token) = &self.cur_token {
+      return Some(Box::new(Identifier{
+        token: token.clone(),
+        value: token.clone().value,
+      }));
+    }
+    None
+  }
+
+  pub fn parse_integer_literal(&mut self) -> Option<Box<Expressions>> {
+    if let Some(token) = &self.cur_token {
+      if let Ok(value) = token.value.parse::<i64>() {
+        return Some(Box::new(
+          IntegerLiteral{
+            token: token.clone(),
+            value: value,
+        }));
+      } else {
+        self.errors.push(format!("could not parse {:?} as integer", token.value));
+      }
+    }
+    None
+  }
+
+  pub fn parse_expression(&mut self, precedence: Precedences) -> Option<Box<Expressions>> {
+    if let Some(token) = &self.cur_token.clone() {
+      return match token.kind {
+        TokenType::TokenIdentifier => {
+          self.parse_identifier()
+        },
+        TokenType::TokenDigit => {
+          self.parse_integer_literal()
+        },
+        TokenType::TokenBan | TokenType::TokenMinus => {
+          self.parse_prefix_expression()
+        },
+        _ => {
+          self.no_prefix_parse_fn_error(token.kind);
+          return None;
+        },
+      };
+    }
+    None
+  }
+
+  pub fn parse_prefix_expression(&mut self) -> Option<Box<Expressions>> {
+    if let Some(token) = &self.cur_token.clone() {
+      if let Some(right) = self.parse_expression(Precedences::Prefix) {
+        return Some(Box::new(
+          PrefixExpression{
+            token: token.clone(),
+            operator: token.clone().value,
+            right: right,
+        }));
+      }
+    }
+    None
+  }
+
+  pub fn parse_infix_expression(&mut self, left: Box<Expressions>) -> Option<Box<Expressions>> {
+    if let Some(token) = &self.cur_token.clone() {
+      let precedence = self.cur_precedence();
+      self.next_token();
+      if let Some(right) = self.parse_expression(precedence) {
+        return Some(Box::new(
+          InfixExpression{
+            token: token.clone(),
+            operator: token.clone().value,
+            left: left,
+            right: right,
+        }));
+      }
+    }
+    None
   }
 
   pub fn cur_token_is(&self, t: TokenType) -> bool {
