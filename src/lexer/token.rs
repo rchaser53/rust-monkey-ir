@@ -3,13 +3,25 @@ pub enum TokenType {
   TokenIdentifier,
   TokenDigit,
   TokenSymbol,
-  TokenInt,
   TokenReturn,
   TokenEof,
   TokenLet,
   TokenAssign,
   TokenColon,
   TokenSemicolon,
+  
+  // for Arithmetic
+  TokenEq,              // =
+  TokenNotEq,           // !=
+  TokenLt,              // <
+  TokenLte,             // <=
+  TokenGt,              // >
+  TokenGte,             // =>
+  TokenPlus,            // +
+  TokenMinus,           // -
+  TokenSlash,           // /
+  TokenAsterisk,        // *
+  TokenBan,
 }
 
 #[derive(Debug, Clone)]
