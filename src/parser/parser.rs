@@ -1,6 +1,7 @@
 use lexer::lexer::*;
 use lexer::token::*;
 
+use parser::precedence::*;
 use parser::node::*;
 use parser::identifier::*;
 use parser::expression::*;
@@ -187,6 +188,26 @@ impl <'a>Parser<'a> {
       return false;
     }
   }
+  pub fn peek_precedence(&mut self) -> Precedences {
+    if let Some(token) = &self.peek_token {
+      let token_type = token.kind;
+      if PrecedenceTokenMap.contains_key(&token_type) {
+        return PrecedenceTokenMap[&token_type].clone();
+      }
+    }
+    Precedences::Lowest
+  }
+
+  pub fn cur_precedence(&mut self) -> Precedences {
+    if let Some(token) = &self.cur_token {
+      let token_type = token.kind;
+      if PrecedenceTokenMap.contains_key(&token_type) {
+        return PrecedenceTokenMap[&token_type].clone();
+      }
+    }
+    Precedences::Lowest
+  }
+
   pub fn emit_error(&self) {
     for error in self.errors.iter() {
       println!("{}", error);
