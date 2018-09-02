@@ -29,7 +29,7 @@ pub enum TokenType {
   TokenMinus,           // -
   TokenSlash,           // /
   TokenAsterisk,        // *
-  TokenBan,
+  TokenBang,            // !
 }
 
 #[derive(Clone, Debug)]

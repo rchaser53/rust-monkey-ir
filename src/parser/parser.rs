@@ -188,15 +188,16 @@ impl <'a>Parser<'a> {
   }
 
   pub fn parse_expression(&mut self, precedence: Precedences) -> Option<Box<Expressions>> {
+    let mut left_exp: Option<Box<Expressions>> = None;
     if let Some(token) = &self.cur_token.clone() {
-      return match token.kind {
+      left_exp = match token.kind {
         TokenType::TokenIdentifier => {
           self.parse_identifier()
         },
         TokenType::TokenDigit => {
           self.parse_integer_literal()
         },
-        TokenType::TokenBan | TokenType::TokenMinus => {
+        TokenType::TokenBang | TokenType::TokenMinus => {
           self.parse_prefix_expression()
         },
         _ => {
@@ -205,7 +206,25 @@ impl <'a>Parser<'a> {
         },
       };
     }
-    None
+
+    while self.peek_token_is(&TokenType::TokenSemicolon) && precedence < self.peek_precedence() {
+      if let Some(token) = &self.peek_token.clone() {
+        left_exp = match token.kind {
+          TokenType::TokenPlus | TokenType::TokenMinus | TokenType::TokenSlash | TokenType::TokenAsterisk |
+          TokenType::TokenEq | TokenType::TokenNotEq |
+          TokenType::TokenLt | TokenType::TokenLte | TokenType::TokenGt | TokenType::TokenGte => {
+            self.next_token();
+            self.parse_infix_expression(left_exp)
+          },
+          _ => {
+            self.no_prefix_parse_fn_error(token.kind);
+            return left_exp;
+          },
+        };
+      }
+    }
+
+    left_exp
   }
 
   pub fn parse_prefix_expression(&mut self) -> Option<Box<Expressions>> {
@@ -222,7 +241,11 @@ impl <'a>Parser<'a> {
     None
   }
 
-  pub fn parse_infix_expression(&mut self, left: Box<Expressions>) -> Option<Box<Expressions>> {
+  pub fn parse_infix_expression(&mut self, left: Option<Box<Expressions>>) -> Option<Box<Expressions>> {
+    if left.is_none() {
+      return None;
+    }
+
     if let Some(token) = &self.cur_token.clone() {
       let precedence = self.cur_precedence();
       self.next_token();
@@ -231,7 +254,7 @@ impl <'a>Parser<'a> {
           InfixExpression{
             token: token.clone(),
             operator: token.clone().value,
-            left: left,
+            left: left.unwrap(),
             right: right,
         }));
       }

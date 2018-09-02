@@ -139,7 +139,7 @@ impl <'a>Lexer<'a> {
         return self.create_token_by_value(TokenType::TokenNotEq, vec![b'!', b'=']);
       }
     }
-    self.create_token_by_value(TokenType::TokenBan, vec![b'!'])
+    self.create_token_by_value(TokenType::TokenBang, vec![b'!'])
   }
 
   pub fn consume_lt(&mut self) -> Token {
@@ -277,7 +277,7 @@ fn ban() {
   lexer_assert(lexer.next_token().unwrap(), TokenType::TokenLet, "let");
   lexer_assert(lexer.next_token().unwrap(), TokenType::TokenIdentifier, "abc");
   lexer_assert(lexer.next_token().unwrap(), TokenType::TokenAssign, "=");
-  lexer_assert(lexer.next_token().unwrap(), TokenType::TokenBan, "!");
+  lexer_assert(lexer.next_token().unwrap(), TokenType::TokenBang, "!");
   lexer_assert(lexer.next_token().unwrap(), TokenType::TokenIdentifier, "abc");
 }
 

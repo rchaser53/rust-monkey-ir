@@ -28,9 +28,9 @@ lazy_static! {
   };
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialOrd, PartialEq)]
 pub enum Precedences {
-  Int,
+  Int = 1,
   Lowest,
   Equals,         // ==
   LessGrater,     // >, >=, <, <=
@@ -39,17 +39,3 @@ pub enum Precedences {
   Prefix,         // -X, !X
   Call,           // the_function(X)
 }
-
-
-// token.EQ:
-// token.NOT_EQ:
-// token.LT:
-// token.GT:
-// token.PLUS:
-// token.MINUS:
-// token.SLASH:
-// token.ASTERISK:
-// [...]
-// EQUALS, EQUALS, LESSGREATER, LESSGREATER, SUM,
-// SUM, PRODUCT, PRODUCT,
-// }
