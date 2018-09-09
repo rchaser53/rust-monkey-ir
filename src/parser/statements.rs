@@ -63,7 +63,7 @@ impl Statement for ReturnStatement {
   }
 
   fn string(&self) -> String {
-    ("return ".to_owned() + &self.return_value.string()).to_string()
+    ("return ".to_owned() + &self.return_value.string() + ";" ).to_string()
   }
 }
 

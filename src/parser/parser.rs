@@ -328,6 +328,10 @@ impl <'a>Parser<'a> {
 }
 
 /* below the test implementation */
+#[warn(dead_code)]
+fn statement_assert(statement: &Box<Statement>, expect: &str) {
+  assert!(statement.string() == expect, statement.emit_debug_info());
+}
 
 #[test]
 fn test_let_statements() {
@@ -344,12 +348,27 @@ fn test_let_statements() {
 
   let statement = program.statements;
 
-  let_statement_assert(&statement[0], "let x = 5;");
-  let_statement_assert(&statement[1], "let y = 10;");
-  let_statement_assert(&statement[2], "let foobar = 939393;");
+  statement_assert(&statement[0], "let x = 5;");
+  statement_assert(&statement[1], "let y = 10;");
+  statement_assert(&statement[2], "let foobar = 939393;");
 }
 
-#[warn(dead_code)]
-fn let_statement_assert(statement: &Box<Statement>, expect: &str) {
-  assert!(statement.string() == expect, statement.emit_debug_info());
+#[test]
+fn test_return_statements() {
+  let input = "
+    return 5;
+    return 10;
+    return 939393;
+  ";
+  let mut lexer = Lexer::new(input);
+  let mut parser = Parser::new(&mut lexer);
+  let program = parser.parse_program();
+
+  assert!(program.statements.len() > 2, "failed parse correctly");
+
+  let statement = program.statements;
+
+  statement_assert(&statement[0], "return 5;");
+  statement_assert(&statement[1], "return 10;");
+  statement_assert(&statement[2], "return 939393;");
 }
