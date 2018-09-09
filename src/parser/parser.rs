@@ -162,8 +162,7 @@ impl <'a>Parser<'a> {
       }
     };
 
-    // TODO this implementation skip nodes until semicolon
-    while self.cur_token_is(TokenType::TokenSemicolon) {
+    if self.peek_token_is(TokenType::TokenSemicolon) {
       self.next_token();
     }
 
