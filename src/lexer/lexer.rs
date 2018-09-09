@@ -244,6 +244,7 @@ impl <'a>Lexer<'a> {
 
 // below is test implementation
 
+#[warn(dead_code)]
 fn lexer_assert(token: Token, token_type: TokenType, value: &str) {
   let expected = Token::new(token_type, value.to_string());
   assert!(token == expected, "\r\nexpected: {:?} \r\nactual: {:?}", expected, token);

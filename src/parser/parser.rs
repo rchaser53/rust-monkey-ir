@@ -334,28 +334,22 @@ fn test_let_statements() {
   let input = "
     let x = 5;
     let y = 10;
-    let foobar = 838383;
+    let foobar = 939393;
   ";
   let mut lexer = Lexer::new(input);
   let mut parser = Parser::new(&mut lexer);
   let program = parser.parse_program();
 
-  let results: Vec<_> = vec![
-    ( "let", "x" ),
-    ( "let", "y" ),
-    ( "let", "foobar" ),
-  ];
+  assert!(program.statements.len() > 2, "failed parse correctly");
 
-  assert!(program.statements.len() > 2, "nya-n");
+  let statement = program.statements;
 
-  for statement in program.statements.into_iter() {
-    // test_let_statement(statement);
-  }
+  let_statement_assert(&statement[0], "let x = 5;");
+  let_statement_assert(&statement[1], "let y = 10;");
+  let_statement_assert(&statement[2], "let foobar = 939393;");
 }
 
-fn test_let_statement(statement: Box<Statement>, literal: String) {
-  assert!(statement.statement_node() == Node{}, "hoge");
-  assert!(statement.token_literal() == literal, "hoge");
-  assert!(statement.token_literal() == literal, "hoge");
-  assert!(statement.token_literal() == literal, "hoge");
+#[warn(dead_code)]
+fn let_statement_assert(statement: &Box<Statement>, expect: &str) {
+  assert!(statement.string() == expect, statement.emit_debug_info());
 }
