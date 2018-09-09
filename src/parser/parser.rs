@@ -119,7 +119,7 @@ impl <'a>Parser<'a> {
   }
 
   pub fn parse_return_statement(&mut self) -> Option<Box<Statement>> {
-    let stmt = {
+    let mut stmt = {
       match &self.cur_token {
         Some(token) => {
           ReturnStatement{
@@ -133,8 +133,14 @@ impl <'a>Parser<'a> {
       }
     };
 
-    // TODO this implementation skip nodes until semicolon
-    while self.cur_token_is(TokenType::TokenSemicolon) {
+    self.next_token();
+    stmt.return_value = if let Some(value) = self.parse_expression(Precedences::Lowest) {
+      value
+    } else {
+      return None;
+    };
+
+    while self.peek_token_is(TokenType::TokenSemicolon) {
       self.next_token();
     }
 
