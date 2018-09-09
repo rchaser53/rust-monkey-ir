@@ -12,8 +12,6 @@ pub struct Parser<'a> {
   pub cur_token: Option<Token>,
   pub peek_token: Option<Token>,
   pub errors: Vec<String>,
-  // pub prefix_parse_fns: HashMap<TokenType, prefix_parse_fn>,
-  // pub infix_parse_fns: HashMap<TokenType, infix_parse_fn>,
 }
 
 impl <'a>Parser<'a> {
@@ -104,8 +102,14 @@ impl <'a>Parser<'a> {
         return None;
       }
 
-      // TODO this implementation skip nodes until semicolon
-      while self.cur_token_is(TokenType::TokenSemicolon) == false {
+      self.next_token();
+      stmt.value = if let Some(value) = self.parse_expression(Precedences::Lowest) {
+        value
+      } else {
+        return None;
+      };
+
+      while self.peek_token_is(TokenType::TokenSemicolon) {
         self.next_token();
       }
 
