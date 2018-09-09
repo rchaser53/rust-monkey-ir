@@ -30,9 +30,7 @@ impl <'a>Parser<'a> {
   }
 
   pub fn next_token(&mut self) {
-    self.cur_token = {
-      self.peek_token.clone()
-    };
+    self.cur_token = self.peek_token.clone();
     self.peek_token = self.l.next_token();
   }
 
@@ -107,7 +105,7 @@ impl <'a>Parser<'a> {
       }
 
       // TODO this implementation skip nodes until semicolon
-      while self.cur_token_is(TokenType::TokenSemicolon) {
+      while self.cur_token_is(TokenType::TokenSemicolon) == false {
         self.next_token();
       }
 
@@ -207,7 +205,7 @@ impl <'a>Parser<'a> {
       };
     }
 
-    while self.peek_token_is(&TokenType::TokenSemicolon) && precedence < self.peek_precedence() {
+    while self.peek_token_is(TokenType::TokenSemicolon) && precedence < self.peek_precedence() {
       if let Some(token) = &self.peek_token.clone() {
         left_exp = match token.kind {
           TokenType::TokenPlus | TokenType::TokenMinus | TokenType::TokenSlash | TokenType::TokenAsterisk |
@@ -269,15 +267,15 @@ impl <'a>Parser<'a> {
     false
   }
 
-  pub fn peek_token_is(&self, t: &TokenType) -> bool {
+  pub fn peek_token_is(&self, t: TokenType) -> bool {
     if let Some(token) = &self.peek_token {
-      return token.kind == *t;
+      return token.kind == t;
     }
     false
   }
 
   pub fn expect_peek(&mut self, t: TokenType) -> bool {
-    if self.peek_token_is(&t) {
+    if self.peek_token_is(t) {
       self.next_token();
       return true;
     } else {
