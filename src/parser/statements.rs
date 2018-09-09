@@ -25,7 +25,7 @@ impl Statement for LetStatement {
   }
 
   fn emit_debug_info(&self) -> String {
-    write_string!(format!("{:?} {:?} {:?}", self.token, self.value, self.name))
+    write_string!(format!("[ {:?}, value: {:?}, {:?} ]", self.token, self.value, self.name))
   }
 
   fn string(&self) -> String {
@@ -59,7 +59,7 @@ impl Statement for ReturnStatement {
   }
 
   fn emit_debug_info(&self) -> String {
-    write_string!(format!("{:?} {:?}", self.token, self.return_value))
+    write_string!(format!("[ {:?}, return_value: {:?} ]", self.token, self.return_value))
   }
 
   fn string(&self) -> String {
@@ -81,7 +81,7 @@ impl Statement for ExpressionStatement {
   }
 
   fn emit_debug_info(&self) -> String {
-    write_string!(format!("{:?} {:?}", self.token, self.expression))
+    write_string!(format!("[{:?}, {:?}]", self.token, self.expression))
   }
 
   fn string(&self) -> String {
