@@ -9,6 +9,11 @@ pub enum TokenType {
   TokenColon,
   TokenSemicolon,
   
+  TokenLparen,          // (
+  TokenRparen,          // )
+  TokenLbrace,          // {
+  TokenRbrace,          // }
+
   // preserve word
   TokenFn,              // fn
   TokenTrue,            // true

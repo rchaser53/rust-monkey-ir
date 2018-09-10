@@ -185,8 +185,24 @@ impl <'a>Lexer<'a> {
             ret_val = self.consume_equal();
             true
           },
-          b',' | b'.' | b'{' | b'}' | b'(' | b')' => {
+          b',' | b'.' => {
             ret_val = self.create_token_by_value(TokenType::TokenSymbol, vec![byte]);
+            true
+          },
+          b'{' => {
+            ret_val = self.create_token_by_value(TokenType::TokenLbrace, vec![byte]);
+            true
+          },
+          b'}' => {
+            ret_val = self.create_token_by_value(TokenType::TokenRbrace, vec![byte]);
+            true
+          },
+          b'(' => {
+            ret_val = self.create_token_by_value(TokenType::TokenLparen, vec![byte]);
+            true
+          },
+          b')' => {
+            ret_val = self.create_token_by_value(TokenType::TokenRparen, vec![byte]);
             true
           },
           b'!' => {
