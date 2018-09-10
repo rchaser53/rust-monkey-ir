@@ -21,7 +21,6 @@ lazy_static! {
     // *, /
     m.insert(TokenType::TokenAsterisk, Precedences::Product);
     m.insert(TokenType::TokenSlash, Precedences::Product);
-    
 
     m.insert(TokenType::TokenIdentifier, Precedences::Int);
     m

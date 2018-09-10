@@ -213,6 +213,9 @@ impl <'a>Parser<'a> {
         TokenType::TokenBang | TokenType::TokenMinus => {
           self.parse_prefix_expression()
         },
+        TokenType::TokenLparen => {
+          self.parse_grouped_expression()
+        },
         _ => {
           self.no_prefix_parse_fn_error(token.kind);
           return None;
@@ -242,6 +245,7 @@ impl <'a>Parser<'a> {
 
   pub fn parse_prefix_expression(&mut self) -> Option<Box<Expressions>> {
     if let Some(token) = &self.cur_token.clone() {
+      self.next_token();
       if let Some(right) = self.parse_expression(Precedences::Prefix) {
         return Some(Box::new(
           PrefixExpression{
@@ -273,6 +277,20 @@ impl <'a>Parser<'a> {
       }
     }
     None
+  }
+
+  pub fn parse_grouped_expression(&mut self) -> Option<Box<Expressions>> {
+    self.next_token();
+    let exp = if let Some(ret) = self.parse_expression(Precedences::Lowest) {
+      ret
+    } else {
+      return None;
+    };
+
+    if self.expect_peek(TokenType::TokenRparen) == false {
+      return None
+    }
+    Some(exp)
   }
 
   pub fn cur_token_is(&self, t: TokenType) -> bool {
