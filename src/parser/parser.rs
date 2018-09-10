@@ -148,7 +148,7 @@ impl <'a>Parser<'a> {
   }
 
   pub fn parse_expression_statement(&mut self) -> Option<Box<Statement>> {
-    let stmt = {
+    let mut stmt = {
       match &self.cur_token {
         Some(token) => {
           ExpressionStatement{
@@ -160,6 +160,12 @@ impl <'a>Parser<'a> {
           return None;
         }
       }
+    };
+
+    stmt.expression = if let Some(expression) = self.parse_expression(Precedences::Lowest) {
+      expression
+    } else {
+      return None;
     };
 
     if self.peek_token_is(TokenType::TokenSemicolon) {
@@ -214,7 +220,7 @@ impl <'a>Parser<'a> {
       };
     }
 
-    while self.peek_token_is(TokenType::TokenSemicolon) && precedence < self.peek_precedence() {
+    while self.peek_token_is(TokenType::TokenSemicolon) == false && precedence < self.peek_precedence() {
       if let Some(token) = &self.peek_token.clone() {
         left_exp = match token.kind {
           TokenType::TokenPlus | TokenType::TokenMinus | TokenType::TokenSlash | TokenType::TokenAsterisk |
@@ -372,3 +378,23 @@ fn test_return_statements() {
   statement_assert(&statement[1], "return 10;");
   statement_assert(&statement[2], "return 939393;");
 }
+
+// #[test]
+// fn test_parse_expression_statement() {
+//   let input = "
+//     return 5;
+//     return 10;
+//     return 939393;
+//   ";
+//   let mut lexer = Lexer::new(input);
+//   let mut parser = Parser::new(&mut lexer);
+//   let program = parser.parse_program();
+
+//   assert!(program.statements.len() > 2, "failed parse correctly");
+
+//   let statement = program.statements;
+
+//   statement_assert(&statement[0], "return 5;");
+//   statement_assert(&statement[1], "return 10;");
+//   statement_assert(&statement[2], "return 939393;");
+// }
