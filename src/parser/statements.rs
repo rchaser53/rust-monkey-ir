@@ -85,6 +85,6 @@ impl Statement for ExpressionStatement {
   }
 
   fn string(&self) -> String {
-    self.expression.string()
+    self.expression.string() + ";"
   }
 }
