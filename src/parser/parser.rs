@@ -216,6 +216,9 @@ impl <'a>Parser<'a> {
         TokenType::TokenLparen => {
           self.parse_grouped_expression()
         },
+        TokenType::TokenTrue | TokenType::TokenFalse => {
+          self.parse_boolean()
+        },
         _ => {
           self.no_prefix_parse_fn_error(token.kind);
           return None;
@@ -241,6 +244,17 @@ impl <'a>Parser<'a> {
     }
 
     left_exp
+  }
+
+  pub fn parse_boolean(&mut self) -> Option<Box<Expressions>> {
+    if let Some(token) = self.cur_token.clone() {
+      return Some(Box::new(
+        Boolean{
+          token: token,
+          value: self.cur_token_is(TokenType::TokenTrue)
+      }))
+    }
+    None
   }
 
   pub fn parse_prefix_expression(&mut self) -> Option<Box<Expressions>> {
@@ -432,4 +446,25 @@ fn test_operator_precedence_parsing() {
   statement_assert(&statement[9], "((5 > 4) == (3 < 4));");
   statement_assert(&statement[10], "((5 < 4) != (3 > 4));");
   statement_assert(&statement[11], "((3 + (4 * 5)) == ((3 * 1) + (4 * 5)));");
+}
+
+#[test]
+fn test_boolean_parsing() {
+  let input = "
+  true;
+  false;
+  3 > 5 == false;
+  3 < 5 == true;
+";
+
+  let mut lexer = Lexer::new(input);
+  let mut parser = Parser::new(&mut lexer);
+  let program = parser.parse_program();
+
+  let statement = program.statements;
+
+  statement_assert(&statement[0], "true;");
+  statement_assert(&statement[1], "false;");
+  statement_assert(&statement[2], "((3 > 5) == false);");
+  statement_assert(&statement[3], "((3 < 5) == true);");
 }

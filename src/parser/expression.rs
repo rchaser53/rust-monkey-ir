@@ -7,7 +7,6 @@ pub trait Expressions {
   // fn expression_node(&mut self) -> Node;
   fn string(&self) -> String;
 }
-
 impl fmt::Debug for Expressions {
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
     write!(f, "{:?}", self.string())
@@ -51,6 +50,7 @@ impl Expressions for IntegerLiteral {
   }
 }
 
+// Box avoids to add derive Clone
 pub struct PrefixExpression {
   pub token: Token,
   pub operator: String,
@@ -71,7 +71,7 @@ impl PrefixExpression {
   }
 }
 
-
+// Box avoids to add derive Clone
 pub struct InfixExpression {
   pub token: Token,
   pub operator: String,
@@ -81,5 +81,21 @@ pub struct InfixExpression {
 impl Expressions for InfixExpression {
   fn string(&self) -> String {
     ("(".to_owned() + &self.left.string() + " " + &self.operator + " " + &self.right.string() + ")")
+  }
+}
+
+#[derive(Debug, Clone)]
+pub struct Boolean {
+  pub token: Token,
+  pub value: bool,
+}
+impl Expressions for Boolean {
+  fn string(&self) -> String {
+    self.value.to_string()
+  }
+}
+impl Boolean {
+  fn token_literal(&self) -> String {
+    self.token.value.to_string()
   }
 }
