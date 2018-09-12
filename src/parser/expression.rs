@@ -2,6 +2,7 @@ use std::fmt;
 
 use lexer::token::*;
 use parser::node::*;
+use parser::statements::*;
 
 pub trait Expressions {
   // fn expression_node(&mut self) -> Node;
@@ -95,6 +96,33 @@ impl Expressions for Boolean {
   }
 }
 impl Boolean {
+  fn token_literal(&self) -> String {
+    self.token.value.to_string()
+  }
+}
+
+pub struct IfExpression {
+  pub token: Token,
+  pub condition: Box<Expressions>,
+  pub consequence: BlockStatement,
+  pub alternative: Option<BlockStatement>,
+}
+impl Expressions for IfExpression {
+  fn string(&self) -> String {
+    let ret_string = "if".to_owned() +  &self.condition.string() + " " + &self.consequence.string();
+
+    if let Some(alt) = &self.alternative {
+      return ret_string + "else " + &alt.string();
+    }
+    ret_string
+  }
+}
+
+impl IfExpression {
+  fn expression_node() -> Node {
+    Node{}
+  }
+
   fn token_literal(&self) -> String {
     self.token.value.to_string()
   }

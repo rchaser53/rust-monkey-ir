@@ -88,3 +88,33 @@ impl Statement for ExpressionStatement {
     self.expression.string() + ";"
   }
 }
+
+pub struct BlockStatement {
+  pub token: Token,
+  pub statements: Vec<Box<Statement>>
+}
+
+impl Statement for BlockStatement {
+  fn statement_node(&self) -> Node {
+    Node{}
+  }
+
+  fn token_literal(&self) -> String {
+    write_string!(self.token.value)
+  }
+
+  fn emit_debug_info(&self) -> String {
+    write_string!(format!("[{:?}, {:?}]", self.token, self.string()))
+  }
+
+  fn string(&self) -> String {
+    let mut string_vec = Vec::new();
+
+
+    for statement in &self.statements {
+      string_vec.push(statement.string());
+    }
+
+    string_vec.join("")
+  }
+}
