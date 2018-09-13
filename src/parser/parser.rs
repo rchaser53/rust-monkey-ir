@@ -219,6 +219,9 @@ impl <'a>Parser<'a> {
         TokenType::TokenTrue | TokenType::TokenFalse => {
           self.parse_boolean()
         },
+        TokenType::TokenIf => {
+          self.parse_if_expression()
+        },
         _ => {
           self.no_prefix_parse_fn_error(token.kind);
           return None;
@@ -293,6 +296,45 @@ impl <'a>Parser<'a> {
     None
   }
 
+  pub fn parse_if_expression(&mut self) -> Option<Box<Expressions>> {
+    if let Some(token) = self.cur_token.clone() {
+      if self.expect_peek(TokenType::TokenLparen) == false {
+        return None;
+      }
+      self.next_token();
+
+      if let Some(condition) = self.parse_expression(Precedences::Lowest) {
+        if self.expect_peek(TokenType::TokenRparen) == false {
+          return None;
+        }
+
+        if self.expect_peek(TokenType::TokenLbrace) == false {
+          return None;
+        }
+
+        let alternative = if self.peek_token_is(TokenType::TokenElse) {
+          self.next_token();
+          if self.expect_peek(TokenType::TokenLbrace) == false {
+            return None;
+          }
+          self.parse_block_statement()
+        } else {
+          None
+        };
+
+        if let Some(consequence) = self.parse_block_statement() {
+          return Some(Box::new(IfExpression{
+            token: token,
+            condition: condition,
+            consequence: consequence,
+            alternative: alternative
+          }));
+        }
+      }
+    }
+    None
+  }
+
   pub fn parse_grouped_expression(&mut self) -> Option<Box<Expressions>> {
     self.next_token();
     let exp = if let Some(ret) = self.parse_expression(Precedences::Lowest) {
@@ -305,6 +347,26 @@ impl <'a>Parser<'a> {
       return None
     }
     Some(exp)
+  }
+
+  pub fn parse_block_statement(&mut self) -> Option<BlockStatement> {
+    if let Some(token) = self.cur_token.clone() {
+      let mut block = BlockStatement{
+        token: token,
+        statements: Vec::new()
+      };
+
+      self.next_token();
+
+      while self.cur_token_is(TokenType::TokenRbrace) == false && self.cur_token.is_none() == false {
+        if let Some(stmt) = self.parse_statement() {
+          block.statements.push(stmt);
+        }
+        self.next_token();
+      }
+      return Some(block);
+    }    
+    None
   }
 
   pub fn cur_token_is(&self, t: TokenType) -> bool {
