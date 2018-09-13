@@ -312,17 +312,17 @@ impl <'a>Parser<'a> {
           return None;
         }
 
-        let alternative = if self.peek_token_is(TokenType::TokenElse) {
-          self.next_token();
-          if self.expect_peek(TokenType::TokenLbrace) == false {
-            return None;
-          }
-          self.parse_block_statement()
-        } else {
-          None
-        };
-
         if let Some(consequence) = self.parse_block_statement() {
+          let alternative = if self.peek_token_is(TokenType::TokenElse) {
+            self.next_token();
+            if self.expect_peek(TokenType::TokenLbrace) == false {
+              return None;
+            }
+            self.parse_block_statement()
+          } else {
+            None
+          };
+
           return Some(Box::new(IfExpression{
             token: token,
             condition: condition,
