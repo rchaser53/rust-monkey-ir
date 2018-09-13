@@ -29,7 +29,7 @@ impl Statement for LetStatement {
   }
 
   fn string(&self) -> String {
-    ("let ".to_owned() + &self.name.value + " = " + &self.value.string() + ";").to_string()
+    ("let ".to_owned() + &self.name.value + " = " + &self.value.string()).to_string()
   }
 }
 impl Default for LetStatement {
@@ -63,7 +63,7 @@ impl Statement for ReturnStatement {
   }
 
   fn string(&self) -> String {
-    ("return ".to_owned() + &self.return_value.string() + ";" ).to_string()
+    ("return ".to_owned() + &self.return_value.string()).to_string()
   }
 }
 
@@ -85,7 +85,7 @@ impl Statement for ExpressionStatement {
   }
 
   fn string(&self) -> String {
-    self.expression.string() + ";"
+    self.expression.string()
   }
 }
 

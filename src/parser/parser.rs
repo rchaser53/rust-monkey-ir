@@ -436,9 +436,9 @@ fn statement_assert(statement: &Box<Statement>, expect: &str) {
 #[test]
 fn test_let_statements() {
   let input = "
-    let x = 5;
-    let y = 10;
-    let foobar = 939393;
+    let x = 5
+    let y = 10
+    let foobar = 939393
   ";
   let mut lexer = Lexer::new(input);
   let mut parser = Parser::new(&mut lexer);
@@ -448,17 +448,17 @@ fn test_let_statements() {
 
   let statement = program.statements;
 
-  statement_assert(&statement[0], "let x = 5;");
-  statement_assert(&statement[1], "let y = 10;");
-  statement_assert(&statement[2], "let foobar = 939393;");
+  statement_assert(&statement[0], "let x = 5");
+  statement_assert(&statement[1], "let y = 10");
+  statement_assert(&statement[2], "let foobar = 939393");
 }
 
 #[test]
 fn test_return_statements() {
   let input = "
-    return 5;
-    return 10;
-    return 939393;
+    return 5
+    return 10
+    return 939393
   ";
   let mut lexer = Lexer::new(input);
   let mut parser = Parser::new(&mut lexer);
@@ -468,26 +468,26 @@ fn test_return_statements() {
 
   let statement = program.statements;
 
-  statement_assert(&statement[0], "return 5;");
-  statement_assert(&statement[1], "return 10;");
-  statement_assert(&statement[2], "return 939393;");
+  statement_assert(&statement[0], "return 5");
+  statement_assert(&statement[1], "return 10");
+  statement_assert(&statement[2], "return 939393");
 }
 
 #[test]
 fn test_operator_precedence_parsing() {
   let input = "
-  -a * b;
-  !-a;
-  a + b + c;
-  a + b - c;
-  a * b * c;
-  a * b / c;
-  a + b / c;
-  a + b * c + d / e - f;
-  3 + 4 - 5 * 5;
-  5 > 4 == 3 < 4;
-  5 < 4 != 3 > 4;
-  3 + 4 * 5 == 3 * 1 + 4 * 5;
+  -a * b
+  !-a
+  a + b + c
+  a + b - c
+  a * b * c
+  a * b / c
+  a + b / c
+  a + b * c + d / e - f
+  3 + 4 - 5 * 5
+  5 > 4 == 3 < 4
+  5 < 4 != 3 > 4
+  3 + 4 * 5 == 3 * 1 + 4 * 5
 ";
 
   let mut lexer = Lexer::new(input);
@@ -496,27 +496,27 @@ fn test_operator_precedence_parsing() {
 
   let statement = program.statements;
 
-  statement_assert(&statement[0], "((-a) * b);");
-  statement_assert(&statement[1], "(!(-a));");
-  statement_assert(&statement[2], "((a + b) + c);");
-  statement_assert(&statement[3], "((a + b) - c);");
-  statement_assert(&statement[4], "((a * b) * c);");
-  statement_assert(&statement[5], "((a * b) / c);");
-  statement_assert(&statement[6], "(a + (b / c));");
-  statement_assert(&statement[7], "(((a + (b * c)) + (d / e)) - f);");
-  statement_assert(&statement[8], "((3 + 4) - (5 * 5));");
-  statement_assert(&statement[9], "((5 > 4) == (3 < 4));");
-  statement_assert(&statement[10], "((5 < 4) != (3 > 4));");
-  statement_assert(&statement[11], "((3 + (4 * 5)) == ((3 * 1) + (4 * 5)));");
+  statement_assert(&statement[0], "((-a) * b)");
+  statement_assert(&statement[1], "(!(-a))");
+  statement_assert(&statement[2], "((a + b) + c)");
+  statement_assert(&statement[3], "((a + b) - c)");
+  statement_assert(&statement[4], "((a * b) * c)");
+  statement_assert(&statement[5], "((a * b) / c)");
+  statement_assert(&statement[6], "(a + (b / c))");
+  statement_assert(&statement[7], "(((a + (b * c)) + (d / e)) - f)");
+  statement_assert(&statement[8], "((3 + 4) - (5 * 5))");
+  statement_assert(&statement[9], "((5 > 4) == (3 < 4))");
+  statement_assert(&statement[10], "((5 < 4) != (3 > 4))");
+  statement_assert(&statement[11], "((3 + (4 * 5)) == ((3 * 1) + (4 * 5)))");
 }
 
 #[test]
 fn test_boolean_parsing() {
   let input = "
-  true;
-  false;
-  3 > 5 == false;
-  3 < 5 == true;
+  true
+  false
+  3 > 5 == false
+  3 < 5 == true
 ";
 
   let mut lexer = Lexer::new(input);
@@ -525,8 +525,8 @@ fn test_boolean_parsing() {
 
   let statement = program.statements;
 
-  statement_assert(&statement[0], "true;");
-  statement_assert(&statement[1], "false;");
-  statement_assert(&statement[2], "((3 > 5) == false);");
-  statement_assert(&statement[3], "((3 < 5) == true);");
+  statement_assert(&statement[0], "true");
+  statement_assert(&statement[1], "false");
+  statement_assert(&statement[2], "((3 > 5) == false)");
+  statement_assert(&statement[3], "((3 < 5) == true)");
 }
