@@ -241,6 +241,10 @@ impl <'a>Parser<'a> {
             self.next_token();
             self.parse_infix_expression(left_exp)
           },
+          TokenType::TokenLparen => {
+            self.next_token();
+            self.parse_call_expression(left_exp)
+          },
           _ => {
             self.no_prefix_parse_fn_error(token.kind);
             return left_exp;
@@ -375,6 +379,49 @@ impl <'a>Parser<'a> {
       }
     }
     None
+  }
+
+  pub fn parse_call_expression(&mut self, function: Option<Box<Expressions>>) -> Option<Box<Expressions>> {
+    if function.is_none() {
+      return None;
+    }
+
+    if let Some(token) = self.cur_token.clone() {
+      return Some(Box::new(
+        CallExpression{
+          token: token,
+          function: function.unwrap(),
+          arguments: self.parse_call_arguments(),
+        }
+      ));
+    }
+    None
+  }
+
+  pub fn parse_call_arguments(&mut self) -> Vec<Box<Expressions>> {
+    let mut args = Vec::new();
+    if self.peek_token_is(TokenType::TokenRparen) {
+      self.next_token();
+      return args;
+    }
+    self.next_token();
+
+    if let Some(arg) = self.parse_expression(Precedences::Lowest) {
+      args.push(arg);
+    }
+
+    while self.peek_token_is(TokenType::TokenComma) {
+      self.next_token();
+      self.next_token();
+      if let Some(arg) = self.parse_expression(Precedences::Lowest) {
+        args.push(arg);
+      }
+    }
+
+    if self.expect_peek(TokenType::TokenRparen) == false {
+      return args;
+    }
+    args
   }
 
   pub fn parse_function_parameters(&mut self) -> Vec<Identifier> {

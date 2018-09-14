@@ -23,6 +23,8 @@ lazy_static! {
     m.insert(TokenType::TokenSlash, Precedences::Product);
 
     m.insert(TokenType::TokenIdentifier, Precedences::Int);
+
+    m.insert(TokenType::TokenLparen, Precedences::Call);
     m
   };
 }

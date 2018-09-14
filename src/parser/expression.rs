@@ -151,3 +151,28 @@ impl FunctionLiteral {
     self.token.value.to_string()
   }
 }
+
+pub struct CallExpression {
+  pub token: Token,
+  pub function: Box<Expressions>,
+  pub arguments: Vec<Box<Expressions>>,
+}
+impl Expressions for CallExpression {
+  fn string(&self) -> String {
+    let mut args = Vec::new();
+    for arg in &self.arguments {
+      args.push(arg.string());
+    }
+
+    self.function.string() + "(" + &args.join(", ") + ")"
+  }
+}
+impl CallExpression {
+  fn expression_node() -> Node {
+    Node{}
+  }
+
+  fn token_literal(&self) -> String {
+    self.token.value.to_string()
+  }
+}
