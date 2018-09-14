@@ -114,6 +114,6 @@ impl Statement for BlockStatement {
       string_vec.push(statement.string());
     }
 
-    string_vec.join("")
+    ("{".to_owned() + &string_vec.join("") + "}")
   }
 }
