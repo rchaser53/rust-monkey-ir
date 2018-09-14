@@ -659,3 +659,22 @@ fn test_funciton_parsing() {
   statement_assert(&statement[1], "fn(x) {}");
   statement_assert(&statement[2], "fn(x, y, z) {}");
 }
+
+#[test]
+fn test_call_parsing() {
+  let input = "
+  a + add(b * c) + d;
+  add(a, b, 1, 2 * 3, 4 + 5, add(6, 7 * 8));
+  add(a + b + c * d / f + g);
+";
+
+  let mut lexer = Lexer::new(input);
+  let mut parser = Parser::new(&mut lexer);
+  let program = parser.parse_program();
+
+  let statement = program.statements;
+
+  statement_assert(&statement[0], "((a + add((b * c))) + d)");
+  statement_assert(&statement[1], "add(a, b, 1, (2 * 3), (4 + 5), add(6, (7 * 8)))");
+  statement_assert(&statement[2], "add((((a + b) + ((c * d) / f)) + g))");
+}
