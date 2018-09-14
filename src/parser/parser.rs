@@ -597,10 +597,9 @@ fn test_boolean_parsing() {
 #[test]
 fn test_funciton_parsing() {
   let input = "
-  true
-  false
-  3 > 5 == false
-  3 < 5 == true
+  fn() {};
+  fn(x) {};
+  fn(x, y, z) {};
 ";
 
   let mut lexer = Lexer::new(input);
@@ -609,8 +608,7 @@ fn test_funciton_parsing() {
 
   let statement = program.statements;
 
-  statement_assert(&statement[0], "true");
-  statement_assert(&statement[1], "false");
-  statement_assert(&statement[2], "((3 > 5) == false)");
-  statement_assert(&statement[3], "((3 < 5) == true)");
+  statement_assert(&statement[0], "fn() {}");
+  statement_assert(&statement[1], "fn(x) {}");
+  statement_assert(&statement[2], "fn(x, y, z) {}");
 }
