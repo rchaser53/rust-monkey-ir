@@ -222,6 +222,9 @@ impl <'a>Parser<'a> {
         TokenType::TokenIf => {
           self.parse_if_expression()
         },
+        TokenType::TokenFn => {
+          self.parse_function_literal()
+        },
         _ => {
           self.no_prefix_parse_fn_error(token.kind);
           return None;
@@ -347,6 +350,66 @@ impl <'a>Parser<'a> {
       return None
     }
     Some(exp)
+  }
+
+  pub fn parse_function_literal(&mut self) -> Option<Box<Expressions>> {
+    if let Some(token) = self.cur_token.clone() {
+      if self.expect_peek(TokenType::TokenLparen) == false {
+        return None;
+      }
+
+      let parameters = self.parse_function_parameters();
+
+      if self.expect_peek(TokenType::TokenLbrace) == false {
+        return None;
+      }
+
+      if let Some(body) = self.parse_block_statement() {
+        return Some(Box::new(
+          FunctionLiteral{
+            token: token,
+            parameters: parameters,
+            body: body,
+          }
+        ));
+      }
+    }
+    None
+  }
+
+  pub fn parse_function_parameters(&mut self) -> Vec<Identifier> {
+    let mut parameters = Vec::new();
+
+    if self.peek_token_is(TokenType::TokenRparen) {
+      self.next_token();
+      return parameters;
+    }
+    self.next_token();
+
+    if let Some(token) = self.cur_token.clone() {
+      parameters.push(Identifier{
+        token: token.clone(),
+        value: token.clone().value
+      });
+    }
+    
+    while self.peek_token_is(TokenType::TokenComma) {
+      self.next_token();
+      self.next_token();
+
+      if let Some(token) = self.cur_token.clone() {
+        parameters.push(Identifier{
+          token: token.clone(),
+          value: token.clone().value
+        });
+      }
+    }
+
+    if self.expect_peek(TokenType::TokenRparen) == false {
+      return Vec::new();
+    }
+
+    parameters
   }
 
   pub fn parse_block_statement(&mut self) -> Option<BlockStatement> {
@@ -512,6 +575,27 @@ fn test_operator_precedence_parsing() {
 
 #[test]
 fn test_boolean_parsing() {
+  let input = "
+  true
+  false
+  3 > 5 == false
+  3 < 5 == true
+";
+
+  let mut lexer = Lexer::new(input);
+  let mut parser = Parser::new(&mut lexer);
+  let program = parser.parse_program();
+
+  let statement = program.statements;
+
+  statement_assert(&statement[0], "true");
+  statement_assert(&statement[1], "false");
+  statement_assert(&statement[2], "((3 > 5) == false)");
+  statement_assert(&statement[3], "((3 < 5) == true)");
+}
+
+#[test]
+fn test_funciton_parsing() {
   let input = "
   true
   false

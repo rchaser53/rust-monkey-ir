@@ -117,8 +117,32 @@ impl Expressions for IfExpression {
     ret_string
   }
 }
-
 impl IfExpression {
+  fn expression_node() -> Node {
+    Node{}
+  }
+
+  fn token_literal(&self) -> String {
+    self.token.value.to_string()
+  }
+}
+
+pub struct FunctionLiteral {
+ pub token: Token,
+ pub parameters: Vec<Identifier>,
+ pub body: BlockStatement
+}
+impl Expressions for FunctionLiteral {
+ fn string(&self) -> String {
+  let mut params = Vec::new();
+  for parameter in &self.parameters {
+    params.push(parameter.string());
+  }
+
+  self.token_literal() + "(" + &params.join(", ") + ") " + &self.body.string()
+ } 
+}
+impl FunctionLiteral {
   fn expression_node() -> Node {
     Node{}
   }

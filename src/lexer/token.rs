@@ -2,11 +2,12 @@
 pub enum TokenType {
   TokenIdentifier,
   TokenDigit,
-  TokenSymbol,
   
   TokenEof,
   TokenAssign,
   TokenColon,
+  TokenComma,
+  TokenPeriod,
   TokenSemicolon,
   
   TokenLparen,          // (

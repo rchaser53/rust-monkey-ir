@@ -110,7 +110,6 @@ impl Statement for BlockStatement {
   fn string(&self) -> String {
     let mut string_vec = Vec::new();
 
-
     for statement in &self.statements {
       string_vec.push(statement.string());
     }

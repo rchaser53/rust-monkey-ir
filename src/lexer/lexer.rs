@@ -185,8 +185,12 @@ impl <'a>Lexer<'a> {
             ret_val = self.consume_equal();
             true
           },
-          b',' | b'.' => {
-            ret_val = self.create_token_by_value(TokenType::TokenSymbol, vec![byte]);
+          b',' => {
+            ret_val = self.create_token_by_value(TokenType::TokenComma, vec![byte]);
+            true
+          },
+          b'.' => {
+            ret_val = self.create_token_by_value(TokenType::TokenPeriod, vec![byte]);
             true
           },
           b'{' => {
