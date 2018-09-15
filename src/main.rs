@@ -10,6 +10,9 @@ use lexer::lexer::*;
 mod parser;
 use parser::parser::*;
 
+mod evalute;
+use evalute::object::*;
+
 fn main() {
   let mut lexer = Lexer::new("0 /* 123 */ 2");
   println!("{:?}", lexer.next_token());
