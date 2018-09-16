@@ -74,7 +74,12 @@ impl <'a>Parser<'a> {
         Some(token) => {
           LetStatement{
             token: Token{ kind: TokenType::TokenLet, value: write_string!("let") },
-            value: Box::new(Expression{ node: Node{} }),
+            value: Box::new(Expression{
+              node: Node{
+                node_type: NodeType::Expression,
+                value: token.value.to_owned()
+              }
+            }),
             name: Identifier{
               token: token.clone(),
               value: token.clone().value,
@@ -124,7 +129,12 @@ impl <'a>Parser<'a> {
         Some(token) => {
           ReturnStatement{
             token: token.clone(),
-            return_value: Box::new(Expression{ node: Node{} }),
+            return_value: Box::new(Expression{
+              node: Node{
+                node_type: NodeType::Expression,
+                value: token.value.to_owned()
+              }
+            }),
           }
         },
         None => {
@@ -153,7 +163,12 @@ impl <'a>Parser<'a> {
         Some(token) => {
           ExpressionStatement{
             token: token.clone(),
-            expression: Box::new(Expression{ node: Node{} }),
+            expression: Box::new(Expression{
+              node: Node{
+                node_type: NodeType::Expression,
+                value: token.value.to_owned()
+              } 
+            }),
           }
         },
         None => {

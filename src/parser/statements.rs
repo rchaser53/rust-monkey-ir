@@ -17,7 +17,11 @@ pub struct LetStatement {
 }
 impl Statement for LetStatement {
   fn statement_node(&self) -> Node {
-    Node{}
+    // temp
+    Node{
+      node_type: NodeType::Expression,
+      value: String::new(),
+    }
   }
 
   fn token_literal(&self) -> String {
@@ -36,7 +40,13 @@ impl Default for LetStatement {
     fn default() -> LetStatement {
       LetStatement{
         token: Token{ kind: TokenType::TokenLet, value: write_string!("let") },
-        value: Box::new(Expression{ node: Node{} }),
+        value: Box::new(Expression{
+          // temp
+          node: Node{
+            node_type: NodeType::Expression,
+            value: String::new(),
+          }
+        }),
         name: Identifier {
           token: Token{ kind: TokenType::TokenIdentifier, value: write_string!("empty_variable") },
           value: write_string!("empty_variable")
@@ -51,7 +61,11 @@ pub struct ReturnStatement {
 }
 impl Statement for ReturnStatement {
   fn statement_node(&self) -> Node {
-    Node{}
+    // temp
+    Node{
+      node_type: NodeType::Identifier,
+      value: String::new(),
+    }
   }
 
   fn token_literal(&self) -> String {
@@ -73,7 +87,11 @@ pub struct ExpressionStatement {
 }
 impl Statement for ExpressionStatement {
   fn statement_node(&self) -> Node {
-    Node{}
+    // temp
+    Node{
+      node_type: NodeType::Identifier,
+      value: String::new(),
+    }
   }
 
   fn token_literal(&self) -> String {
@@ -96,7 +114,11 @@ pub struct BlockStatement {
 
 impl Statement for BlockStatement {
   fn statement_node(&self) -> Node {
-    Node{}
+    // temp
+    Node{
+      node_type: NodeType::Identifier,
+      value: String::new(),
+    }
   }
 
   fn token_literal(&self) -> String {

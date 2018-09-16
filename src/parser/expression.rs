@@ -5,7 +5,7 @@ use parser::node::*;
 use parser::statements::*;
 
 pub trait Expressions {
-  // fn expression_node(&mut self) -> Node;
+  fn expression_node(&mut self) -> Node;
   fn string(&self) -> String;
 }
 impl fmt::Debug for Expressions {
@@ -19,13 +19,12 @@ pub struct Expression {
   pub node: Node
 }
 impl Expressions for Expression {
+  fn expression_node(&mut self) -> Node {
+    self.node.clone()
+  }
+
   fn string(&self) -> String {
     self.node.string()
-  }
-}
-impl Expression {
-  pub fn expression_node(&mut self) -> Node {
-    self.node.clone()
   }
 }
 
@@ -38,6 +37,13 @@ impl Expressions for Identifier {
   fn string(&self) -> String {
     self.token.value.to_string()
   }
+
+  fn expression_node(&mut self) -> Node {
+    Node{
+      node_type: NodeType::Identifier,
+      value: self.value.to_owned(),
+    }
+  }
 }
 
 #[derive(Debug, Clone)]
@@ -48,6 +54,13 @@ pub struct IntegerLiteral {
 impl Expressions for IntegerLiteral {
   fn string(&self) -> String {
     self.token.value.to_string()
+  }
+
+  fn expression_node(&mut self) -> Node {
+    Node{
+      node_type: NodeType::IntegerLiteral,
+      value: self.value.to_string(),
+    }
   }
 }
 
@@ -61,12 +74,15 @@ impl Expressions for PrefixExpression {
   fn string(&self) -> String {
     ("(".to_owned() + &self.operator.to_string() + &self.right.string() + ")")
   }
+
+  fn expression_node(&mut self) -> Node {
+    Node{
+      node_type: NodeType::PrefixExpression,
+      value: self.operator.to_owned(),
+    }
+  }
 }
 impl PrefixExpression {
-  fn expression_node() -> Node {
-    Node{}
-  }
-
   fn token_literal(&self) -> String {
     self.token.value.to_string()
   }
@@ -83,6 +99,13 @@ impl Expressions for InfixExpression {
   fn string(&self) -> String {
     ("(".to_owned() + &self.left.string() + " " + &self.operator + " " + &self.right.string() + ")")
   }
+
+  fn expression_node(&mut self) -> Node {
+    Node{
+      node_type: NodeType::InfixExpression,
+      value: self.operator.to_owned(),
+    }
+  }
 }
 
 #[derive(Debug, Clone)]
@@ -93,6 +116,13 @@ pub struct Boolean {
 impl Expressions for Boolean {
   fn string(&self) -> String {
     self.value.to_string()
+  }
+
+  fn expression_node(&mut self) -> Node {
+    Node{
+      node_type: NodeType::Boolean,
+      value: self.value.to_string(),
+    }
   }
 }
 impl Boolean {
@@ -116,12 +146,16 @@ impl Expressions for IfExpression {
     }
     ret_string
   }
+
+  fn expression_node(&mut self) -> Node {
+    Node{
+      node_type: NodeType::IfExpression,
+      // value: self.value.to_string(),
+      value: String::new(),
+    }
+  }
 }
 impl IfExpression {
-  fn expression_node() -> Node {
-    Node{}
-  }
-
   fn token_literal(&self) -> String {
     self.token.value.to_string()
   }
@@ -141,12 +175,15 @@ impl Expressions for FunctionLiteral {
 
   self.token_literal() + "(" + &params.join(", ") + ") " + &self.body.string()
  } 
+
+  fn expression_node(&mut self) -> Node {
+    Node{
+      node_type: NodeType::FunctionLiteral,
+      value: String::new(),
+    }
+  }
 }
 impl FunctionLiteral {
-  fn expression_node() -> Node {
-    Node{}
-  }
-
   fn token_literal(&self) -> String {
     self.token.value.to_string()
   }
@@ -166,12 +203,15 @@ impl Expressions for CallExpression {
 
     self.function.string() + "(" + &args.join(", ") + ")"
   }
+
+  fn expression_node(&mut self) -> Node {
+    Node{
+      node_type: NodeType::CallExpression,
+      value: String::new(),
+    }
+  }
 }
 impl CallExpression {
-  fn expression_node() -> Node {
-    Node{}
-  }
-
   fn token_literal(&self) -> String {
     self.token.value.to_string()
   }
