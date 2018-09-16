@@ -20,7 +20,7 @@ pub struct Expression {
 }
 impl Expressions for Expression {
   fn expression_node(&mut self) -> Node {
-    self.node.clone()
+    self.node.to_owned()
   }
 
   fn string(&self) -> String {

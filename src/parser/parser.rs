@@ -28,7 +28,7 @@ impl <'a>Parser<'a> {
   }
 
   pub fn next_token(&mut self) {
-    self.cur_token = self.peek_token.clone();
+    self.cur_token = self.peek_token.to_owned();
     self.peek_token = self.l.next_token();
   }
 
@@ -51,7 +51,7 @@ impl <'a>Parser<'a> {
   }
 
   pub fn parse_statement(&mut self) -> Option<Box<Statement>> {
-    if let Some(token) = &self.cur_token.clone() {
+    if let Some(token) = self.cur_token.to_owned() {
       return match token.kind {
         TokenType::TokenLet => {
           self.parse_let_statement()
@@ -81,8 +81,8 @@ impl <'a>Parser<'a> {
               }
             }),
             name: Identifier{
-              token: token.clone(),
-              value: token.clone().value,
+              token: token.to_owned(),
+              value: token.value.to_owned(),
             },
           }
         },
@@ -96,11 +96,10 @@ impl <'a>Parser<'a> {
       return None;
     }
     
-    if let Some(token) = &self.cur_token.clone() {
-      let token_clone = token.clone();
+    if let Some(token) = self.cur_token.to_owned() {
       stmt.name = Identifier {
-        token: token.clone(),
-        value: token_clone.value,
+        token: token.to_owned(),
+        value: token.value.to_owned(),
       };
 
       if self.expect_peek(TokenType::TokenAssign) == false {
@@ -128,7 +127,7 @@ impl <'a>Parser<'a> {
       match &self.cur_token {
         Some(token) => {
           ReturnStatement{
-            token: token.clone(),
+            token: token.to_owned(),
             return_value: Box::new(Expression{
               node: Node{
                 node_type: NodeType::Expression,
@@ -162,7 +161,7 @@ impl <'a>Parser<'a> {
       match &self.cur_token {
         Some(token) => {
           ExpressionStatement{
-            token: token.clone(),
+            token: token.to_owned(),
             expression: Box::new(Expression{
               node: Node{
                 node_type: NodeType::Expression,
@@ -193,8 +192,8 @@ impl <'a>Parser<'a> {
   pub fn parse_identifier(&self) -> Option<Box<Expressions>> {
     if let Some(token) = &self.cur_token {
       return Some(Box::new(Identifier{
-        token: token.clone(),
-        value: token.clone().value,
+        token: token.to_owned(),
+        value: token.value.to_owned(),
       }));
     }
     None
@@ -205,7 +204,7 @@ impl <'a>Parser<'a> {
       if let Ok(value) = token.value.parse::<i64>() {
         return Some(Box::new(
           IntegerLiteral{
-            token: token.clone(),
+            token: token.to_owned(),
             value: value,
         }));
       } else {
@@ -217,7 +216,7 @@ impl <'a>Parser<'a> {
 
   pub fn parse_expression(&mut self, precedence: Precedences) -> Option<Box<Expressions>> {
     let mut left_exp: Option<Box<Expressions>> = None;
-    if let Some(token) = &self.cur_token.clone() {
+    if let Some(token) = self.cur_token.to_owned() {
       left_exp = match token.kind {
         TokenType::TokenIdentifier => {
           self.parse_identifier()
@@ -248,7 +247,7 @@ impl <'a>Parser<'a> {
     }
 
     while self.peek_token_is(TokenType::TokenSemicolon) == false && precedence < self.peek_precedence() {
-      if let Some(token) = &self.peek_token.clone() {
+      if let Some(token) = self.peek_token.to_owned() {
         left_exp = match token.kind {
           TokenType::TokenPlus | TokenType::TokenMinus | TokenType::TokenSlash | TokenType::TokenAsterisk |
           TokenType::TokenEq | TokenType::TokenNotEq |
@@ -272,7 +271,7 @@ impl <'a>Parser<'a> {
   }
 
   pub fn parse_boolean(&mut self) -> Option<Box<Expressions>> {
-    if let Some(token) = self.cur_token.clone() {
+    if let Some(token) = self.cur_token.to_owned() {
       return Some(Box::new(
         Boolean{
           token: token,
@@ -283,13 +282,13 @@ impl <'a>Parser<'a> {
   }
 
   pub fn parse_prefix_expression(&mut self) -> Option<Box<Expressions>> {
-    if let Some(token) = &self.cur_token.clone() {
+    if let Some(token) = self.cur_token.to_owned() {
       self.next_token();
       if let Some(right) = self.parse_expression(Precedences::Prefix) {
         return Some(Box::new(
           PrefixExpression{
-            token: token.clone(),
-            operator: token.clone().value,
+            token: token.to_owned(),
+            operator: token.value.to_owned(),
             right: right,
         }));
       }
@@ -302,14 +301,14 @@ impl <'a>Parser<'a> {
       return None;
     }
 
-    if let Some(token) = &self.cur_token.clone() {
+    if let Some(token) = self.cur_token.to_owned() {
       let precedence = self.cur_precedence();
       self.next_token();
       if let Some(right) = self.parse_expression(precedence) {
         return Some(Box::new(
           InfixExpression{
-            token: token.clone(),
-            operator: token.clone().value,
+            token: token.to_owned(),
+            operator: token.value.to_owned(),
             left: left.unwrap(),
             right: right,
         }));
@@ -319,7 +318,7 @@ impl <'a>Parser<'a> {
   }
 
   pub fn parse_if_expression(&mut self) -> Option<Box<Expressions>> {
-    if let Some(token) = self.cur_token.clone() {
+    if let Some(token) = self.cur_token.to_owned() {
       if self.expect_peek(TokenType::TokenLparen) == false {
         return None;
       }
@@ -372,7 +371,7 @@ impl <'a>Parser<'a> {
   }
 
   pub fn parse_function_literal(&mut self) -> Option<Box<Expressions>> {
-    if let Some(token) = self.cur_token.clone() {
+    if let Some(token) = self.cur_token.to_owned() {
       if self.expect_peek(TokenType::TokenLparen) == false {
         return None;
       }
@@ -401,7 +400,7 @@ impl <'a>Parser<'a> {
       return None;
     }
 
-    if let Some(token) = self.cur_token.clone() {
+    if let Some(token) = self.cur_token.to_owned() {
       return Some(Box::new(
         CallExpression{
           token: token,
@@ -448,10 +447,10 @@ impl <'a>Parser<'a> {
     }
     self.next_token();
 
-    if let Some(token) = self.cur_token.clone() {
+    if let Some(token) = self.cur_token.to_owned() {
       parameters.push(Identifier{
-        token: token.clone(),
-        value: token.clone().value
+        token: token.to_owned(),
+        value: token.value.to_owned()
       });
     }
     
@@ -459,10 +458,10 @@ impl <'a>Parser<'a> {
       self.next_token();
       self.next_token();
 
-      if let Some(token) = self.cur_token.clone() {
+      if let Some(token) = self.cur_token.to_owned() {
         parameters.push(Identifier{
-          token: token.clone(),
-          value: token.clone().value
+          token: token.to_owned(),
+          value: token.value.to_owned()
         });
       }
     }
@@ -475,7 +474,7 @@ impl <'a>Parser<'a> {
   }
 
   pub fn parse_block_statement(&mut self) -> Option<BlockStatement> {
-    if let Some(token) = self.cur_token.clone() {
+    if let Some(token) = self.cur_token.to_owned() {
       let mut block = BlockStatement{
         token: token,
         statements: Vec::new()
@@ -521,17 +520,17 @@ impl <'a>Parser<'a> {
     if let Some(token) = &self.peek_token {
       let token_type = token.kind;
       if PrecedenceTokenMap.contains_key(&token_type) {
-        return PrecedenceTokenMap[&token_type].clone();
+        return PrecedenceTokenMap[&token_type].to_owned();
       }
     }
     Precedences::Lowest
   }
 
-  pub fn cur_precedence(&mut self) -> Precedences {
+  pub fn cur_precedence(&self) -> Precedences {
     if let Some(token) = &self.cur_token {
       let token_type = token.kind;
       if PrecedenceTokenMap.contains_key(&token_type) {
-        return PrecedenceTokenMap[&token_type].clone();
+        return PrecedenceTokenMap[&token_type].to_owned();
       }
     }
     Precedences::Lowest
