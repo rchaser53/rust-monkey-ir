@@ -249,7 +249,7 @@ impl <'a>Parser<'a> {
     while self.peek_token_is(TokenType::Semicolon) == false && precedence < self.peek_precedence() {
       if let Some(token) = self.peek_token.to_owned() {
         left_exp = match token.kind {
-          TokenType::Plus | TokenType::Minus | TokenType::Slash | TokenType::Asterisk |
+          TokenType::Plus | TokenType::Minus | TokenType::Divide | TokenType::Multiply |
           TokenType::Eq | TokenType::NotEq |
           TokenType::Lt | TokenType::Lte | TokenType::Gt | TokenType::Gte => {
             self.next_token();

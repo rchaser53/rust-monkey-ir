@@ -33,8 +33,8 @@ pub enum TokenType {
   Gte,             // =>
   Plus,            // +
   Minus,           // -
-  Slash,           // /
-  Asterisk,        // *
+  Divide,           // /
+  Multiply,        // *
   Bang,            // !
 }
 

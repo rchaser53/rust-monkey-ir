@@ -119,7 +119,7 @@ impl <'a>Lexer<'a> {
         return (target_token, false);
       }
     }
-    (self.create_token_by_value(TokenType::Slash, vec![b'/']), true)
+    (self.create_token_by_value(TokenType::Divide, vec![b'/']), true)
   }
 
   pub fn consume_equal(&mut self) -> Token {
@@ -214,7 +214,7 @@ impl <'a>Lexer<'a> {
             true
           },
           b'*' => {
-            ret_val = self.create_token_by_value(TokenType::Asterisk, vec![byte]);
+            ret_val = self.create_token_by_value(TokenType::Multiply, vec![byte]);
             true
           },
           b'+' => {
@@ -306,9 +306,9 @@ fn ban() {
 fn division_multiple() {
   let mut lexer = Lexer::new("1 / 323 * 3 / 2");
   lexer_assert(lexer.next_token().unwrap(), TokenType::Digit, "1");
-  lexer_assert(lexer.next_token().unwrap(), TokenType::Slash, "/");
+  lexer_assert(lexer.next_token().unwrap(), TokenType::Divide, "/");
   lexer_assert(lexer.next_token().unwrap(), TokenType::Digit, "323");
-  lexer_assert(lexer.next_token().unwrap(), TokenType::Asterisk, "*");
+  lexer_assert(lexer.next_token().unwrap(), TokenType::Multiply, "*");
   lexer_assert(lexer.next_token().unwrap(), TokenType::Digit, "3");
 }
 
