@@ -5,3 +5,5 @@ pub mod statements;
 pub mod program;
 pub mod precedence;
 pub mod parser;
+pub mod parser_new;
+pub mod statements_new;
