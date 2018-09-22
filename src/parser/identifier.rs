@@ -19,7 +19,7 @@ impl Identifier {
 impl Default for Identifier {
     fn default() -> Identifier {
       Identifier{
-        token: Token{ kind: TokenType::TokenIdentifier, value: String::new() },
+        token: Token{ kind: TokenType::Identifier, value: String::new() },
         value: String::new()
       }
     }

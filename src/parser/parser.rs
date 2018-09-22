@@ -53,10 +53,10 @@ impl <'a>Parser<'a> {
   pub fn parse_statement(&mut self) -> Option<Box<Statement>> {
     if let Some(token) = self.cur_token.to_owned() {
       return match token.kind {
-        TokenType::TokenLet => {
+        TokenType::Let => {
           self.parse_let_statement()
         },
-        TokenType::TokenReturn => {
+        TokenType::Return => {
           self.parse_return_statement()
         },
         _ => {
@@ -73,7 +73,7 @@ impl <'a>Parser<'a> {
       match &self.cur_token {
         Some(token) => {
           LetStatement{
-            token: Token{ kind: TokenType::TokenLet, value: write_string!("let") },
+            token: Token{ kind: TokenType::Let, value: write_string!("let") },
             value: Box::new(Expression{
               node: Node{
                 node_type: NodeType::Expression,
@@ -92,7 +92,7 @@ impl <'a>Parser<'a> {
       }
     };
 
-    if self.expect_peek(TokenType::TokenIdentifier) == false {
+    if self.expect_peek(TokenType::Identifier) == false {
       return None;
     }
     
@@ -102,7 +102,7 @@ impl <'a>Parser<'a> {
         value: token.value.to_owned(),
       };
 
-      if self.expect_peek(TokenType::TokenAssign) == false {
+      if self.expect_peek(TokenType::Assign) == false {
         return None;
       }
 
@@ -113,7 +113,7 @@ impl <'a>Parser<'a> {
         return None;
       };
 
-      while self.peek_token_is(TokenType::TokenSemicolon) {
+      while self.peek_token_is(TokenType::Semicolon) {
         self.next_token();
       }
 
@@ -149,7 +149,7 @@ impl <'a>Parser<'a> {
       return None;
     };
 
-    while self.peek_token_is(TokenType::TokenSemicolon) {
+    while self.peek_token_is(TokenType::Semicolon) {
       self.next_token();
     }
 
@@ -182,7 +182,7 @@ impl <'a>Parser<'a> {
       return None;
     };
 
-    if self.peek_token_is(TokenType::TokenSemicolon) {
+    if self.peek_token_is(TokenType::Semicolon) {
       self.next_token();
     }
 
@@ -218,25 +218,25 @@ impl <'a>Parser<'a> {
     let mut left_exp: Option<Box<Expressions>> = None;
     if let Some(token) = self.cur_token.to_owned() {
       left_exp = match token.kind {
-        TokenType::TokenIdentifier => {
+        TokenType::Identifier => {
           self.parse_identifier()
         },
-        TokenType::TokenDigit => {
+        TokenType::Digit => {
           self.parse_integer_literal()
         },
-        TokenType::TokenBang | TokenType::TokenMinus => {
+        TokenType::Bang | TokenType::Minus => {
           self.parse_prefix_expression()
         },
-        TokenType::TokenLparen => {
+        TokenType::Lparen => {
           self.parse_grouped_expression()
         },
-        TokenType::TokenTrue | TokenType::TokenFalse => {
+        TokenType::True | TokenType::False => {
           self.parse_boolean()
         },
-        TokenType::TokenIf => {
+        TokenType::If => {
           self.parse_if_expression()
         },
-        TokenType::TokenFn => {
+        TokenType::Fn => {
           self.parse_function_literal()
         },
         _ => {
@@ -246,16 +246,16 @@ impl <'a>Parser<'a> {
       };
     }
 
-    while self.peek_token_is(TokenType::TokenSemicolon) == false && precedence < self.peek_precedence() {
+    while self.peek_token_is(TokenType::Semicolon) == false && precedence < self.peek_precedence() {
       if let Some(token) = self.peek_token.to_owned() {
         left_exp = match token.kind {
-          TokenType::TokenPlus | TokenType::TokenMinus | TokenType::TokenSlash | TokenType::TokenAsterisk |
-          TokenType::TokenEq | TokenType::TokenNotEq |
-          TokenType::TokenLt | TokenType::TokenLte | TokenType::TokenGt | TokenType::TokenGte => {
+          TokenType::Plus | TokenType::Minus | TokenType::Slash | TokenType::Asterisk |
+          TokenType::Eq | TokenType::NotEq |
+          TokenType::Lt | TokenType::Lte | TokenType::Gt | TokenType::Gte => {
             self.next_token();
             self.parse_infix_expression(left_exp)
           },
-          TokenType::TokenLparen => {
+          TokenType::Lparen => {
             self.next_token();
             self.parse_call_expression(left_exp)
           },
@@ -275,7 +275,7 @@ impl <'a>Parser<'a> {
       return Some(Box::new(
         Boolean{
           token: token,
-          value: self.cur_token_is(TokenType::TokenTrue)
+          value: self.cur_token_is(TokenType::True)
       }))
     }
     None
@@ -319,24 +319,24 @@ impl <'a>Parser<'a> {
 
   pub fn parse_if_expression(&mut self) -> Option<Box<Expressions>> {
     if let Some(token) = self.cur_token.to_owned() {
-      if self.expect_peek(TokenType::TokenLparen) == false {
+      if self.expect_peek(TokenType::Lparen) == false {
         return None;
       }
       self.next_token();
 
       if let Some(condition) = self.parse_expression(Precedences::Lowest) {
-        if self.expect_peek(TokenType::TokenRparen) == false {
+        if self.expect_peek(TokenType::Rparen) == false {
           return None;
         }
 
-        if self.expect_peek(TokenType::TokenLbrace) == false {
+        if self.expect_peek(TokenType::Lbrace) == false {
           return None;
         }
 
         if let Some(consequence) = self.parse_block_statement() {
-          let alternative = if self.peek_token_is(TokenType::TokenElse) {
+          let alternative = if self.peek_token_is(TokenType::Else) {
             self.next_token();
-            if self.expect_peek(TokenType::TokenLbrace) == false {
+            if self.expect_peek(TokenType::Lbrace) == false {
               return None;
             }
             self.parse_block_statement()
@@ -364,7 +364,7 @@ impl <'a>Parser<'a> {
       return None;
     };
 
-    if self.expect_peek(TokenType::TokenRparen) == false {
+    if self.expect_peek(TokenType::Rparen) == false {
       return None
     }
     Some(exp)
@@ -372,13 +372,13 @@ impl <'a>Parser<'a> {
 
   pub fn parse_function_literal(&mut self) -> Option<Box<Expressions>> {
     if let Some(token) = self.cur_token.to_owned() {
-      if self.expect_peek(TokenType::TokenLparen) == false {
+      if self.expect_peek(TokenType::Lparen) == false {
         return None;
       }
 
       let parameters = self.parse_function_parameters();
 
-      if self.expect_peek(TokenType::TokenLbrace) == false {
+      if self.expect_peek(TokenType::Lbrace) == false {
         return None;
       }
 
@@ -414,7 +414,7 @@ impl <'a>Parser<'a> {
 
   pub fn parse_call_arguments(&mut self) -> Vec<Box<Expressions>> {
     let mut args = Vec::new();
-    if self.peek_token_is(TokenType::TokenRparen) {
+    if self.peek_token_is(TokenType::Rparen) {
       self.next_token();
       return args;
     }
@@ -424,7 +424,7 @@ impl <'a>Parser<'a> {
       args.push(arg);
     }
 
-    while self.peek_token_is(TokenType::TokenComma) {
+    while self.peek_token_is(TokenType::Comma) {
       self.next_token();
       self.next_token();
       if let Some(arg) = self.parse_expression(Precedences::Lowest) {
@@ -432,7 +432,7 @@ impl <'a>Parser<'a> {
       }
     }
 
-    if self.expect_peek(TokenType::TokenRparen) == false {
+    if self.expect_peek(TokenType::Rparen) == false {
       return args;
     }
     args
@@ -441,7 +441,7 @@ impl <'a>Parser<'a> {
   pub fn parse_function_parameters(&mut self) -> Vec<Identifier> {
     let mut parameters = Vec::new();
 
-    if self.peek_token_is(TokenType::TokenRparen) {
+    if self.peek_token_is(TokenType::Rparen) {
       self.next_token();
       return parameters;
     }
@@ -454,7 +454,7 @@ impl <'a>Parser<'a> {
       });
     }
     
-    while self.peek_token_is(TokenType::TokenComma) {
+    while self.peek_token_is(TokenType::Comma) {
       self.next_token();
       self.next_token();
 
@@ -466,7 +466,7 @@ impl <'a>Parser<'a> {
       }
     }
 
-    if self.expect_peek(TokenType::TokenRparen) == false {
+    if self.expect_peek(TokenType::Rparen) == false {
       return Vec::new();
     }
 
@@ -482,7 +482,7 @@ impl <'a>Parser<'a> {
 
       self.next_token();
 
-      while self.cur_token_is(TokenType::TokenRbrace) == false && self.cur_token.is_none() == false {
+      while self.cur_token_is(TokenType::Rbrace) == false && self.cur_token.is_none() == false {
         if let Some(stmt) = self.parse_statement() {
           block.statements.push(stmt);
         }

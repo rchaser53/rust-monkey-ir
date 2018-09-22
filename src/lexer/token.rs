@@ -1,41 +1,41 @@
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum TokenType {
-  TokenIdentifier,
-  TokenDigit,
+  Identifier,
+  Digit,
   
-  TokenEof,
-  TokenAssign,
-  TokenColon,
-  TokenComma,
-  TokenPeriod,
-  TokenSemicolon,
+  Eof,
+  Assign,
+  Colon,
+  Comma,
+  Period,
+  Semicolon,
   
-  TokenLparen,          // (
-  TokenRparen,          // )
-  TokenLbrace,          // {
-  TokenRbrace,          // }
+  Lparen,          // (
+  Rparen,          // )
+  Lbrace,          // {
+  Rbrace,          // }
 
   // preserve word
-  TokenFn,              // fn
-  TokenTrue,            // true
-  TokenFalse,           // false
-  TokenIf,              // if
-  TokenElse,            // else
-  TokenLet,             // let
-  TokenReturn,          // return
+  Fn,              // fn
+  True,            // true
+  False,           // false
+  If,              // if
+  Else,            // else
+  Let,             // let
+  Return,          // return
 
   // for Arithmetic
-  TokenEq,              // =
-  TokenNotEq,           // !=
-  TokenLt,              // <
-  TokenLte,             // <=
-  TokenGt,              // >
-  TokenGte,             // =>
-  TokenPlus,            // +
-  TokenMinus,           // -
-  TokenSlash,           // /
-  TokenAsterisk,        // *
-  TokenBang,            // !
+  Eq,              // =
+  NotEq,           // !=
+  Lt,              // <
+  Lte,             // <=
+  Gt,              // >
+  Gte,             // =>
+  Plus,            // +
+  Minus,           // -
+  Slash,           // /
+  Asterisk,        // *
+  Bang,            // !
 }
 
 #[derive(Clone, Debug)]

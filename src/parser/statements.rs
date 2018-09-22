@@ -39,7 +39,7 @@ impl Statement for LetStatement {
 impl Default for LetStatement {
     fn default() -> LetStatement {
       LetStatement{
-        token: Token{ kind: TokenType::TokenLet, value: write_string!("let") },
+        token: Token{ kind: TokenType::Let, value: write_string!("let") },
         value: Box::new(Expression{
           // temp
           node: Node{
@@ -48,7 +48,7 @@ impl Default for LetStatement {
           }
         }),
         name: Identifier {
-          token: Token{ kind: TokenType::TokenIdentifier, value: write_string!("empty_variable") },
+          token: Token{ kind: TokenType::Identifier, value: write_string!("empty_variable") },
           value: write_string!("empty_variable")
         }
       }

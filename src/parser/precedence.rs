@@ -5,26 +5,26 @@ lazy_static! {
   pub static ref PrecedenceTokenMap: HashMap<TokenType, Precedences>  = {
     let mut m = HashMap::new();
     // ==, !=
-    m.insert(TokenType::TokenEq, Precedences::Equals);
-    m.insert(TokenType::TokenNotEq, Precedences::Equals);
+    m.insert(TokenType::Eq, Precedences::Equals);
+    m.insert(TokenType::NotEq, Precedences::Equals);
 
     // >, >=, <, <=
-    m.insert(TokenType::TokenLt, Precedences::LessGrater);
-    m.insert(TokenType::TokenLte, Precedences::LessGrater);
-    m.insert(TokenType::TokenGt, Precedences::LessGrater);
-    m.insert(TokenType::TokenGte, Precedences::LessGrater);
+    m.insert(TokenType::Lt, Precedences::LessGrater);
+    m.insert(TokenType::Lte, Precedences::LessGrater);
+    m.insert(TokenType::Gt, Precedences::LessGrater);
+    m.insert(TokenType::Gte, Precedences::LessGrater);
 
     // +, -
-    m.insert(TokenType::TokenPlus, Precedences::Sum);
-    m.insert(TokenType::TokenMinus, Precedences::Sum);
+    m.insert(TokenType::Plus, Precedences::Sum);
+    m.insert(TokenType::Minus, Precedences::Sum);
 
     // *, /
-    m.insert(TokenType::TokenAsterisk, Precedences::Product);
-    m.insert(TokenType::TokenSlash, Precedences::Product);
+    m.insert(TokenType::Asterisk, Precedences::Product);
+    m.insert(TokenType::Slash, Precedences::Product);
 
-    m.insert(TokenType::TokenIdentifier, Precedences::Int);
+    m.insert(TokenType::Identifier, Precedences::Int);
 
-    m.insert(TokenType::TokenLparen, Precedences::Call);
+    m.insert(TokenType::Lparen, Precedences::Call);
     m
   };
 }

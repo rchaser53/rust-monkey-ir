@@ -17,20 +17,20 @@ impl <'a>Lexer<'a> {
 
   pub fn create_eof_token(&mut self) -> Token {
     Token::new(
-      TokenType::TokenEof,
+      TokenType::Eof,
       String::new()
     )
   }
 
   pub fn handle_reserved_word(&self, word: &str, token: TokenType) -> TokenType {
     match word {
-      "let" => TokenType::TokenLet,
-      "fn" => TokenType::TokenFn,
-      "true" => TokenType::TokenTrue,
-      "false" => TokenType::TokenFalse,
-      "if" => TokenType::TokenIf,
-      "else" => TokenType::TokenElse,
-      "return" => TokenType::TokenReturn,
+      "let" => TokenType::Let,
+      "fn" => TokenType::Fn,
+      "true" => TokenType::True,
+      "false" => TokenType::False,
+      "if" => TokenType::If,
+      "else" => TokenType::Else,
+      "return" => TokenType::Return,
       _ => token,
     }
   }
@@ -95,9 +95,9 @@ impl <'a>Lexer<'a> {
     }
 
     let token_type = if num_flag == true {
-      TokenType::TokenDigit
+      TokenType::Digit
     } else {
-      TokenType::TokenIdentifier
+      TokenType::Identifier
     };
 
     self.create_token_by_value(token_type, temp_vec)
@@ -119,47 +119,47 @@ impl <'a>Lexer<'a> {
         return (target_token, false);
       }
     }
-    (self.create_token_by_value(TokenType::TokenSlash, vec![b'/']), true)
+    (self.create_token_by_value(TokenType::Slash, vec![b'/']), true)
   }
 
   pub fn consume_equal(&mut self) -> Token {
     if let Some(next) = self.get_next_char() {
       if next == b'=' {
         self.position += 1;
-        return self.create_token_by_value(TokenType::TokenEq, vec![b'=', b'=']);
+        return self.create_token_by_value(TokenType::Eq, vec![b'=', b'=']);
       }
     }
-    self.create_token_by_value(TokenType::TokenAssign, vec![b'='])
+    self.create_token_by_value(TokenType::Assign, vec![b'='])
   }
 
   pub fn consume_ban(&mut self) -> Token {
     if let Some(next) = self.get_next_char() {
       if next == b'=' {
         self.position += 1;
-        return self.create_token_by_value(TokenType::TokenNotEq, vec![b'!', b'=']);
+        return self.create_token_by_value(TokenType::NotEq, vec![b'!', b'=']);
       }
     }
-    self.create_token_by_value(TokenType::TokenBang, vec![b'!'])
+    self.create_token_by_value(TokenType::Bang, vec![b'!'])
   }
 
   pub fn consume_lt(&mut self) -> Token {
     if let Some(next) = self.get_next_char() {
       if next == b'=' {
         self.position += 1;
-        return self.create_token_by_value(TokenType::TokenLte, vec![b'<', b'=']);
+        return self.create_token_by_value(TokenType::Lte, vec![b'<', b'=']);
       }
     }
-    self.create_token_by_value(TokenType::TokenLt, vec![b'<'])
+    self.create_token_by_value(TokenType::Lt, vec![b'<'])
   }
 
   pub fn consume_gt(&mut self) -> Token {
     if let Some(next) = self.get_next_char() {
       if next == b'=' {
         self.position += 1;
-        return self.create_token_by_value(TokenType::TokenGte, vec![b'>', b'=']);
+        return self.create_token_by_value(TokenType::Gte, vec![b'>', b'=']);
       }
     }
-    self.create_token_by_value(TokenType::TokenGt, vec![b'>'])
+    self.create_token_by_value(TokenType::Gt, vec![b'>'])
   }
 
   pub fn next_token(&mut self) -> Option<Token> {
@@ -186,27 +186,27 @@ impl <'a>Lexer<'a> {
             true
           },
           b',' => {
-            ret_val = self.create_token_by_value(TokenType::TokenComma, vec![byte]);
+            ret_val = self.create_token_by_value(TokenType::Comma, vec![byte]);
             true
           },
           b'.' => {
-            ret_val = self.create_token_by_value(TokenType::TokenPeriod, vec![byte]);
+            ret_val = self.create_token_by_value(TokenType::Period, vec![byte]);
             true
           },
           b'{' => {
-            ret_val = self.create_token_by_value(TokenType::TokenLbrace, vec![byte]);
+            ret_val = self.create_token_by_value(TokenType::Lbrace, vec![byte]);
             true
           },
           b'}' => {
-            ret_val = self.create_token_by_value(TokenType::TokenRbrace, vec![byte]);
+            ret_val = self.create_token_by_value(TokenType::Rbrace, vec![byte]);
             true
           },
           b'(' => {
-            ret_val = self.create_token_by_value(TokenType::TokenLparen, vec![byte]);
+            ret_val = self.create_token_by_value(TokenType::Lparen, vec![byte]);
             true
           },
           b')' => {
-            ret_val = self.create_token_by_value(TokenType::TokenRparen, vec![byte]);
+            ret_val = self.create_token_by_value(TokenType::Rparen, vec![byte]);
             true
           },
           b'!' => {
@@ -214,15 +214,15 @@ impl <'a>Lexer<'a> {
             true
           },
           b'*' => {
-            ret_val = self.create_token_by_value(TokenType::TokenAsterisk, vec![byte]);
+            ret_val = self.create_token_by_value(TokenType::Asterisk, vec![byte]);
             true
           },
           b'+' => {
-            ret_val = self.create_token_by_value(TokenType::TokenPlus, vec![byte]);
+            ret_val = self.create_token_by_value(TokenType::Plus, vec![byte]);
             true
           },
           b'-' => {
-            ret_val = self.create_token_by_value(TokenType::TokenMinus, vec![byte]);
+            ret_val = self.create_token_by_value(TokenType::Minus, vec![byte]);
             true
           },
           b'<' => {
@@ -234,11 +234,11 @@ impl <'a>Lexer<'a> {
             true
           },
           b':' => {
-            ret_val = self.create_token_by_value(TokenType::TokenColon, vec![byte]);
+            ret_val = self.create_token_by_value(TokenType::Colon, vec![byte]);
             true
           },
           b';' => {
-            ret_val = self.create_token_by_value(TokenType::TokenSemicolon, vec![byte]);
+            ret_val = self.create_token_by_value(TokenType::Semicolon, vec![byte]);
             true
           },
           b'\n' | b'\r' | b' ' => {
@@ -273,58 +273,58 @@ fn lexer_assert(token: Token, token_type: TokenType, value: &str) {
 #[test]
 fn digit() {
   let mut lexer = Lexer::new("123 456");
-  lexer_assert(lexer.next_token().unwrap(), TokenType::TokenDigit, "123");
-  lexer_assert(lexer.next_token().unwrap(), TokenType::TokenDigit, "456");
+  lexer_assert(lexer.next_token().unwrap(), TokenType::Digit, "123");
+  lexer_assert(lexer.next_token().unwrap(), TokenType::Digit, "456");
 }
 
 #[test]
 fn identifier() {
   let mut lexer = Lexer::new("123 abc 45d6");
-  lexer_assert(lexer.next_token().unwrap(), TokenType::TokenDigit, "123");
-  lexer_assert(lexer.next_token().unwrap(), TokenType::TokenIdentifier, "abc");
-  lexer_assert(lexer.next_token().unwrap(), TokenType::TokenIdentifier, "45d6");
+  lexer_assert(lexer.next_token().unwrap(), TokenType::Digit, "123");
+  lexer_assert(lexer.next_token().unwrap(), TokenType::Identifier, "abc");
+  lexer_assert(lexer.next_token().unwrap(), TokenType::Identifier, "45d6");
 }
 
 #[test]
 fn comment() {
   let mut lexer = Lexer::new("0 /* 123 */ 2");
-  lexer_assert(lexer.next_token().unwrap(), TokenType::TokenDigit, "0");
-  lexer_assert(lexer.next_token().unwrap(), TokenType::TokenDigit, "2");
+  lexer_assert(lexer.next_token().unwrap(), TokenType::Digit, "0");
+  lexer_assert(lexer.next_token().unwrap(), TokenType::Digit, "2");
 }
 
 #[test]
 fn ban() {
   let mut lexer = Lexer::new("let abc = !abc");
-  lexer_assert(lexer.next_token().unwrap(), TokenType::TokenLet, "let");
-  lexer_assert(lexer.next_token().unwrap(), TokenType::TokenIdentifier, "abc");
-  lexer_assert(lexer.next_token().unwrap(), TokenType::TokenAssign, "=");
-  lexer_assert(lexer.next_token().unwrap(), TokenType::TokenBang, "!");
-  lexer_assert(lexer.next_token().unwrap(), TokenType::TokenIdentifier, "abc");
+  lexer_assert(lexer.next_token().unwrap(), TokenType::Let, "let");
+  lexer_assert(lexer.next_token().unwrap(), TokenType::Identifier, "abc");
+  lexer_assert(lexer.next_token().unwrap(), TokenType::Assign, "=");
+  lexer_assert(lexer.next_token().unwrap(), TokenType::Bang, "!");
+  lexer_assert(lexer.next_token().unwrap(), TokenType::Identifier, "abc");
 }
 
 #[test]
 fn division_multiple() {
   let mut lexer = Lexer::new("1 / 323 * 3 / 2");
-  lexer_assert(lexer.next_token().unwrap(), TokenType::TokenDigit, "1");
-  lexer_assert(lexer.next_token().unwrap(), TokenType::TokenSlash, "/");
-  lexer_assert(lexer.next_token().unwrap(), TokenType::TokenDigit, "323");
-  lexer_assert(lexer.next_token().unwrap(), TokenType::TokenAsterisk, "*");
-  lexer_assert(lexer.next_token().unwrap(), TokenType::TokenDigit, "3");
+  lexer_assert(lexer.next_token().unwrap(), TokenType::Digit, "1");
+  lexer_assert(lexer.next_token().unwrap(), TokenType::Slash, "/");
+  lexer_assert(lexer.next_token().unwrap(), TokenType::Digit, "323");
+  lexer_assert(lexer.next_token().unwrap(), TokenType::Asterisk, "*");
+  lexer_assert(lexer.next_token().unwrap(), TokenType::Digit, "3");
 }
 
 #[test]
 fn gt() {
   let mut lexer = Lexer::new("123 <= 456");
-  lexer_assert(lexer.next_token().unwrap(), TokenType::TokenDigit, "123");
-  lexer_assert(lexer.next_token().unwrap(), TokenType::TokenLte, "<=");
-  lexer_assert(lexer.next_token().unwrap(), TokenType::TokenDigit, "456");
+  lexer_assert(lexer.next_token().unwrap(), TokenType::Digit, "123");
+  lexer_assert(lexer.next_token().unwrap(), TokenType::Lte, "<=");
+  lexer_assert(lexer.next_token().unwrap(), TokenType::Digit, "456");
 }
 
 #[test]
 fn if_test() {
   let mut lexer = Lexer::new("if 123 == 456");
-  lexer_assert(lexer.next_token().unwrap(), TokenType::TokenIf, "if");
-  lexer_assert(lexer.next_token().unwrap(), TokenType::TokenDigit, "123");
-  lexer_assert(lexer.next_token().unwrap(), TokenType::TokenEq, "==");
-  lexer_assert(lexer.next_token().unwrap(), TokenType::TokenDigit, "456");
+  lexer_assert(lexer.next_token().unwrap(), TokenType::If, "if");
+  lexer_assert(lexer.next_token().unwrap(), TokenType::Digit, "123");
+  lexer_assert(lexer.next_token().unwrap(), TokenType::Eq, "==");
+  lexer_assert(lexer.next_token().unwrap(), TokenType::Digit, "456");
 }
