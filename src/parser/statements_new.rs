@@ -89,7 +89,86 @@ pub enum Expression {
   }
 }
 
-// impl Statement {
+impl Expression {
+  pub fn string(&self) -> String {
+    match *self {
+      Expression::Identifier(ident) => {
+        ident.0
+      },
+      Expression::IntegerLiteral(int) => {
+        int.to_string()
+      },
+      Expression::StringLiteral(string) => {
+        string
+      },
+      Expression::Boolean(boolean) => {
+        boolean.to_string()
+      },
+      Expression::Prefix(prefix, _) => {
+        format!("{}", prefix)
+      },
+      Expression::Infix(infix, _, _) => {
+        format!("{}", infix)
+      },
+      Expression::If{
+        condition,
+        consequence,
+        alternative
+      } => {
+        let mut ret_string = "if".to_owned() +  &condition.string();
+        for statement in consequence {
+          ret_string = ret_string + " " + &statement.string();
+        }
+
+        if let Some(alt) = alternative {
+          let else_string = String::new();
+          for statement in alt {
+            else_string = else_string + " " + &statement.string();
+          }
+
+          return ret_string + "else " + &else_string;
+        }
+        ret_string
+      },
+      Expression::Function{
+        parameters,
+        body
+      } => {
+        let ret_string = "fn(".to_owned();
+        for (index, parameter) in parameters.iter().enumerate() {
+          if index != 0 {
+            ret_string = ret_string + ","
+          }
+          ret_string = ret_string + &parameter.0;
+        }
+
+        ret_string = ret_string + "{ ";
+
+        for statement in body {
+          ret_string = ret_string + " " + &statement.string();
+        }
+
+        ret_string + " }"
+      },
+      Expression::Call{
+        function,
+        arguments
+      } => {
+        let ret_string = String::new();
+        for (index, parameter) in arguments.iter().enumerate() {
+          if index != 0 {
+            ret_string = ret_string + ","
+          }
+          ret_string = ret_string + &parameter.string();
+        }
+
+        function.string() + &ret_string
+      }
+    }
+  }
+}
+
+impl Statement {
 //   fn statement_node(&mut self) -> Node {
 //     match *self {
 //       Statement::LetStatement(token, expressions, identifier) => {
@@ -157,26 +236,17 @@ pub enum Expression {
 //     }
 //   }
 
-//   fn string(&self) -> String {
-//     match *self {
-//       Statement::LetStatement(token, expressions, identifier) => {
-//         ("let ".to_owned() + &self.name.value + " = " + &self.value.string()).to_string()
-//       },
-//       Statement::ReturnStatement(token, expressions) => {
-//         ("return ".to_owned() + &self.return_value.string()).to_string()
-//       },
-//       Statement::ExpressionStatement(token, expressions) => {
-//         expression.string()
-//       },
-//       Statement::BlockStatement(token, statements) => {
-//         let mut string_vec = Vec::new();
-
-//         for statement in &statements {
-//           string_vec.push(statement.string());
-//         }
-
-//         ("{".to_owned() + &string_vec.join("") + "}")
-//       }
-//     }
-//   }
-// }
+  pub fn string(&self) -> String {
+    match *self {
+      Statement::Let(ident, expr) => {
+        ("let ".to_owned() + &ident.0 + " = " + &expr.string()).to_string()
+      },
+      Statement::Return(expr) => {
+        ("return ".to_owned() + &expr.string()).to_string()
+      },
+      Statement::Expression(expr) => {
+        expr.string()
+      },
+    }
+  }
+}
