@@ -91,15 +91,16 @@ pub enum Expression {
 
 impl Expression {
   pub fn string(&self) -> String {
-    match *self {
+    match self {
       Expression::Identifier(ident) => {
-        ident.0
+        // TBD refactoring
+        ident.0.to_string()
       },
       Expression::IntegerLiteral(int) => {
         int.to_string()
       },
-      Expression::StringLiteral(string) => {
-        string
+      Expression::StringLiteral(literal) => {
+        literal.to_string()
       },
       Expression::Boolean(boolean) => {
         boolean.to_string()
@@ -121,7 +122,7 @@ impl Expression {
         }
 
         if let Some(alt) = alternative {
-          let else_string = String::new();
+          let mut else_string = String::new();
           for statement in alt {
             else_string = else_string + " " + &statement.string();
           }
@@ -134,7 +135,7 @@ impl Expression {
         parameters,
         body
       } => {
-        let ret_string = "fn(".to_owned();
+        let mut ret_string = "fn(".to_owned();
         for (index, parameter) in parameters.iter().enumerate() {
           if index != 0 {
             ret_string = ret_string + ","
@@ -154,7 +155,7 @@ impl Expression {
         function,
         arguments
       } => {
-        let ret_string = String::new();
+        let mut ret_string = String::new();
         for (index, parameter) in arguments.iter().enumerate() {
           if index != 0 {
             ret_string = ret_string + ","
@@ -219,25 +220,22 @@ impl Statement {
     
 //   }
 
-//   fn emit_debug_info(&self) -> String {
-//     match *self {
-//       Statement::LetStatement(token, expressions, identifier) => {
-//         write_string!(format!("[ {:?}, value: {:?}, {:?} ]", token, expressions, identifier))
-//       },
-//       Statement::ReturnStatement(token, expressions) => {
-//         write_string!(format!("[ {:?}, return_value: {:?} ]", token, expressions))
-//       },
-//       Statement::ExpressionStatement(token, expressions) => {
-//         write_string!(format!("[{:?}, {:?}]", token, expression))
-//       },
-//       Statement::BlockStatement(token, statements) => {
-//         write_string!(format!("[{:?}, {:?}]", token, self.string()))
-//       }
-//     }
-//   }
+  pub fn emit_debug_info(&self) -> String {
+    match self {
+      Statement::Let(ident, expr) => {
+        write_string!(format!("[ identifiy: {:?}, expression: {:?} ]", ident, expr))
+      },
+      Statement::Return(expr) => {
+        write_string!(format!("[ expression: {:?} ]", expr))
+      },
+      Statement::Expression(expr) => {
+        write_string!(format!("[ expression: {:?} ]", expr))
+      },
+    }
+  }
 
   pub fn string(&self) -> String {
-    match *self {
+    match self {
       Statement::Let(ident, expr) => {
         ("let ".to_owned() + &ident.0 + " = " + &expr.string()).to_string()
       },

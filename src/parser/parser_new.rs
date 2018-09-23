@@ -478,3 +478,27 @@ impl <'a>Parser<'a> {
     self.errors.push(format!("no prefix parse function for {:?} found", t));
   }
 }
+
+/* below the test implementation */
+#[warn(dead_code)]
+fn statement_assert(statement: &Statement, expect: &str) {
+  assert!(statement.string() == expect, statement.emit_debug_info());
+}
+
+#[test]
+fn test_let_statements() {
+  let input = "
+    let x = 5
+    let y = 10
+    let foobar = 939393
+  ";
+  let mut lexer = Lexer::new(input);
+  let mut parser = Parser::new(&mut lexer);
+  let program = parser.parse_program();
+
+  assert!(program.len() > 2, "failed parse correctly");
+
+  statement_assert(&program[0], "let x = 5");
+  statement_assert(&program[1], "let y = 10");
+  statement_assert(&program[2], "let foobar = 939393");
+}
