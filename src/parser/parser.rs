@@ -2,10 +2,8 @@ use lexer::lexer::*;
 use lexer::token::*;
 
 use parser::precedence::*;
-use parser::node::*;
-use parser::expression::*;
 use parser::statements::*;
-use parser::program::*;
+use parser::expressions::*;
 
 pub struct Parser<'a> {
   pub l: &'a  mut Lexer<'a>,
@@ -33,12 +31,11 @@ impl <'a>Parser<'a> {
   }
 
   pub fn parse_program(&mut self) -> Program {
-    let mut program = Program{
-      statements: Vec::new()
-    };
+    let mut program = Vec::new();
+
     while self.cur_token != None {
       if let Some(stmt) = self.parse_statement() {
-        program.statements.push(stmt);
+        program.push(stmt);
       }
       self.next_token();
     }
@@ -50,7 +47,7 @@ impl <'a>Parser<'a> {
     program
   }
 
-  pub fn parse_statement(&mut self) -> Option<Box<Statement>> {
+  pub fn parse_statement(&mut self) -> Option<Statement> {
     if let Some(token) = self.cur_token.to_owned() {
       return match token.kind {
         TokenType::Let => {
@@ -68,46 +65,20 @@ impl <'a>Parser<'a> {
     }
   }
 
-  pub fn parse_let_statement(&mut self) -> Option<Box<Statement>> {
-    let mut stmt = {
-      match &self.cur_token {
-        Some(token) => {
-          LetStatement{
-            token: Token{ kind: TokenType::Let, value: write_string!("let") },
-            value: Box::new(Expression{
-              node: Node{
-                node_type: NodeType::Expression,
-                value: token.value.to_owned()
-              }
-            }),
-            name: Identifier{
-              token: token.to_owned(),
-              value: token.value.to_owned(),
-            },
-          }
-        },
-        None => {
-          return None;
-        }
-      }
-    };
-
+  pub fn parse_let_statement(&mut self) -> Option<Statement> {
     if self.expect_peek(TokenType::Identifier) == false {
       return None;
     }
     
     if let Some(token) = self.cur_token.to_owned() {
-      stmt.name = Identifier {
-        token: token.to_owned(),
-        value: token.value.to_owned(),
-      };
+      let name = Identifier(token.value.to_owned());
 
       if self.expect_peek(TokenType::Assign) == false {
         return None;
       }
 
       self.next_token();
-      stmt.value = if let Some(value) = self.parse_expression(Precedences::Lowest) {
+      let value = if let Some(value) = self.parse_expression(Precedences::Lowest) {
         value
       } else {
         return None;
@@ -117,33 +88,14 @@ impl <'a>Parser<'a> {
         self.next_token();
       }
 
-      return Some(Box::new(stmt));
+      return Some(Statement::Let(name, value));
     }
     None
   }
 
-  pub fn parse_return_statement(&mut self) -> Option<Box<Statement>> {
-    let mut stmt = {
-      match &self.cur_token {
-        Some(token) => {
-          ReturnStatement{
-            token: token.to_owned(),
-            return_value: Box::new(Expression{
-              node: Node{
-                node_type: NodeType::Expression,
-                value: token.value.to_owned()
-              }
-            }),
-          }
-        },
-        None => {
-          return None;
-        }
-      }
-    };
-
+  pub fn parse_return_statement(&mut self) -> Option<Statement> {
     self.next_token();
-    stmt.return_value = if let Some(value) = self.parse_expression(Precedences::Lowest) {
+    let return_value = if let Some(value) = self.parse_expression(Precedences::Lowest) {
       value
     } else {
       return None;
@@ -153,30 +105,11 @@ impl <'a>Parser<'a> {
       self.next_token();
     }
 
-    return Some(Box::new(stmt));
+    return Some(Statement::Return(return_value));
   }
 
-  pub fn parse_expression_statement(&mut self) -> Option<Box<Statement>> {
-    let mut stmt = {
-      match &self.cur_token {
-        Some(token) => {
-          ExpressionStatement{
-            token: token.to_owned(),
-            expression: Box::new(Expression{
-              node: Node{
-                node_type: NodeType::Expression,
-                value: token.value.to_owned()
-              } 
-            }),
-          }
-        },
-        None => {
-          return None;
-        }
-      }
-    };
-
-    stmt.expression = if let Some(expression) = self.parse_expression(Precedences::Lowest) {
+  pub fn parse_expression_statement(&mut self) -> Option<Statement> {
+    let expression = if let Some(expression) = self.parse_expression(Precedences::Lowest) {
       expression
     } else {
       return None;
@@ -186,27 +119,22 @@ impl <'a>Parser<'a> {
       self.next_token();
     }
 
-    return Some(Box::new(stmt));
+    return Some(Statement::Expression(expression));
   }
 
-  pub fn parse_identifier(&self) -> Option<Box<Expressions>> {
+  pub fn parse_identifier(&self) -> Option<Expression> {
     if let Some(token) = &self.cur_token {
-      return Some(Box::new(Identifier{
-        token: token.to_owned(),
-        value: token.value.to_owned(),
-      }));
+      return Some(Expression::Identifier(
+        Identifier(token.value.to_owned())
+      ));
     }
     None
   }
 
-  pub fn parse_integer_literal(&mut self) -> Option<Box<Expressions>> {
+  pub fn parse_integer_literal(&mut self) -> Option<Expression> {
     if let Some(token) = &self.cur_token {
       if let Ok(value) = token.value.parse::<i64>() {
-        return Some(Box::new(
-          IntegerLiteral{
-            token: token.to_owned(),
-            value: value,
-        }));
+        return Some(Expression::IntegerLiteral(value));
       } else {
         self.errors.push(format!("could not parse {:?} as integer", token.value));
       }
@@ -214,8 +142,14 @@ impl <'a>Parser<'a> {
     None
   }
 
-  pub fn parse_expression(&mut self, precedence: Precedences) -> Option<Box<Expressions>> {
-    let mut left_exp: Option<Box<Expressions>> = None;
+  pub fn parse_boolean(&mut self) -> Option<Expression> {
+    return Some(Expression::Boolean(
+      self.cur_token_is(TokenType::True))
+    );
+  }
+
+  pub fn parse_expression(&mut self, precedence: Precedences) -> Option<Expression> {
+    let mut left_exp: Option<Expression> = None;
     if let Some(token) = self.cur_token.to_owned() {
       left_exp = match token.kind {
         TokenType::Identifier => {
@@ -270,33 +204,47 @@ impl <'a>Parser<'a> {
     left_exp
   }
 
-  pub fn parse_boolean(&mut self) -> Option<Box<Expressions>> {
-    if let Some(token) = self.cur_token.to_owned() {
-      return Some(Box::new(
-        Boolean{
-          token: token,
-          value: self.cur_token_is(TokenType::True)
-      }))
-    }
-    None
-  }
-
-  pub fn parse_prefix_expression(&mut self) -> Option<Box<Expressions>> {
+  pub fn parse_prefix_expression(&mut self) -> Option<Expression> {
     if let Some(token) = self.cur_token.to_owned() {
       self.next_token();
       if let Some(right) = self.parse_expression(Precedences::Prefix) {
-        return Some(Box::new(
-          PrefixExpression{
-            token: token.to_owned(),
-            operator: token.value.to_owned(),
-            right: right,
-        }));
+        return Some(
+          Expression::Prefix(
+            self.convert_token_to_prefix(token.kind),
+            Box::new(right),
+          )
+        );
       }
     }
     None
   }
 
-  pub fn parse_infix_expression(&mut self, left: Option<Box<Expressions>>) -> Option<Box<Expressions>> {
+  pub fn convert_token_to_prefix(&self, token: TokenType) -> Prefix {
+    match token {
+      TokenType::Plus => Prefix::Plus,
+      TokenType::Minus => Prefix::Minus,
+      TokenType::Bang => Prefix::Bang,
+      _ => { panic!("nya-n"); }
+    }
+  }
+
+  pub fn convert_token_to_infix(&self, token: TokenType) -> Infix {
+    match token {
+      TokenType::Plus => Infix::Plus,
+      TokenType::Minus => Infix::Minus,
+      TokenType::Divide => Infix::Divide,
+      TokenType::Multiply => Infix::Multiply,
+      TokenType::Eq => Infix::Eq,
+      TokenType::NotEq => Infix::NotEq,
+      TokenType::Gte => Infix::Gte,
+      TokenType::Gt => Infix::Gt,
+      TokenType::Lte => Infix::Lte,
+      TokenType::Lt => Infix::Lt,
+      _ => { panic!("nya-n"); }
+    }
+  }
+
+  pub fn parse_infix_expression(&mut self, left: Option<Expression>) -> Option<Expression> {
     if left.is_none() {
       return None;
     }
@@ -305,58 +253,55 @@ impl <'a>Parser<'a> {
       let precedence = self.cur_precedence();
       self.next_token();
       if let Some(right) = self.parse_expression(precedence) {
-        return Some(Box::new(
-          InfixExpression{
-            token: token.to_owned(),
-            operator: token.value.to_owned(),
-            left: left.unwrap(),
-            right: right,
-        }));
+        return Some(
+          Expression::Infix(
+            self.convert_token_to_infix(token.kind),
+            Box::new(left.unwrap()),
+            Box::new(right)
+          )
+        );
       }
     }
     None
   }
 
-  pub fn parse_if_expression(&mut self) -> Option<Box<Expressions>> {
-    if let Some(token) = self.cur_token.to_owned() {
-      if self.expect_peek(TokenType::Lparen) == false {
+  pub fn parse_if_expression(&mut self) -> Option<Expression> {
+    if self.expect_peek(TokenType::Lparen) == false {
+      return None;
+    }
+    self.next_token();
+
+    if let Some(condition) = self.parse_expression(Precedences::Lowest) {
+      if self.expect_peek(TokenType::Rparen) == false {
         return None;
       }
-      self.next_token();
 
-      if let Some(condition) = self.parse_expression(Precedences::Lowest) {
-        if self.expect_peek(TokenType::Rparen) == false {
-          return None;
-        }
+      if self.expect_peek(TokenType::Lbrace) == false {
+        return None;
+      }
 
-        if self.expect_peek(TokenType::Lbrace) == false {
-          return None;
-        }
+      if let Some(consequence) = self.parse_block_statement() {
+        let alternative = if self.peek_token_is(TokenType::Else) {
+          self.next_token();
+          if self.expect_peek(TokenType::Lbrace) == false {
+            return None;
+          }
+          self.parse_block_statement()
+        } else {
+          None
+        };
 
-        if let Some(consequence) = self.parse_block_statement() {
-          let alternative = if self.peek_token_is(TokenType::Else) {
-            self.next_token();
-            if self.expect_peek(TokenType::Lbrace) == false {
-              return None;
-            }
-            self.parse_block_statement()
-          } else {
-            None
-          };
-
-          return Some(Box::new(IfExpression{
-            token: token,
-            condition: condition,
-            consequence: consequence,
-            alternative: alternative
-          }));
-        }
+        return Some(Expression::If{
+          condition: Box::new(condition),
+          consequence: consequence,
+          alternative: alternative,
+        });
       }
     }
     None
   }
 
-  pub fn parse_grouped_expression(&mut self) -> Option<Box<Expressions>> {
+  pub fn parse_grouped_expression(&mut self) -> Option<Expression> {
     self.next_token();
     let exp = if let Some(ret) = self.parse_expression(Precedences::Lowest) {
       ret
@@ -370,49 +315,42 @@ impl <'a>Parser<'a> {
     Some(exp)
   }
 
-  pub fn parse_function_literal(&mut self) -> Option<Box<Expressions>> {
-    if let Some(token) = self.cur_token.to_owned() {
-      if self.expect_peek(TokenType::Lparen) == false {
-        return None;
-      }
-
-      let parameters = self.parse_function_parameters();
-
-      if self.expect_peek(TokenType::Lbrace) == false {
-        return None;
-      }
-
-      if let Some(body) = self.parse_block_statement() {
-        return Some(Box::new(
-          FunctionLiteral{
-            token: token,
-            parameters: parameters,
-            body: body,
-          }
-        ));
-      }
-    }
-    None
-  }
-
-  pub fn parse_call_expression(&mut self, function: Option<Box<Expressions>>) -> Option<Box<Expressions>> {
-    if function.is_none() {
+  pub fn parse_function_literal(&mut self) -> Option<Expression> {
+    if self.expect_peek(TokenType::Lparen) == false {
       return None;
     }
 
-    if let Some(token) = self.cur_token.to_owned() {
-      return Some(Box::new(
-        CallExpression{
-          token: token,
-          function: function.unwrap(),
-          arguments: self.parse_call_arguments(),
+    let parameters = self.parse_function_parameters();
+
+    if self.expect_peek(TokenType::Lbrace) == false {
+      return None;
+    }
+
+    if let Some(body) = self.parse_block_statement() {
+      return Some(
+        Expression::Function{
+          parameters: parameters,
+          body: body,
         }
-      ));
+      );
     }
     None
   }
 
-  pub fn parse_call_arguments(&mut self) -> Vec<Box<Expressions>> {
+  pub fn parse_call_expression(&mut self, function: Option<Expression>) -> Option<Expression> {
+    if let Some(function) = function {
+      Some(
+        Expression::Call{
+          function: Box::new(function),
+          arguments: self.parse_call_arguments(),
+        }
+      )
+    } else {
+      None
+    }
+  }
+
+  pub fn parse_call_arguments(&mut self) -> Vec<Expression> {
     let mut args = Vec::new();
     if self.peek_token_is(TokenType::Rparen) {
       self.next_token();
@@ -448,21 +386,19 @@ impl <'a>Parser<'a> {
     self.next_token();
 
     if let Some(token) = self.cur_token.to_owned() {
-      parameters.push(Identifier{
-        token: token.to_owned(),
-        value: token.value.to_owned()
-      });
+      parameters.push(
+        Identifier(token.value.to_owned())
+      );
     }
     
     while self.peek_token_is(TokenType::Comma) {
       self.next_token();
       self.next_token();
 
-      if let Some(token) = self.cur_token.to_owned() {
-        parameters.push(Identifier{
-          token: token.to_owned(),
-          value: token.value.to_owned()
-        });
+      if let Some(token) = self.cur_token.to_owned() {;
+        parameters.push(
+          Identifier(token.value.to_owned())
+        );
       }
     }
 
@@ -474,23 +410,16 @@ impl <'a>Parser<'a> {
   }
 
   pub fn parse_block_statement(&mut self) -> Option<BlockStatement> {
-    if let Some(token) = self.cur_token.to_owned() {
-      let mut block = BlockStatement{
-        token: token,
-        statements: Vec::new()
-      };
+    let mut block = Vec::new();
+    self.next_token();
 
-      self.next_token();
-
-      while self.cur_token_is(TokenType::Rbrace) == false && self.cur_token.is_none() == false {
-        if let Some(stmt) = self.parse_statement() {
-          block.statements.push(stmt);
-        }
-        self.next_token();
+    while self.cur_token_is(TokenType::Rbrace) == false && self.cur_token.is_none() == false {
+      if let Some(stmt) = self.parse_statement() {
+        block.push(stmt);
       }
-      return Some(block);
-    }    
-    None
+      self.next_token();
+    }
+    return Some(block);
   }
 
   pub fn cur_token_is(&self, t: TokenType) -> bool {
@@ -553,7 +482,7 @@ impl <'a>Parser<'a> {
 
 /* below the test implementation */
 #[warn(dead_code)]
-fn statement_assert(statement: &Box<Statement>, expect: &str) {
+fn statement_assert(statement: &Statement, expect: &str) {
   assert!(statement.string() == expect, statement.emit_debug_info());
 }
 
@@ -568,13 +497,11 @@ fn test_let_statements() {
   let mut parser = Parser::new(&mut lexer);
   let program = parser.parse_program();
 
-  assert!(program.statements.len() > 2, "failed parse correctly");
+  assert!(program.len() > 2, "failed parse correctly");
 
-  let statement = program.statements;
-
-  statement_assert(&statement[0], "let x = 5");
-  statement_assert(&statement[1], "let y = 10");
-  statement_assert(&statement[2], "let foobar = 939393");
+  statement_assert(&program[0], "let x = 5");
+  statement_assert(&program[1], "let y = 10");
+  statement_assert(&program[2], "let foobar = 939393");
 }
 
 #[test]
@@ -588,13 +515,11 @@ fn test_return_statements() {
   let mut parser = Parser::new(&mut lexer);
   let program = parser.parse_program();
 
-  assert!(program.statements.len() > 2, "failed parse correctly");
+  assert!(program.len() > 2, "failed parse correctly");
 
-  let statement = program.statements;
-
-  statement_assert(&statement[0], "return 5");
-  statement_assert(&statement[1], "return 10");
-  statement_assert(&statement[2], "return 939393");
+  statement_assert(&program[0], "return 5");
+  statement_assert(&program[1], "return 10");
+  statement_assert(&program[2], "return 939393");
 }
 
 #[test]
@@ -618,20 +543,18 @@ fn test_operator_precedence_parsing() {
   let mut parser = Parser::new(&mut lexer);
   let program = parser.parse_program();
 
-  let statement = program.statements;
-
-  statement_assert(&statement[0], "((-a) * b)");
-  statement_assert(&statement[1], "(!(-a))");
-  statement_assert(&statement[2], "((a + b) + c)");
-  statement_assert(&statement[3], "((a + b) - c)");
-  statement_assert(&statement[4], "((a * b) * c)");
-  statement_assert(&statement[5], "((a * b) / c)");
-  statement_assert(&statement[6], "(a + (b / c))");
-  statement_assert(&statement[7], "(((a + (b * c)) + (d / e)) - f)");
-  statement_assert(&statement[8], "((3 + 4) - (5 * 5))");
-  statement_assert(&statement[9], "((5 > 4) == (3 < 4))");
-  statement_assert(&statement[10], "((5 < 4) != (3 > 4))");
-  statement_assert(&statement[11], "((3 + (4 * 5)) == ((3 * 1) + (4 * 5)))");
+  statement_assert(&program[0], "((-a) * b)");
+  statement_assert(&program[1], "(!(-a))");
+  statement_assert(&program[2], "((a + b) + c)");
+  statement_assert(&program[3], "((a + b) - c)");
+  statement_assert(&program[4], "((a * b) * c)");
+  statement_assert(&program[5], "((a * b) / c)");
+  statement_assert(&program[6], "(a + (b / c))");
+  statement_assert(&program[7], "(((a + (b * c)) + (d / e)) - f)");
+  statement_assert(&program[8], "((3 + 4) - (5 * 5))");
+  statement_assert(&program[9], "((5 > 4) == (3 < 4))");
+  statement_assert(&program[10], "((5 < 4) != (3 > 4))");
+  statement_assert(&program[11], "((3 + (4 * 5)) == ((3 * 1) + (4 * 5)))");
 }
 
 #[test]
@@ -647,12 +570,10 @@ fn test_boolean_parsing() {
   let mut parser = Parser::new(&mut lexer);
   let program = parser.parse_program();
 
-  let statement = program.statements;
-
-  statement_assert(&statement[0], "true");
-  statement_assert(&statement[1], "false");
-  statement_assert(&statement[2], "((3 > 5) == false)");
-  statement_assert(&statement[3], "((3 < 5) == true)");
+  statement_assert(&program[0], "true");
+  statement_assert(&program[1], "false");
+  statement_assert(&program[2], "((3 > 5) == false)");
+  statement_assert(&program[3], "((3 < 5) == true)");
 }
 
 #[test]
@@ -667,11 +588,9 @@ fn test_funciton_parsing() {
   let mut parser = Parser::new(&mut lexer);
   let program = parser.parse_program();
 
-  let statement = program.statements;
-
-  statement_assert(&statement[0], "fn() {}");
-  statement_assert(&statement[1], "fn(x) {}");
-  statement_assert(&statement[2], "fn(x, y, z) {}");
+  statement_assert(&program[0], "fn() {}");
+  statement_assert(&program[1], "fn(x) {}");
+  statement_assert(&program[2], "fn(x, y, z) {}");
 }
 
 #[test]
@@ -686,9 +605,7 @@ fn test_call_parsing() {
   let mut parser = Parser::new(&mut lexer);
   let program = parser.parse_program();
 
-  let statement = program.statements;
-
-  statement_assert(&statement[0], "((a + add((b * c))) + d)");
-  statement_assert(&statement[1], "add(a, b, 1, (2 * 3), (4 + 5), add(6, (7 * 8)))");
-  statement_assert(&statement[2], "add((((a + b) + ((c * d) / f)) + g))");
+  statement_assert(&program[0], "((a + add((b * c))) + d)");
+  statement_assert(&program[1], "add(a, b, 1, (2 * 3), (4 + 5), add(6, (7 * 8)))");
+  statement_assert(&program[2], "add((((a + b) + ((c * d) / f)) + g))");
 }
