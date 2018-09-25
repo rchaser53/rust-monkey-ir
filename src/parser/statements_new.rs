@@ -138,18 +138,19 @@ impl Expression {
         let mut ret_string = "fn(".to_owned();
         for (index, parameter) in parameters.iter().enumerate() {
           if index != 0 {
-            ret_string = ret_string + ","
+            ret_string = ret_string + ", "
           }
           ret_string = ret_string + &parameter.0;
         }
 
-        ret_string = ret_string + "{ ";
+
+        ret_string = ret_string + ") {";
 
         for statement in body {
           ret_string = ret_string + " " + &statement.string();
         }
 
-        ret_string + " }"
+        ret_string + "}"
       },
       Expression::Call{
         function,
