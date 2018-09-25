@@ -1,5 +1,4 @@
 use std::fmt;
-
 use parser::expressions::*;
 
 #[derive(PartialEq, Clone, Debug)]
@@ -59,8 +58,6 @@ pub enum Statement {
 
 pub type BlockStatement = Vec<Statement>;
 pub type Program = BlockStatement;
-
-
 
 impl Statement {
 //   fn statement_node(&mut self) -> Node {

@@ -1,54 +1,18 @@
-#[derive(Debug, Clone)]
-pub enum ObjectType {
-  IntegerObj,
-  BooleanObj,
-  NullObj,
-}
-
-pub trait Object {
-  fn inspect(&self) -> String;
-  fn object_type(&self) -> ObjectType;
-}
-
+use std::fmt;
 
 #[derive(Debug, Clone)]
-pub struct Integer {
-  pub value: i64
-}
-impl Object for Integer {
-  fn inspect(&self) -> String {
-    self.value.to_string()
-  }
-
-  fn object_type(&self) -> ObjectType {
-    ObjectType::IntegerObj
-  }
+pub enum Object {
+    Integer(i64),
+    Boolean(bool),
+    Null,
 }
 
-
-#[derive(Debug, Clone)]
-pub struct Boolean {
-  pub value: bool
-}
-impl Object for Boolean {
-  fn inspect(&self) -> String {
-    self.value.to_string()
-  }
-
-  fn object_type(&self) -> ObjectType {
-    ObjectType::BooleanObj
-  }
-}
-
-
-#[derive(Debug, Clone)]
-pub struct Null {}
-impl Object for Null {
-  fn inspect(&self) -> String {
-    "null".to_string()
-  }
-
-  fn object_type(&self) -> ObjectType {
-    ObjectType::NullObj
-  }
+impl fmt::Display for Object {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match *self {
+            Object::Integer(int) => write!(f, "{}", int.to_string()),
+            Object::Boolean(boolean) => write!(f, "{}", boolean.to_string()),
+            Object::Null => write!(f, "Null"),
+        }
+    }
 }
