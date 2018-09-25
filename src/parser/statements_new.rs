@@ -105,11 +105,11 @@ impl Expression {
       Expression::Boolean(boolean) => {
         boolean.to_string()
       },
-      Expression::Prefix(prefix, _) => {
-        format!("{}", prefix)
+      Expression::Prefix(prefix, expr) => {
+        format!("({}{})", prefix, expr.string())
       },
-      Expression::Infix(infix, _, _) => {
-        format!("{}", infix)
+      Expression::Infix(infix, left, right) => {
+        format!("({} {} {})", left.string(), infix, right.string())
       },
       Expression::If{
         condition,
