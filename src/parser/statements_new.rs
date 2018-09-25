@@ -156,15 +156,15 @@ impl Expression {
         function,
         arguments
       } => {
-        let mut ret_string = String::new();
+        let mut ret_string = "(".to_owned();
         for (index, parameter) in arguments.iter().enumerate() {
           if index != 0 {
-            ret_string = ret_string + ","
+            ret_string = ret_string + ", "
           }
           ret_string = ret_string + &parameter.string();
         }
 
-        function.string() + &ret_string
+        function.string() + &ret_string + ")"
       }
     }
   }
