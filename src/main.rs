@@ -14,13 +14,10 @@ mod evalute;
 use evalute::eval::*;
 
 fn main() {
-  let mut lexer = Lexer::new("0 /* 123 */ 2");
-  println!("{:?}", lexer.next_token());
-  println!("{:?}", lexer.next_token());
-  println!("{:?}", lexer.next_token());
   let input = "
-  1 + 3;
+  1 + 3 * 2;
 ";
+
   let mut lexer = Lexer::new(input);
   let mut parser = Parser::new(&mut lexer);
   let program = parser.parse_program();
@@ -31,8 +28,4 @@ fn main() {
   // println!("{:?}", lexer.next_token());
   // println!("{:?}", lexer.next_token());
   // println!("{:?}", lexer.next_token());
-
-
-
-  // println!("{:?}", read_file_to_tokens("input.txt"));
 }
