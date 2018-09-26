@@ -1,3 +1,6 @@
+use lexer::lexer::*;
+
+use parser::parser::*;
 use parser::statements::*;
 use parser::expressions::*;
 
@@ -8,6 +11,14 @@ pub struct Eval {}
 impl Eval {
   pub fn new() -> Self {
     Eval{}
+  }
+
+  pub fn eval_program(&self, program: Program) -> Vec<Object> {
+    let mut objects = Vec::new();
+    for statement in program.into_iter() {
+      objects.push(self.eval_statement(statement));
+    }
+    objects
   }
 
   pub fn eval_statement(&self, statement: Statement) -> Object {
@@ -123,12 +134,28 @@ impl Eval {
       }
     }
   }
+}
 
-  pub fn eval_program(&self, program: Program) -> Vec<Object> {
-    let mut objects = Vec::new();
-    for statement in program.into_iter() {
-      objects.push(self.eval_statement(statement));
-    }
-    objects
-  }
+#[warn(dead_code)]
+fn compile_input(input: &str) -> Vec<Statement> {
+  let mut lexer = Lexer::new(input);
+  let mut parser = Parser::new(&mut lexer);
+  parser.parse_program()
+}
+
+#[test]
+fn integer() {
+  let input = "
+  1;
+  1 + 2;
+  3 - 1;
+";
+  let statements = compile_input(input);
+
+  let mut eval = Eval::new();
+  let objects = eval.eval_program(statements);
+
+  assert!("1" == format!("{}", objects[0]));
+  assert!("3" == format!("{}", objects[1]));
+  assert!("2" == format!("{}", objects[2]));
 }
