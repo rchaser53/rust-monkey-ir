@@ -1,5 +1,5 @@
-use std::collections::HashMap;
 use lexer::token::*;
+use std::collections::HashMap;
 
 lazy_static! {
   pub static ref PrecedenceTokenMap: HashMap<TokenType, Precedences>  = {
@@ -31,12 +31,12 @@ lazy_static! {
 
 #[derive(Debug, Clone, PartialOrd, PartialEq)]
 pub enum Precedences {
-  Int = 1,
-  Lowest,
-  Equals,         // ==
-  LessGrater,     // >, >=, <, <=
-  Sum,            // +, -
-  Product,        // *, /
-  Prefix,         // -X, !X
-  Call,           // the_function(X)
+    Int = 1,
+    Lowest,
+    Equals,     // ==
+    LessGrater, // >, >=, <, <=
+    Sum,        // +, -
+    Product,    // *, /
+    Prefix,     // -X, !X
+    Call,       // the_function(X)
 }
