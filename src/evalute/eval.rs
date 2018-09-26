@@ -70,6 +70,9 @@ impl Eval {
       Object::Integer(expr) => {
         self.calculate_prefix_integer(prefix, expr)
       },
+      Object::Boolean(expr) => {
+        self.calculate_prefix_boolean(prefix, expr)
+      },
       _ => {
         panic!("expr value should be integer, but actually {:?}", expr_value);
       }
@@ -93,6 +96,17 @@ impl Eval {
       },
       _ => {
         panic!("left value should be integer, but actually {:?}", left_value);
+      }
+    }
+  }
+
+  pub fn calculate_prefix_boolean(&self, prefix: Prefix, value: bool) -> Object {
+    match prefix {
+      Prefix::Bang => {
+        Object::Boolean(!value)
+      },
+      _ => {
+        panic!("{:?} cannot be use for prefix", prefix);
       }
     }
   }
@@ -158,4 +172,23 @@ fn integer() {
   assert!("1" == format!("{}", objects[0]));
   assert!("3" == format!("{}", objects[1]));
   assert!("2" == format!("{}", objects[2]));
+}
+
+#[test]
+fn boolean() {
+  let input = "
+  true;
+  false;
+  !true;
+  !false;
+";
+  let statements = compile_input(input);
+
+  let mut eval = Eval::new();
+  let objects = eval.eval_program(statements);
+
+  assert!("true" == format!("{}", objects[0]));
+  assert!("false" == format!("{}", objects[1]));
+  assert!("false" == format!("{}", objects[2]));
+  assert!("true" == format!("{}", objects[3]));
 }
