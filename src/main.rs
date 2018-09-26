@@ -18,15 +18,9 @@ fn main() {
   1 + 3 * 2;
 ";
 
-  let mut lexer = Lexer::new(input);
-  let mut parser = Parser::new(&mut lexer);
-  let program = parser.parse_program();
+    let mut lexer = Lexer::new(input);
+    let mut parser = Parser::new(&mut lexer);
+    let program = parser.parse_program();
 
-  let eval = Eval::new();
-  let result_value = eval.eval_program(program);
-
-  println!("{}", result_value[0]);
-  // println!("{:?}", lexer.next_token());
-  // println!("{:?}", lexer.next_token());
-  // println!("{:?}", lexer.next_token());
-}
+    let mut eval = Eval::new();
+    let result_value = eval.eval_program(program);

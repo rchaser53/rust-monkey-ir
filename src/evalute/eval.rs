@@ -13,7 +13,7 @@ impl Eval {
         Eval {}
     }
 
-    pub fn eval_program(&self, program: Program) -> Vec<Object> {
+    pub fn eval_program(&mut self, program: Program) -> Vec<Object> {
         let mut objects = Vec::new();
         for statement in program.into_iter() {
             objects.push(self.eval_statement(statement));
@@ -21,9 +21,9 @@ impl Eval {
         objects
     }
 
-    pub fn eval_statement(&self, statement: Statement) -> Object {
+    pub fn eval_statement(&mut self, statement: Statement) -> Object {
         match statement {
-            Statement::Let(ident, expr) => self.eval_let_staement(),
+            Statement::Let(ident, expr) => self.eval_let_staement(ident, expr),
             Statement::Return(expr) => self.eval_return_statement(expr),
             Statement::Expression(expr) => self.eval_expression(expr),
         }
@@ -37,17 +37,18 @@ impl Eval {
         Object::Integer(1)
     }
 
-    pub fn eval_expression(&self, expr: Expression) -> Object {
+    pub fn eval_expression(&mut self, expr: Expression) -> Object {
         match expr {
             Expression::IntegerLiteral(int) => Object::Integer(int),
             Expression::Boolean(boolean) => Object::Boolean(boolean),
             Expression::Prefix(prefix, expr) => self.eval_prefix(prefix, expr),
             Expression::Infix(infix, left, right) => self.eval_infix(infix, left, right),
+            Expression::If{condition, consequence, alternative } => self.eval_if(condition, consequence, alternative),
             _ => Object::Null,
         }
     }
 
-    pub fn eval_prefix(&self, prefix: Prefix, expr: Box<Expression>) -> Object {
+    pub fn eval_prefix(&mut self, prefix: Prefix, expr: Box<Expression>) -> Object {
         let expr_value = self.eval_expression(*expr);
 
         match expr_value {
@@ -63,7 +64,7 @@ impl Eval {
     }
 
     pub fn eval_infix(
-        &self,
+        &mut self,
         infix: Infix,
         left: Box<Expression>,
         right: Box<Expression>,
@@ -88,6 +89,30 @@ impl Eval {
                 );
             }
         }
+    }
+
+    pub fn eval_if(
+      &mut self,
+      condition: Box<Expression>,
+      consequence: BlockStatement,
+      alternative: Option<BlockStatement>,
+    ) -> Object {
+      let condition_obj = self.eval_expression(*condition);
+
+      match condition_obj {
+        Object::Boolean(boolean) => {
+          if boolean {
+            self.eval_program(consequence);
+          }
+          if let Some(alt) = alternative {
+            self.eval_program(alt);
+          }
+        },
+        _ => {
+            panic!("condition should be boolean. actually {:?}", condition_obj);
+        }
+      };
+      Object::Null
     }
 
     pub fn calculate_prefix_boolean(&self, prefix: Prefix, value: bool) -> Object {
