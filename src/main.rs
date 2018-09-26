@@ -22,7 +22,8 @@ fn main() {
   let mut parser = Parser::new(&mut lexer);
   let program = parser.parse_program();
 
-  let result_value = eval_program(program);
+  let eval = Eval::new();
+  let result_value = eval.eval_program(program);
 
   println!("{}", result_value[0]);
   // println!("{:?}", lexer.next_token());
