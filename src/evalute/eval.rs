@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use lexer::lexer::*;
 
 use parser::expressions::*;
@@ -6,11 +8,15 @@ use parser::statements::*;
 
 use evalute::object::*;
 
-pub struct Eval {}
+pub struct Eval {
+  pub store: HashMap<String, Object>
+}
 
 impl Eval {
     pub fn new() -> Self {
-        Eval {}
+        Eval {
+          store: HashMap::new()
+        }
     }
 
     pub fn eval_program(&mut self, program: Program) -> Vec<Object> {
@@ -29,8 +35,14 @@ impl Eval {
         }
     }
 
-    pub fn eval_let_staement(&self) -> Object {
-        Object::Integer(1)
+    pub fn eval_let_staement(&mut self, ident: Identifier, expr: Expression) -> Object {
+      let value = self.eval_expression(expr);
+      self.store.insert(
+        ident.0,
+        value.clone()
+      );
+
+      value
     }
 
     pub fn eval_return_statement(&self, expr: Expression) -> Object {
@@ -44,8 +56,13 @@ impl Eval {
             Expression::Prefix(prefix, expr) => self.eval_prefix(prefix, expr),
             Expression::Infix(infix, left, right) => self.eval_infix(infix, left, right),
             Expression::If{condition, consequence, alternative } => self.eval_if(condition, consequence, alternative),
+            Expression::Identifier(ident) => self.eval_identifier(ident),
             _ => Object::Null,
         }
+    }
+
+    pub fn eval_identifier(&self, ident: Identifier) -> Object {
+      self.store[&ident.0].clone()
     }
 
     pub fn eval_prefix(&mut self, prefix: Prefix, expr: Box<Expression>) -> Object {
@@ -159,7 +176,7 @@ fn compile_input(input: &str) -> Vec<Statement> {
 }
 
 #[test]
-fn integer() {
+fn eval_integer() {
     let input = "
   1;
   1 + 2;
@@ -176,7 +193,7 @@ fn integer() {
 }
 
 #[test]
-fn boolean() {
+fn eval_boolean() {
     let input = "
   true;
   false;
@@ -192,4 +209,21 @@ fn boolean() {
     assert!("false" == format!("{}", objects[1]));
     assert!("false" == format!("{}", objects[2]));
     assert!("true" == format!("{}", objects[3]));
+}
+
+#[test]
+fn eval_let() {
+    let input = "
+  let a = 1;
+  let b = 2;
+  a + b;
+";
+    let statements = compile_input(input);
+
+    let mut eval = Eval::new();
+    let objects = eval.eval_program(statements);
+
+    assert!("1" == format!("{}", objects[0]));
+    assert!("2" == format!("{}", objects[1]));
+    assert!("3" == format!("{}", objects[2]));
 }
