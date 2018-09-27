@@ -19,19 +19,28 @@ impl Eval {
         }
     }
 
-    pub fn eval_program(&mut self, program: Program) -> Vec<Object> {
-        let mut objects = Vec::new();
+    pub fn eval_program(&mut self, program: Program) -> Object {
         for statement in program.into_iter() {
-            objects.push(self.eval_statement(statement));
+          if let Some(obj) = self.eval_statement(statement) {
+            return obj;
+          }
         }
-        objects
+        Object::Null
     }
 
-    pub fn eval_statement(&mut self, statement: Statement) -> Object {
+    pub fn eval_statement(&mut self, statement: Statement) -> Option<Object> {
         match statement {
-            Statement::Let(ident, expr) => self.eval_let_staement(ident, expr),
-            Statement::Return(expr) => self.eval_return_statement(expr),
-            Statement::Expression(expr) => self.eval_expression(expr),
+            Statement::Let(ident, expr) => {
+              self.eval_let_staement(ident, expr);
+              None
+            },
+            Statement::Return(expr) => {
+              Some(self.eval_return_statement(expr))
+            },
+            Statement::Expression(expr) => {
+              self.eval_expression(expr);
+              None
+            },
         }
     }
 
@@ -45,8 +54,8 @@ impl Eval {
       value
     }
 
-    pub fn eval_return_statement(&self, expr: Expression) -> Object {
-        Object::Integer(1)
+    pub fn eval_return_statement(&mut self, expr: Expression) -> Object {
+        self.eval_expression(expr)
     }
 
     pub fn eval_expression(&mut self, expr: Expression) -> Object {
@@ -178,37 +187,40 @@ fn compile_input(input: &str) -> Vec<Statement> {
 #[test]
 fn eval_integer() {
     let input = "
-  1;
-  1 + 2;
-  3 - 1;
+  return 1;
 ";
     let statements = compile_input(input);
 
     let mut eval = Eval::new();
     let objects = eval.eval_program(statements);
 
-    assert!("1" == format!("{}", objects[0]));
-    assert!("3" == format!("{}", objects[1]));
-    assert!("2" == format!("{}", objects[2]));
+    assert!("1" == format!("{}", objects));
 }
 
 #[test]
 fn eval_boolean() {
     let input = "
-  true;
-  false;
-  !true;
-  !false;
+  return true;
 ";
     let statements = compile_input(input);
 
     let mut eval = Eval::new();
     let objects = eval.eval_program(statements);
 
-    assert!("true" == format!("{}", objects[0]));
-    assert!("false" == format!("{}", objects[1]));
-    assert!("false" == format!("{}", objects[2]));
-    assert!("true" == format!("{}", objects[3]));
+    assert!("true" == format!("{}", objects));
+}
+
+#[test]
+fn eval_null() {
+    let input = "
+  let a = 1;
+";
+    let statements = compile_input(input);
+
+    let mut eval = Eval::new();
+    let objects = eval.eval_program(statements);
+
+    assert!("Null" == format!("{}", objects));
 }
 
 #[test]
@@ -216,14 +228,12 @@ fn eval_let() {
     let input = "
   let a = 1;
   let b = 2;
-  a + b;
+  return a + b;
 ";
     let statements = compile_input(input);
 
     let mut eval = Eval::new();
     let objects = eval.eval_program(statements);
 
-    assert!("1" == format!("{}", objects[0]));
-    assert!("2" == format!("{}", objects[1]));
-    assert!("3" == format!("{}", objects[2]));
+    assert!("3" == format!("{}", objects));
 }
