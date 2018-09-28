@@ -38,8 +38,15 @@ impl Eval {
               Some(self.eval_return_statement(expr))
             },
             Statement::Expression(expr) => {
-              self.eval_expression(expr);
-              None
+              match expr {
+                Expression::If{condition, consequence, alternative } => {
+                  Some(self.eval_if(condition, consequence, alternative))
+                },
+                _ => {
+                  self.eval_expression(expr);
+                  None
+                }
+              }
             },
         }
     }
@@ -64,7 +71,6 @@ impl Eval {
             Expression::Boolean(boolean) => Object::Boolean(boolean),
             Expression::Prefix(prefix, expr) => self.eval_prefix(prefix, expr),
             Expression::Infix(infix, left, right) => self.eval_infix(infix, left, right),
-            Expression::If{condition, consequence, alternative } => self.eval_if(condition, consequence, alternative),
             Expression::Identifier(ident) => self.eval_identifier(ident),
             _ => Object::Null,
         }
@@ -128,10 +134,10 @@ impl Eval {
       match condition_obj {
         Object::Boolean(boolean) => {
           if boolean {
-            self.eval_program(consequence);
+            return self.eval_program(consequence);
           }
           if let Some(alt) = alternative {
-            self.eval_program(alt);
+            return self.eval_program(alt);
           }
         },
         _ => {
@@ -229,6 +235,21 @@ fn eval_let() {
   let a = 1;
   let b = 2;
   return a + b;
+";
+    let statements = compile_input(input);
+
+    let mut eval = Eval::new();
+    let objects = eval.eval_program(statements);
+
+    assert!("3" == format!("{}", objects));
+}
+
+#[test]
+fn eval_if() {
+    let input = "
+  if (true) {
+    return 3;
+  }
 ";
     let statements = compile_input(input);
 
