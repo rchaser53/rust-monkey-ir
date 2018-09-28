@@ -466,6 +466,13 @@ fn statement_assert(statement: &Statement, expect: &str) {
     assert!(statement.string() == expect, statement.emit_debug_info());
 }
 
+#[warn(dead_code)]
+fn parse_input(input: &str) -> Program {
+    let mut lexer = Lexer::new(input);
+    let mut parser = Parser::new(&mut lexer);
+    parser.parse_program()
+}
+
 #[test]
 fn test_let_statements() {
     let input = "
@@ -473,12 +480,7 @@ fn test_let_statements() {
     let y = 10;
     let foobar = 939393;
   ";
-    let mut lexer = Lexer::new(input);
-    let mut parser = Parser::new(&mut lexer);
-    let program = parser.parse_program();
-
-    assert!(program.len() > 2, "failed parse correctly");
-
+    let program = parse_input(input);
     statement_assert(&program[0], "let x = 5");
     statement_assert(&program[1], "let y = 10");
     statement_assert(&program[2], "let foobar = 939393");
@@ -491,12 +493,7 @@ fn test_return_statements() {
     return 10;
     return 939393;
   ";
-    let mut lexer = Lexer::new(input);
-    let mut parser = Parser::new(&mut lexer);
-    let program = parser.parse_program();
-
-    assert!(program.len() > 2, "failed parse correctly");
-
+    let program = parse_input(input);
     statement_assert(&program[0], "return 5");
     statement_assert(&program[1], "return 10");
     statement_assert(&program[2], "return 939393");
@@ -518,11 +515,7 @@ fn test_operator_precedence_parsing() {
   5 < 4 != 3 > 4;
   3 + 4 * 5 == 3 * 1 + 4 * 5;
 ";
-
-    let mut lexer = Lexer::new(input);
-    let mut parser = Parser::new(&mut lexer);
-    let program = parser.parse_program();
-
+    let program = parse_input(input);
     statement_assert(&program[0], "((-a) * b)");
     statement_assert(&program[1], "(!(-a))");
     statement_assert(&program[2], "((a + b) + c)");
@@ -544,11 +537,7 @@ fn test_if_else_parsing() {
   if(a > b) { return 1; };
   if(a > b) { return 1; } else { return 0; };
 ";
-
-    let mut lexer = Lexer::new(input);
-    let mut parser = Parser::new(&mut lexer);
-    let program = parser.parse_program();
-
+    let program = parse_input(input);
     statement_assert(&program[0], "if(a > b) {  }");
     statement_assert(&program[1], "if(a > b) { return 1 }");
     statement_assert(&program[2], "if(a > b) { return 1 } else { return 0 }");
@@ -562,11 +551,7 @@ fn test_boolean_parsing() {
   3 > 5 == false;
   3 < 5 == true;
 ";
-
-    let mut lexer = Lexer::new(input);
-    let mut parser = Parser::new(&mut lexer);
-    let program = parser.parse_program();
-
+    let program = parse_input(input);
     statement_assert(&program[0], "true");
     statement_assert(&program[1], "false");
     statement_assert(&program[2], "((3 > 5) == false)");
@@ -580,11 +565,7 @@ fn test_funciton_parsing() {
   fn(x) {};
   fn(x, y, z) {};
 ";
-
-    let mut lexer = Lexer::new(input);
-    let mut parser = Parser::new(&mut lexer);
-    let program = parser.parse_program();
-
+    let program = parse_input(input);
     statement_assert(&program[0], "fn() {}");
     statement_assert(&program[1], "fn(x) {}");
     statement_assert(&program[2], "fn(x, y, z) {}");
@@ -597,11 +578,7 @@ fn test_call_parsing() {
   add(a, b, 1, 2 * 3, 4 + 5, add(6, 7 * 8));
   add(a + b + c * d / f + g);
 ";
-
-    let mut lexer = Lexer::new(input);
-    let mut parser = Parser::new(&mut lexer);
-    let program = parser.parse_program();
-
+    let program = parse_input(input);
     statement_assert(&program[0], "((a + add((b * c))) + d)");
     statement_assert(
         &program[1],

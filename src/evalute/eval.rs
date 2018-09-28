@@ -184,10 +184,12 @@ impl Eval {
 }
 
 #[warn(dead_code)]
-fn compile_input(input: &str) -> Vec<Statement> {
+fn compile_input(input: &str) -> Object {
     let mut lexer = Lexer::new(input);
     let mut parser = Parser::new(&mut lexer);
-    parser.parse_program()
+    let statements = parser.parse_program();
+    let mut eval = Eval::new();
+    eval.eval_program(statements)
 }
 
 #[test]
@@ -195,12 +197,7 @@ fn eval_integer() {
     let input = "
   return 1;
 ";
-    let statements = compile_input(input);
-
-    let mut eval = Eval::new();
-    let objects = eval.eval_program(statements);
-
-    assert!("1" == format!("{}", objects));
+    assert!("1" == format!("{}", compile_input(input)));
 }
 
 #[test]
@@ -208,12 +205,7 @@ fn eval_boolean() {
     let input = "
   return true;
 ";
-    let statements = compile_input(input);
-
-    let mut eval = Eval::new();
-    let objects = eval.eval_program(statements);
-
-    assert!("true" == format!("{}", objects));
+    assert!("true" == format!("{}", compile_input(input)));
 }
 
 #[test]
@@ -221,12 +213,7 @@ fn eval_null() {
     let input = "
   let a = 1;
 ";
-    let statements = compile_input(input);
-
-    let mut eval = Eval::new();
-    let objects = eval.eval_program(statements);
-
-    assert!("Null" == format!("{}", objects));
+    assert!("Null" == format!("{}", compile_input(input)));
 }
 
 #[test]
@@ -236,12 +223,7 @@ fn eval_let() {
   let b = 2;
   return a + b;
 ";
-    let statements = compile_input(input);
-
-    let mut eval = Eval::new();
-    let objects = eval.eval_program(statements);
-
-    assert!("3" == format!("{}", objects));
+    assert!("3" == format!("{}", compile_input(input)));
 }
 
 #[test]
@@ -251,12 +233,7 @@ fn eval_if() {
     return 3;
   }
 ";
-    let statements = compile_input(input);
-
-    let mut eval = Eval::new();
-    let objects = eval.eval_program(statements);
-
-    assert!("3" == format!("{}", objects));
+    assert!("3" == format!("{}", compile_input(input)));
 }
 
 
@@ -269,10 +246,5 @@ fn eval_else() {
     return 3;
   }
 ";
-    let statements = compile_input(input);
-
-    let mut eval = Eval::new();
-    let objects = eval.eval_program(statements);
-
-    assert!("3" == format!("{}", objects));
+    assert!("3" == format!("{}", compile_input(input)));
 }
