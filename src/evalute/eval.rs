@@ -258,3 +258,21 @@ fn eval_if() {
 
     assert!("3" == format!("{}", objects));
 }
+
+
+#[test]
+fn eval_else() {
+    let input = "
+  if (false) {
+    return 1;
+  } else {
+    return 3;
+  }
+";
+    let statements = compile_input(input);
+
+    let mut eval = Eval::new();
+    let objects = eval.eval_program(statements);
+
+    assert!("3" == format!("{}", objects));
+}
