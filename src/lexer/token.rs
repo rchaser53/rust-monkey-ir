@@ -30,7 +30,7 @@ pub enum TokenType {
     Lt,       // <
     Lte,      // <=
     Gt,       // >
-    Gte,      // =>
+    Gte,      // >=
     Plus,     // +
     Minus,    // -
     Divide,   // /

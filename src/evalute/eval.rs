@@ -181,6 +181,10 @@ impl Eval {
             Infix::Minus => Object::Integer(left - right),
             Infix::Multiply => Object::Integer(left * right),
             Infix::Divide => Object::Integer(left / right),
+            Infix::Lt => Object::Boolean(left < right),
+            Infix::Lte => Object::Boolean(left <= right),
+            Infix::Gt => Object::Boolean(left > right),
+            Infix::Gte => Object::Boolean(left >= right),
             _ => {
                 panic!("{:?} cannot be calculate for integer", infix);
             }
@@ -203,6 +207,24 @@ fn eval_integer() {
   return 1;
 ";
     assert!("1" == format!("{}", compile_input(input)));
+}
+
+#[test]
+fn eval_integer_with_paren() {
+  let input = "
+    return (1 + 3 * 2) * (2 - 1);
+  ";
+
+  assert!("7" == format!("{}", compile_input(input)));
+}
+
+#[test]
+fn eval_infix_gte() {
+  let input = "
+    return 3 >= (5 - 1);
+  ";
+
+  assert!("false" == format!("{}", compile_input(input)));
 }
 
 #[test]
@@ -257,7 +279,7 @@ fn eval_else() {
 #[test]
 fn eval_no_return_if() {
     let input = "
-  if (true) {
+  if (1 < 3) {
     let a = 1;
   }
   return 3;
