@@ -64,13 +64,39 @@ impl Eval {
             Expression::Prefix(prefix, expr) => self.eval_prefix(prefix, expr, env),
             Expression::Infix(infix, left, right) => self.eval_infix(infix, left, right, env),
             Expression::Identifier(ident) => self.eval_identifier(ident, env),
-            Expression::Function{ parameters, body } => self.eval_function(parameters, body, env),
+            Expression::Function{ parameters, body } => Object::Function{
+              parameters: parameters,
+              body: body,
+              env: env.clone()
+            },
+            Expression::Call{ function, arguments } => self.eval_call(function, arguments, env),
             _ => Object::Null,
         }
     }
 
-    pub fn eval_function(&self, parameters: Vec<Identifier>, body: BlockStatement, env: &mut Environment) -> Object {
-      Object::Null
+    pub fn eval_call(&mut self, function: Box<Expression>, arguments: Vec<Expression>, outer_env: &mut Environment) -> Object {
+      match *function {
+        Expression::Identifier(ident) => {
+          let mut call_function = outer_env.get(&ident.0);
+
+          match call_function {
+            Object::Function{ parameters, body, env } => {
+              let mut func_env = env.clone();
+              for (index, parameter) in parameters.iter().enumerate() {
+                let actual_param = self.eval_expression(arguments[index].clone(), outer_env);
+                func_env.set(parameter.0.to_string(), actual_param);
+              }
+              return self.eval_program(body, &mut func_env);
+            },
+            _ => {
+              panic!("cannot call {:?}", call_function);
+            }
+          }
+        },
+        _ => {
+          panic!("cannot call {:?}", function);
+        }
+      }
     }
 
     pub fn eval_identifier(&self, ident: Identifier, env: &mut Environment) -> Object {
@@ -284,4 +310,16 @@ fn eval_no_return_if() {
   return 3;
 ";
     assert!("3" == format!("{}", compile_input(input)));
+}
+
+#[test]
+fn eval_function() {
+    let input = "
+  let ho = fn(a) {
+    return a + 3;
+  }
+
+  return ho(1) + 3;
+";
+    assert!("7" == format!("{}", compile_input(input)));
 }
