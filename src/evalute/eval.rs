@@ -40,7 +40,7 @@ impl Eval {
             Statement::Expression(expr) => {
               match expr {
                 Expression::If{condition, consequence, alternative } => {
-                  Some(self.eval_if(condition, consequence, alternative))
+                  self.eval_if(condition, consequence, alternative)
                 },
                 _ => {
                   self.eval_expression(expr);
@@ -128,23 +128,28 @@ impl Eval {
       condition: Box<Expression>,
       consequence: BlockStatement,
       alternative: Option<BlockStatement>,
-    ) -> Object {
+    ) -> Option<Object> {
       let condition_obj = self.eval_expression(*condition);
+      let mut return_obj = Object::Null;
 
       match condition_obj {
         Object::Boolean(boolean) => {
           if boolean {
-            return self.eval_program(consequence);
+            return_obj = self.eval_program(consequence);
           }
           if let Some(alt) = alternative {
-            return self.eval_program(alt);
+            return_obj = self.eval_program(alt);
           }
         },
         _ => {
             panic!("condition should be boolean. actually {:?}", condition_obj);
         }
       };
-      Object::Null
+      
+      match return_obj {
+        Object::Null => None,
+        _ => Some(return_obj)
+      }
     }
 
     pub fn calculate_prefix_boolean(&self, prefix: Prefix, value: bool) -> Object {
@@ -245,6 +250,17 @@ fn eval_else() {
   } else {
     return 3;
   }
+";
+    assert!("3" == format!("{}", compile_input(input)));
+}
+
+#[test]
+fn eval_no_return_if() {
+    let input = "
+  if (true) {
+    let a = 1;
+  }
+  return 3;
 ";
     assert!("3" == format!("{}", compile_input(input)));
 }
