@@ -12,6 +12,7 @@ use parser::parser::*;
 
 mod evalute;
 use evalute::eval::*;
+use evalute::object::*;
 
 fn main() {
   let input = "
@@ -22,5 +23,5 @@ fn main() {
     let mut parser = Parser::new(&mut lexer);
     let program = parser.parse_program();
 
-    let mut eval = Eval::new();
+    let mut eval = Eval::new(Environment::new());
     let result_value = eval.eval_program(program);

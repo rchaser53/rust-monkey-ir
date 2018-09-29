@@ -1,5 +1,3 @@
-use std::collections::HashMap;
-
 use lexer::lexer::*;
 
 use parser::expressions::*;
@@ -9,13 +7,13 @@ use parser::statements::*;
 use evalute::object::*;
 
 pub struct Eval {
-  pub store: HashMap<String, Object>
+  pub store: Environment,
 }
 
 impl Eval {
-    pub fn new() -> Self {
-        Eval {
-          store: HashMap::new()
+    pub fn new(environment: Environment) -> Self {
+        Eval{
+          store: environment
         }
     }
 
@@ -53,12 +51,10 @@ impl Eval {
 
     pub fn eval_let_staement(&mut self, ident: Identifier, expr: Expression) -> Object {
       let value = self.eval_expression(expr);
-      self.store.insert(
+      self.store.set(
         ident.0,
-        value.clone()
-      );
-
-      value
+        value
+      )
     }
 
     pub fn eval_return_statement(&mut self, expr: Expression) -> Object {
@@ -77,7 +73,7 @@ impl Eval {
     }
 
     pub fn eval_identifier(&self, ident: Identifier) -> Object {
-      self.store[&ident.0].clone()
+      self.store.get(&ident.0)
     }
 
     pub fn eval_prefix(&mut self, prefix: Prefix, expr: Box<Expression>) -> Object {
@@ -197,7 +193,7 @@ fn compile_input(input: &str) -> Object {
     let mut lexer = Lexer::new(input);
     let mut parser = Parser::new(&mut lexer);
     let statements = parser.parse_program();
-    let mut eval = Eval::new();
+    let mut eval = Eval::new(Environment::new());
     eval.eval_program(statements)
 }
 
