@@ -23,5 +23,5 @@ fn main() {
     let mut parser = Parser::new(&mut lexer);
     let program = parser.parse_program();
 
-    let mut eval = Eval::new(Environment::new());
-    let result_value = eval.eval_program(program);
+    let mut eval = Eval::new();
+    let result_value = eval.eval_program(program, &mut Environment::new());

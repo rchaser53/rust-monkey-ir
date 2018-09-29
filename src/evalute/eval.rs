@@ -6,42 +6,38 @@ use parser::statements::*;
 
 use evalute::object::*;
 
-pub struct Eval {
-  pub store: Environment,
-}
+pub struct Eval {}
 
 impl Eval {
-    pub fn new(environment: Environment) -> Self {
-        Eval{
-          store: environment
-        }
+    pub fn new() -> Self {
+        Eval{}
     }
 
-    pub fn eval_program(&mut self, program: Program) -> Object {
+    pub fn eval_program(&mut self, program: Program, env: &mut Environment) -> Object {
         for statement in program.into_iter() {
-          if let Some(obj) = self.eval_statement(statement) {
+          if let Some(obj) = self.eval_statement(statement, env) {
             return obj;
           }
         }
         Object::Null
     }
 
-    pub fn eval_statement(&mut self, statement: Statement) -> Option<Object> {
+    pub fn eval_statement(&mut self, statement: Statement, env: &mut Environment) -> Option<Object> {
         match statement {
             Statement::Let(ident, expr) => {
-              self.eval_let_staement(ident, expr);
+              self.eval_let_staement(ident, expr, env);
               None
             },
             Statement::Return(expr) => {
-              Some(self.eval_return_statement(expr))
+              Some(self.eval_return_statement(expr, env))
             },
             Statement::Expression(expr) => {
               match expr {
                 Expression::If{condition, consequence, alternative } => {
-                  self.eval_if(condition, consequence, alternative)
+                  self.eval_if(condition, consequence, alternative, env)
                 },
                 _ => {
-                  self.eval_expression(expr);
+                  self.eval_expression(expr, env);
                   None
                 }
               }
@@ -49,35 +45,40 @@ impl Eval {
         }
     }
 
-    pub fn eval_let_staement(&mut self, ident: Identifier, expr: Expression) -> Object {
-      let value = self.eval_expression(expr);
-      self.store.set(
+    pub fn eval_let_staement(&mut self, ident: Identifier, expr: Expression, env: &mut Environment) -> Object {
+      let value = self.eval_expression(expr, env);
+      env.set(
         ident.0,
         value
       )
     }
 
-    pub fn eval_return_statement(&mut self, expr: Expression) -> Object {
-        self.eval_expression(expr)
+    pub fn eval_return_statement(&mut self, expr: Expression, env: &mut Environment) -> Object {
+        self.eval_expression(expr, env)
     }
 
-    pub fn eval_expression(&mut self, expr: Expression) -> Object {
+    pub fn eval_expression(&mut self, expr: Expression, env: &mut Environment) -> Object {
         match expr {
             Expression::IntegerLiteral(int) => Object::Integer(int),
             Expression::Boolean(boolean) => Object::Boolean(boolean),
-            Expression::Prefix(prefix, expr) => self.eval_prefix(prefix, expr),
-            Expression::Infix(infix, left, right) => self.eval_infix(infix, left, right),
-            Expression::Identifier(ident) => self.eval_identifier(ident),
+            Expression::Prefix(prefix, expr) => self.eval_prefix(prefix, expr, env),
+            Expression::Infix(infix, left, right) => self.eval_infix(infix, left, right, env),
+            Expression::Identifier(ident) => self.eval_identifier(ident, env),
+            Expression::Function{ parameters, body } => self.eval_function(parameters, body, env),
             _ => Object::Null,
         }
     }
 
-    pub fn eval_identifier(&self, ident: Identifier) -> Object {
-      self.store.get(&ident.0)
+    pub fn eval_function(&self, parameters: Vec<Identifier>, body: BlockStatement, env: &mut Environment) -> Object {
+      Object::Null
     }
 
-    pub fn eval_prefix(&mut self, prefix: Prefix, expr: Box<Expression>) -> Object {
-        let expr_value = self.eval_expression(*expr);
+    pub fn eval_identifier(&self, ident: Identifier, env: &mut Environment) -> Object {
+      env.get(&ident.0)
+    }
+
+    pub fn eval_prefix(&mut self, prefix: Prefix, expr: Box<Expression>, env: &mut Environment) -> Object {
+        let expr_value = self.eval_expression(*expr, env);
 
         match expr_value {
             Object::Integer(expr) => self.calculate_prefix_integer(prefix, expr),
@@ -96,9 +97,10 @@ impl Eval {
         infix: Infix,
         left: Box<Expression>,
         right: Box<Expression>,
+        env: &mut Environment,
     ) -> Object {
-        let left_value = self.eval_expression(*left);
-        let right_value = self.eval_expression(*right);
+        let left_value = self.eval_expression(*left, env);
+        let right_value = self.eval_expression(*right, env);
 
         match left_value {
             Object::Integer(left) => match right_value {
@@ -124,17 +126,18 @@ impl Eval {
       condition: Box<Expression>,
       consequence: BlockStatement,
       alternative: Option<BlockStatement>,
+      env: &mut Environment,
     ) -> Option<Object> {
-      let condition_obj = self.eval_expression(*condition);
+      let condition_obj = self.eval_expression(*condition, env);
       let mut return_obj = Object::Null;
 
       match condition_obj {
         Object::Boolean(boolean) => {
           if boolean {
-            return_obj = self.eval_program(consequence);
+            return_obj = self.eval_program(consequence, env);
           }
           if let Some(alt) = alternative {
-            return_obj = self.eval_program(alt);
+            return_obj = self.eval_program(alt, env);
           }
         },
         _ => {
@@ -193,8 +196,8 @@ fn compile_input(input: &str) -> Object {
     let mut lexer = Lexer::new(input);
     let mut parser = Parser::new(&mut lexer);
     let statements = parser.parse_program();
-    let mut eval = Eval::new(Environment::new());
-    eval.eval_program(statements)
+    let mut eval = Eval::new();
+    eval.eval_program(statements, &mut Environment::new())
 }
 
 #[test]
