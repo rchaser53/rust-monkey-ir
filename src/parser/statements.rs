@@ -1,5 +1,5 @@
-use parser::expressions::*;
 use std::fmt;
+use parser::expressions::*;
 
 #[derive(PartialEq, Clone, Debug)]
 pub enum Prefix {
@@ -60,21 +60,23 @@ pub type BlockStatement = Vec<Statement>;
 pub type Program = BlockStatement;
 
 impl Statement {
+    #[warn(dead_code)]
     pub fn emit_debug_info(&self) -> String {
         match self {
-            Statement::Let(ident, expr) => write_string!(format!(
-                "[ identifiy: {:?}, expression: {:?} ]",
-                ident, expr
+            Statement::Let(Identifier(ref string), expr) => write_string!(format!(
+                "[ identifiy: {}, expression: {} ]",
+                string, expr.string()
             )),
-            Statement::Return(expr) => write_string!(format!("[ expression: {:?} ]", expr)),
-            Statement::Expression(expr) => write_string!(format!("[ expression: {:?} ]", expr)),
+            Statement::Return(expr) => write_string!(format!("[ expression: {} ]", expr.string())),
+            Statement::Expression(expr) => write_string!(format!("[ expression: {} ]", expr.string())),
         }
     }
 
     pub fn string(&self) -> String {
         match self {
-            Statement::Let(ident, expr) => {
-                ("let ".to_owned() + &ident.0 + " = " + &expr.string()).to_string()
+            Statement::Let(Identifier(ref string), expr) => {
+                format!("let {} = {}", string, &expr.string())
+                // ("let ".to_owned() + &ident.0 + " = " + &expr.string()).to_string()
             }
             Statement::Return(expr) => ("return ".to_owned() + &expr.string()).to_string(),
             Statement::Expression(expr) => expr.string(),

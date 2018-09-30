@@ -29,9 +29,7 @@ pub enum Expression {
 impl Expression {
     pub fn string(&self) -> String {
         match self {
-            Expression::Identifier(ident) => {
-                ident.0.to_string()
-            }
+            Expression::Identifier(ident) => ident.0.to_string(),
             Expression::IntegerLiteral(int) => int.to_string(),
             Expression::StringLiteral(literal) => format!(r#""{}""#, literal.to_string()),
             Expression::Boolean(boolean) => boolean.to_string(),
@@ -66,18 +64,24 @@ impl Expression {
                 format!("if{} {{ {} }}", &condition.string(), consequence_string)
             }
             Expression::Function { parameters, body } => {
-                let mut ret_string = String::new();
-                for (index, parameter) in parameters.iter().enumerate() {
-                    if index != 0 {
-                        ret_string = ret_string + ", "
+                let mut param_string = String::new();
+                for (index, Identifier(ref string)) in parameters.iter().enumerate() {
+                    if index == 0 {
+                        param_string.push_str(&format!("{}", string));
+                    } else {
+                        param_string.push_str(&format!(", {}", string));
                     }
-                    ret_string = ret_string + &parameter.0;
                 }
-                for statement in body {
-                    ret_string = ret_string + " " + &statement.string();
+                let mut ret_string = String::new();
+                for (index, statement) in body.iter().enumerate() {
+                    if index == 0 {
+                        ret_string.push_str(&format!("{}", statement.string()));
+                    } else {
+                        ret_string.push_str(&format!(" {}", statement.string()));
+                    }
                 }
 
-                format!("fn({}) {{}}", ret_string)
+                format!("fn({}) {{ {} }}", param_string, ret_string)
             }
             Expression::Call {
                 function,
@@ -85,10 +89,11 @@ impl Expression {
             } => {
                 let mut ret_string = String::new();
                 for (index, parameter) in arguments.iter().enumerate() {
-                    if index != 0 {
-                        ret_string = ret_string + ", "
+                    if index == 0 {
+                        ret_string.push_str(&format!("{}", &parameter.string()));
+                    } else {
+                        ret_string.push_str(&format!(", {}", &parameter.string()));
                     }
-                    ret_string = ret_string + &parameter.string();
                 }
 
                 format!("{}({})", function.string(), ret_string)

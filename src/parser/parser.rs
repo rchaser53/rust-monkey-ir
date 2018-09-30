@@ -137,7 +137,7 @@ impl<'a> Parser<'a> {
 
     pub fn parse_string_literal(&mut self) -> Option<Expression> {
         if let Some(token) = &self.cur_token {
-          return Some(Expression::StringLiteral(token.value.to_owned()));
+            return Some(Expression::StringLiteral(token.value.to_owned()));
         }
         None
     }
@@ -571,14 +571,14 @@ fn test_boolean_parsing() {
 #[test]
 fn test_funciton_parsing() {
     let input = r#"
-  fn() {};
+  fn() { };
   fn(x) {};
   fn(x, y, z) {};
 "#;
     let program = parse_input(input);
-    statement_assert(&program[0], "fn() {}");
-    statement_assert(&program[1], "fn(x) {}");
-    statement_assert(&program[2], "fn(x, y, z) {}");
+    statement_assert(&program[0], "fn() {  }");
+    statement_assert(&program[1], "fn(x) {  }");
+    statement_assert(&program[2], "fn(x, y, z) {  }");
 }
 
 #[test]
