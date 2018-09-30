@@ -158,6 +158,22 @@ impl<'a> Lexer<'a> {
         self.create_token_by_value(TokenType::Gt, vec![b'>'])
     }
 
+    pub fn consume_string(&mut self) -> Token {
+      let mut char_vec = Vec::new();
+      loop {
+        if let Some(next_char) = self.get_next_char() {
+          self.position += 1;
+          if next_char == b'"' {
+            break;
+          }
+          char_vec.push(next_char);
+        } else {
+          break;
+        }
+      };
+      self.create_token_by_value(TokenType::String, char_vec)
+    }
+
     pub fn next_token(&mut self) -> Option<Token> {
         let mut ret_val: Token = self.create_eof_token();
         loop {
@@ -171,6 +187,10 @@ impl<'a> Lexer<'a> {
                     b'a'...b'z' | b'A'...b'Z' => {
                         ret_val = self.consumue_character(byte, false);
                         true
+                    }
+                    b'"' => {
+                      ret_val = self.consume_string();
+                      true
                     }
                     b'/' => {
                         let (temp_ret, flag) = self.consume_slash(ret_val);
@@ -280,6 +300,15 @@ fn identifier() {
     lexer_assert(lexer.next_token().unwrap(), TokenType::Digit, "123");
     lexer_assert(lexer.next_token().unwrap(), TokenType::Identifier, "abc");
     lexer_assert(lexer.next_token().unwrap(), TokenType::Identifier, "45d6");
+}
+
+#[test]
+fn string() {
+    let mut lexer = Lexer::new(r#"
+    "abc" "def"
+    "#);
+    lexer_assert(lexer.next_token().unwrap(), TokenType::String, "abc");
+    lexer_assert(lexer.next_token().unwrap(), TokenType::String, "def");
 }
 
 #[test]

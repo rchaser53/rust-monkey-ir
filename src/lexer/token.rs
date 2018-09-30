@@ -10,6 +10,8 @@ pub enum TokenType {
     Period,
     Semicolon,
 
+    String,
+
     Lparen, // (
     Rparen, // )
     Lbrace, // {
