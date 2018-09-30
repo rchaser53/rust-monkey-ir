@@ -7,6 +7,7 @@ use parser::expressions::*;
 #[derive(Debug, Clone)]
 pub enum Object {
     Integer(i64),
+    String(String),
     Boolean(bool),
     Function{
       parameters: Vec<Identifier>,
@@ -20,8 +21,9 @@ impl fmt::Display for Object {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             Object::Integer(int) => write!(f, "{}", int.to_string()),
+            Object::String(string) => write!(f, "{}", string),
             Object::Boolean(boolean) => write!(f, "{}", boolean.to_string()),
-            Object::Function{ parameters, body, env } => {
+            Object::Function{ parameters, body, env: _ } => {
               let mut ret_string = String::new();
               for (index, parameter) in parameters.iter().enumerate() {
                   if index != 0 {

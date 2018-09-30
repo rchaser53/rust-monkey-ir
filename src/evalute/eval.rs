@@ -60,6 +60,7 @@ impl Eval {
     pub fn eval_expression(&mut self, expr: Expression, env: &mut Environment) -> Object {
         match expr {
             Expression::IntegerLiteral(int) => Object::Integer(int),
+            Expression::StringLiteral(string) => Object::String(string),
             Expression::Boolean(boolean) => Object::Boolean(boolean),
             Expression::Prefix(prefix, expr) => self.eval_prefix(prefix, expr, env),
             Expression::Infix(infix, left, right) => self.eval_infix(infix, left, right, env),
@@ -131,6 +132,15 @@ impl Eval {
         match left_value {
             Object::Integer(left) => match right_value {
                 Object::Integer(right) => self.calculate_infix_integer(infix, left, right),
+                _ => {
+                    panic!(
+                        "right value should be integer, but actually {:?}",
+                        right_value
+                    );
+                }
+            },
+            Object::String(left) => match right_value {
+                Object::String(right) => Object::String(left + &right),
                 _ => {
                     panic!(
                         "right value should be integer, but actually {:?}",
@@ -235,6 +245,14 @@ fn eval_integer() {
 }
 
 #[test]
+fn eval_string() {
+    let input = "
+  return \"abc\";
+";
+    assert!("abc" == format!("{}", compile_input(input)));
+}
+
+#[test]
 fn eval_integer_with_paren() {
   let input = r#"
     return (1 + 3 * 2) * (2 - 1);
@@ -250,6 +268,15 @@ fn eval_infix_gte() {
   "#;
 
   assert!("false" == format!("{}", compile_input(input)));
+}
+
+#[test]
+fn eval_infix_string() {
+  let input = r#"
+    return "hello " + "world";
+  "#;
+
+  assert!("hello world" == format!("{}", compile_input(input)));
 }
 
 #[test]
