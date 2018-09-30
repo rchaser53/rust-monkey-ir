@@ -289,14 +289,18 @@ fn lexer_assert(token: Token, token_type: TokenType, value: &str) {
 
 #[test]
 fn digit() {
-    let mut lexer = Lexer::new("123 456");
+    let mut lexer = Lexer::new(r#"
+    123 456
+    "#);
     lexer_assert(lexer.next_token().unwrap(), TokenType::Digit, "123");
     lexer_assert(lexer.next_token().unwrap(), TokenType::Digit, "456");
 }
 
 #[test]
 fn identifier() {
-    let mut lexer = Lexer::new("123 abc 45d6");
+    let mut lexer = Lexer::new(r#"
+    123 abc 45d6
+    "#);
     lexer_assert(lexer.next_token().unwrap(), TokenType::Digit, "123");
     lexer_assert(lexer.next_token().unwrap(), TokenType::Identifier, "abc");
     lexer_assert(lexer.next_token().unwrap(), TokenType::Identifier, "45d6");
@@ -313,14 +317,18 @@ fn string() {
 
 #[test]
 fn comment() {
-    let mut lexer = Lexer::new("0 /* 123 */ 2");
+    let mut lexer = Lexer::new(r#"
+    0 /* 123 */ 2
+    "#);
     lexer_assert(lexer.next_token().unwrap(), TokenType::Digit, "0");
     lexer_assert(lexer.next_token().unwrap(), TokenType::Digit, "2");
 }
 
 #[test]
 fn ban() {
-    let mut lexer = Lexer::new("let abc = !abc");
+    let mut lexer = Lexer::new(r#"
+    let abc = !abc
+    "#);
     lexer_assert(lexer.next_token().unwrap(), TokenType::Let, "let");
     lexer_assert(lexer.next_token().unwrap(), TokenType::Identifier, "abc");
     lexer_assert(lexer.next_token().unwrap(), TokenType::Assign, "=");
@@ -330,7 +338,9 @@ fn ban() {
 
 #[test]
 fn division_multiple() {
-    let mut lexer = Lexer::new("1 / 323 * 3 / 2");
+    let mut lexer = Lexer::new(r#"
+    1 / 323 * 3 / 2
+    "#);
     lexer_assert(lexer.next_token().unwrap(), TokenType::Digit, "1");
     lexer_assert(lexer.next_token().unwrap(), TokenType::Divide, "/");
     lexer_assert(lexer.next_token().unwrap(), TokenType::Digit, "323");
@@ -340,7 +350,9 @@ fn division_multiple() {
 
 #[test]
 fn gt() {
-    let mut lexer = Lexer::new("123 <= 456");
+    let mut lexer = Lexer::new(r#"
+    123 <= 456
+    "#);
     lexer_assert(lexer.next_token().unwrap(), TokenType::Digit, "123");
     lexer_assert(lexer.next_token().unwrap(), TokenType::Lte, "<=");
     lexer_assert(lexer.next_token().unwrap(), TokenType::Digit, "456");
@@ -348,7 +360,9 @@ fn gt() {
 
 #[test]
 fn if_test() {
-    let mut lexer = Lexer::new("if 123 == 456");
+    let mut lexer = Lexer::new(r#"
+    if 123 == 456
+    "#);
     lexer_assert(lexer.next_token().unwrap(), TokenType::If, "if");
     lexer_assert(lexer.next_token().unwrap(), TokenType::Digit, "123");
     lexer_assert(lexer.next_token().unwrap(), TokenType::Eq, "==");

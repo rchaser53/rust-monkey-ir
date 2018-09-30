@@ -228,105 +228,105 @@ fn compile_input(input: &str) -> Object {
 
 #[test]
 fn eval_integer() {
-    let input = "
+    let input = r#"
   return 1;
-";
+"#;
     assert!("1" == format!("{}", compile_input(input)));
 }
 
 #[test]
 fn eval_integer_with_paren() {
-  let input = "
+  let input = r#"
     return (1 + 3 * 2) * (2 - 1);
-  ";
+  "#;
 
   assert!("7" == format!("{}", compile_input(input)));
 }
 
 #[test]
 fn eval_infix_gte() {
-  let input = "
+  let input = r#"
     return 3 >= (5 - 1);
-  ";
+  "#;
 
   assert!("false" == format!("{}", compile_input(input)));
 }
 
 #[test]
 fn eval_boolean() {
-    let input = "
+    let input = r#"
   return true;
-";
+"#;
     assert!("true" == format!("{}", compile_input(input)));
 }
 
 #[test]
 fn eval_null() {
-    let input = "
+    let input = r#"
   let a = 1;
-";
+"#;
     assert!("Null" == format!("{}", compile_input(input)));
 }
 
 #[test]
 fn eval_let() {
-    let input = "
+    let input = r#"
   let a = 1;
   let b = 2;
   return a + b;
-";
+"#;
     assert!("3" == format!("{}", compile_input(input)));
 }
 
 #[test]
 fn eval_if() {
-    let input = "
+    let input = r#"
   if (true) {
     return 3;
   }
-";
+"#;
     assert!("3" == format!("{}", compile_input(input)));
 }
 
 
 #[test]
 fn eval_else() {
-    let input = "
+    let input = r#"
   if (false) {
     return 1;
   } else {
     return 3;
   }
-";
+"#;
     assert!("3" == format!("{}", compile_input(input)));
 }
 
 #[test]
 fn eval_no_return_if() {
-    let input = "
+    let input = r#"
   if (1 < 3) {
     let a = 1;
   }
   return 3;
-";
+"#;
     assert!("3" == format!("{}", compile_input(input)));
 }
 
 #[test]
 fn eval_function() {
-    let input = "
+    let input = r#"
   let hoge = fn(a) {
     return a + 3;
   };
 
   return hoge(1) + 3;
-";
+"#;
     assert!("7" == format!("{}", compile_input(input)));
 }
 
 #[test]
 fn eval_closure() {
-    let input = "
+    let input = r#"
   let a = 5;
   let b = 2;
   let hoge = fn(a) {
@@ -334,13 +334,13 @@ fn eval_closure() {
   };
 
   return hoge(1) + 3;
-";
+"#;
     assert!("6" == format!("{}", compile_input(input)));
 }
 
 #[test]
 fn eval_return_function() {
-    let input = "
+    let input = r#"
   let ho = fn(a) {
     return fn(b) {
       return a + b;
@@ -349,6 +349,6 @@ fn eval_return_function() {
   let hoi = ho(1);
 
   return hoi(2);
-";
+"#;
     assert!("3" == format!("{}", compile_input(input)));
 }

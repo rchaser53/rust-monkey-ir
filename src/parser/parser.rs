@@ -475,11 +475,11 @@ fn parse_input(input: &str) -> Program {
 
 #[test]
 fn test_let_statements() {
-    let input = "
+    let input = r#"
     let x = 5;
     let y = 10;
     let foobar = 939393;
-  ";
+  "#;
     let program = parse_input(input);
     statement_assert(&program[0], "let x = 5");
     statement_assert(&program[1], "let y = 10");
@@ -488,11 +488,11 @@ fn test_let_statements() {
 
 #[test]
 fn test_return_statements() {
-    let input = "
+    let input = r#"
     return 5;
     return 10;
     return 939393;
-  ";
+  "#;
     let program = parse_input(input);
     statement_assert(&program[0], "return 5");
     statement_assert(&program[1], "return 10");
@@ -501,7 +501,7 @@ fn test_return_statements() {
 
 #[test]
 fn test_operator_precedence_parsing() {
-    let input = "
+    let input = r#"
   -a * b;
   !-a;
   a + b + c;
@@ -514,7 +514,7 @@ fn test_operator_precedence_parsing() {
   5 > 4 == 3 < 4;
   5 < 4 != 3 > 4;
   3 + 4 * 5 == 3 * 1 + 4 * 5;
-";
+"#;
     let program = parse_input(input);
     statement_assert(&program[0], "((-a) * b)");
     statement_assert(&program[1], "(!(-a))");
@@ -532,11 +532,11 @@ fn test_operator_precedence_parsing() {
 
 #[test]
 fn test_if_else_parsing() {
-    let input = "
+    let input = r#"
   if(a > b) {};
   if(a > b) { return 1; };
   if(a > b) { return 1; } else { return 0; };
-";
+"#;
     let program = parse_input(input);
     statement_assert(&program[0], "if(a > b) {  }");
     statement_assert(&program[1], "if(a > b) { return 1 }");
@@ -545,12 +545,12 @@ fn test_if_else_parsing() {
 
 #[test]
 fn test_boolean_parsing() {
-    let input = "
+    let input = r#"
   true;
   false;
   3 > 5 == false;
   3 < 5 == true;
-";
+"#;
     let program = parse_input(input);
     statement_assert(&program[0], "true");
     statement_assert(&program[1], "false");
@@ -560,11 +560,11 @@ fn test_boolean_parsing() {
 
 #[test]
 fn test_funciton_parsing() {
-    let input = "
+    let input = r#"
   fn() {};
   fn(x) {};
   fn(x, y, z) {};
-";
+"#;
     let program = parse_input(input);
     statement_assert(&program[0], "fn() {}");
     statement_assert(&program[1], "fn(x) {}");
@@ -573,11 +573,11 @@ fn test_funciton_parsing() {
 
 #[test]
 fn test_call_parsing() {
-    let input = "
+    let input = r#"
   a + add(b * c) + d;
   add(a, b, 1, 2 * 3, 4 + 5, add(6, 7 * 8));
   add(a + b + c * d / f + g);
-";
+"#;
     let program = parse_input(input);
     statement_assert(&program[0], "((a + add((b * c))) + d)");
     statement_assert(
