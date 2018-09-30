@@ -33,7 +33,7 @@ impl Expression {
                 ident.0.to_string()
             }
             Expression::IntegerLiteral(int) => int.to_string(),
-            Expression::StringLiteral(literal) => literal.to_string(),
+            Expression::StringLiteral(literal) => format!(r#""{}""#, literal.to_string()),
             Expression::Boolean(boolean) => boolean.to_string(),
             Expression::Prefix(prefix, expr) => format!("({}{})", prefix, expr.string()),
             Expression::Infix(infix, left, right) => {

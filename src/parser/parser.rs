@@ -135,6 +135,13 @@ impl<'a> Parser<'a> {
         None
     }
 
+    pub fn parse_string_literal(&mut self) -> Option<Expression> {
+        if let Some(token) = &self.cur_token {
+          return Some(Expression::StringLiteral(token.value.to_owned()));
+        }
+        None
+    }
+
     pub fn parse_boolean(&mut self) -> Option<Expression> {
         return Some(Expression::Boolean(self.cur_token_is(TokenType::True)));
     }
@@ -145,6 +152,7 @@ impl<'a> Parser<'a> {
             left_exp = match token.kind {
                 TokenType::Identifier => self.parse_identifier(),
                 TokenType::Digit => self.parse_integer_literal(),
+                TokenType::String => self.parse_string_literal(),
                 TokenType::Bang | TokenType::Minus => self.parse_prefix_expression(),
                 TokenType::Lparen => self.parse_grouped_expression(),
                 TokenType::True | TokenType::False => self.parse_boolean(),
@@ -478,12 +486,14 @@ fn test_let_statements() {
     let input = r#"
     let x = 5;
     let y = 10;
+    let z = "abc";
     let foobar = 939393;
   "#;
     let program = parse_input(input);
     statement_assert(&program[0], "let x = 5");
     statement_assert(&program[1], "let y = 10");
-    statement_assert(&program[2], "let foobar = 939393");
+    statement_assert(&program[2], r#"let z = "abc""#);
+    statement_assert(&program[3], "let foobar = 939393");
 }
 
 #[test]
