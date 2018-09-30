@@ -315,11 +315,40 @@ fn eval_no_return_if() {
 #[test]
 fn eval_function() {
     let input = "
-  let ho = fn(a) {
+  let hoge = fn(a) {
     return a + 3;
-  }
+  };
 
-  return ho(1) + 3;
+  return hoge(1) + 3;
 ";
     assert!("7" == format!("{}", compile_input(input)));
+}
+
+#[test]
+fn eval_closure() {
+    let input = "
+  let a = 5;
+  let b = 2;
+  let hoge = fn(a) {
+    return a + b;
+  };
+
+  return hoge(1) + 3;
+";
+    assert!("6" == format!("{}", compile_input(input)));
+}
+
+#[test]
+fn eval_return_function() {
+    let input = "
+  let ho = fn(a) {
+    return fn(b) {
+      return a + b;
+    };
+  };
+  let hoi = ho(1);
+
+  return hoi(2);
+";
+    assert!("3" == format!("{}", compile_input(input)));
 }
