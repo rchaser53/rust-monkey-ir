@@ -1,5 +1,5 @@
-use std::fmt;
 use parser::expressions::*;
+use std::fmt;
 
 #[derive(PartialEq, Clone, Debug)]
 pub enum Prefix {
@@ -65,10 +65,13 @@ impl Statement {
         match self {
             Statement::Let(Identifier(ref string), expr) => write_string!(format!(
                 "[ identifiy: {}, expression: {} ]",
-                string, expr.string()
+                string,
+                expr.string()
             )),
             Statement::Return(expr) => write_string!(format!("[ expression: {} ]", expr.string())),
-            Statement::Expression(expr) => write_string!(format!("[ expression: {} ]", expr.string())),
+            Statement::Expression(expr) => {
+                write_string!(format!("[ expression: {} ]", expr.string()))
+            }
         }
     }
 

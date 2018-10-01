@@ -9,13 +9,17 @@ pub enum Object {
     Integer(i64),
     String(String),
     Boolean(bool),
-    Function {
-        parameters: Vec<Identifier>,
-        body: BlockStatement,
-        env: Environment,
-    },
+    Function(Function),
     Null,
 }
+
+#[derive(Debug, Clone)]
+pub struct Function {
+    pub parameters: Vec<Identifier>,
+    pub body: BlockStatement,
+    pub env: Environment,
+}
+
 
 impl fmt::Display for Object {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -23,13 +27,9 @@ impl fmt::Display for Object {
             Object::Integer(int) => write!(f, "{}", int.to_string()),
             Object::String(string) => write!(f, "{}", string),
             Object::Boolean(boolean) => write!(f, "{}", boolean.to_string()),
-            Object::Function {
-                parameters,
-                body,
-                env: _,
-            } => {
+            Object::Function(ref func) => {
                 let mut param_string = String::new();
-                for (index, Identifier(ref string)) in parameters.iter().enumerate() {
+                for (index, Identifier(ref string)) in func.parameters.iter().enumerate() {
                     if index == 0 {
                         param_string.push_str(&format!("{}", string));
                     } else {
@@ -37,7 +37,7 @@ impl fmt::Display for Object {
                     }
                 }
                 let mut body_string = String::new();
-                for (index, statement) in body.iter().enumerate() {
+                for (index, statement) in func.body.iter().enumerate() {
                     if index == 0 {
                         body_string.push_str(&format!("{}", statement.string()));
                     } else {

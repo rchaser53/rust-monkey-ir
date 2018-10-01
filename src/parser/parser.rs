@@ -331,10 +331,31 @@ impl<'a> Parser<'a> {
 
     pub fn parse_call_expression(&mut self, function: Option<Expression>) -> Option<Expression> {
         if let Some(function) = function {
-            Some(Expression::Call {
+            let expr = Expression::Call(
+              Call{
                 function: Box::new(function),
                 arguments: self.parse_call_arguments(),
-            })
+            });
+        
+            match expr.clone() {
+              Expression::Function{ parameters: _, body: _ } => {
+                if let Some(token) = self.peek_token.to_owned() {
+                  return match token.kind {
+                    TokenType::Lparen => {
+                        self.next_token();
+                        self.parse_call_expression(Some(expr))
+                    },
+                    _ => {
+                      Some(expr)
+                    }
+                  };
+                }
+                None
+              },
+              _ => {
+                Some(expr)
+              }
+            }
         } else {
             None
         }

@@ -20,10 +20,16 @@ pub enum Expression {
         parameters: Vec<Identifier>,
         body: BlockStatement,
     },
-    Call {
-        function: Box<Expression>,
-        arguments: Vec<Expression>,
-    },
+    Call(Call),
+    // Error {
+
+    // },
+}
+
+#[derive(PartialEq, Clone, Debug)]
+pub struct Call {
+    pub function: Box<Expression>,
+    pub arguments: Vec<Expression>,
 }
 
 impl Expression {
@@ -83,12 +89,9 @@ impl Expression {
 
                 format!("fn({}) {{ {} }}", param_string, ret_string)
             }
-            Expression::Call {
-                function,
-                arguments,
-            } => {
+            Expression::Call(call) => {
                 let mut ret_string = String::new();
-                for (index, parameter) in arguments.iter().enumerate() {
+                for (index, parameter) in call.arguments.iter().enumerate() {
                     if index == 0 {
                         ret_string.push_str(&format!("{}", &parameter.string()));
                     } else {

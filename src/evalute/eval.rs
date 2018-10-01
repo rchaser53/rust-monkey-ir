@@ -69,50 +69,49 @@ impl Eval {
             Expression::Prefix(prefix, expr) => self.eval_prefix(prefix, expr, env),
             Expression::Infix(infix, left, right) => self.eval_infix(infix, left, right, env),
             Expression::Identifier(ident) => self.eval_identifier(ident, env),
-            Expression::Function { parameters, body } => Object::Function {
+            Expression::Function { parameters, body } => Object::Function(Function{
                 parameters: parameters,
                 body: body,
                 env: env.clone(),
-            },
-            Expression::Call {
+            }),
+            Expression::Call(Call{
                 function,
                 arguments,
-            } => self.eval_call(function, arguments, env),
+            }) => self.eval_call(function, arguments, env),
             _ => Object::Null,
         }
     }
 
     pub fn eval_call(
         &mut self,
-        function: Box<Expression>,
-        arguments: Vec<Expression>,
+        outer_function: Box<Expression>,
+        outer_arguments: Vec<Expression>,
         outer_env: &mut Environment,
     ) -> Object {
-        match *function {
-            Expression::Identifier(ident) => {
-                let mut call_function = outer_env.get(&ident.0);
-
+        match *outer_function {
+            Expression::Identifier(Identifier(ref string)) => {
+                let mut call_function = outer_env.get(string);
                 match call_function {
-                    Object::Function {
-                        parameters,
-                        body,
-                        env,
-                    } => {
-                        let mut func_env = env.clone();
-                        for (index, parameter) in parameters.iter().enumerate() {
+                    Object::Function(func) => {
+                        let mut func_env = func.env.clone();
+                        for (index, parameter) in func.parameters.into_iter().enumerate() {
                             let actual_param =
-                                self.eval_expression(arguments[index].clone(), outer_env);
+                                self.eval_expression(outer_arguments[index].clone(), outer_env);
                             func_env.set(parameter.0.to_string(), actual_param);
                         }
-                        return self.eval_program(body, &mut func_env);
+                        let obj = self.eval_program(func.body, &mut func_env);
+                        obj
                     }
                     _ => {
                         panic!("cannot call {:?}", call_function);
                     }
                 }
-            }
+            },
+            Expression::Call(call) => {
+              self.eval_call(call.function, call.arguments, outer_env)
+            },
             _ => {
-                panic!("cannot call {:?}", function);
+                panic!("cannot call {:?}", outer_function);
             }
         }
     }
