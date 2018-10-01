@@ -28,18 +28,23 @@ impl fmt::Display for Object {
                 body,
                 env: _,
             } => {
-                let mut ret_string = String::new();
+                let mut param_string = String::new();
                 for (index, Identifier(ref string)) in parameters.iter().enumerate() {
                     if index == 0 {
-                        ret_string.push_str(&format!("{}", string));
+                        param_string.push_str(&format!("{}", string));
                     } else {
-                        ret_string.push_str(&format!(", {}", string));
+                        param_string.push_str(&format!(", {}", string));
                     }
                 }
-                for statement in body {
-                    ret_string = ret_string + " " + &statement.string();
+                let mut body_string = String::new();
+                for (index, statement) in body.iter().enumerate() {
+                    if index == 0 {
+                        body_string.push_str(&format!("{}", statement.string()));
+                    } else {
+                        body_string.push_str(&format!(" {}", statement.string()));
+                    }
                 }
-                write!(f, "fn({}) {{}}", ret_string)
+                write!(f, "fn({}) {{ {} }}", param_string, body_string)
             }
             Object::Null => write!(f, "Null"),
         }
