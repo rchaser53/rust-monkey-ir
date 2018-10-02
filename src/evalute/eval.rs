@@ -91,27 +91,58 @@ impl Eval {
         match *outer_function {
             Expression::Identifier(Identifier(ref string)) => {
                 let mut call_function = outer_env.get(string);
-                match call_function {
-                    Object::Function(func) => {
-                        let mut func_env = func.env.clone();
-                        for (index, parameter) in func.parameters.into_iter().enumerate() {
-                            let actual_param =
-                                self.eval_expression(outer_arguments[index].clone(), outer_env);
-                            func_env.set(parameter.0.to_string(), actual_param);
-                        }
-                        let obj = self.eval_program(func.body, &mut func_env);
-                        obj
-                    }
-                    _ => {
-                        panic!("cannot call {:?}", call_function);
-                    }
-                }
+                self.exec_func(call_function, outer_arguments, outer_env)
             },
             Expression::Call(call) => {
-              self.eval_call(call.function, call.arguments, outer_env)
+              match *call.function.clone() {
+                Expression::Identifier(Identifier(ref string)) => {
+                  let mut call_function = outer_env.get(string);
+                  let maybe_func = self.exec_func(call_function, outer_arguments.clone(), outer_env);
+
+                  match maybe_func.clone() {
+                    Object::Function(func) => {
+                      let mut func_env = func.env.clone();
+                      for (index, parameter) in func.parameters.into_iter().enumerate() {
+                          let actual_param =
+                              self.eval_expression(outer_arguments[index].clone(), outer_env);
+                          func_env.set(parameter.0.to_string(), actual_param);
+                      }
+                      self.eval_program(func.body, &mut func_env)
+                    },
+                    _ => maybe_func
+                  }
+                },
+                _ => {
+                  panic!("nay-n");
+                }
+              }
+              
+              
             },
             _ => {
                 panic!("cannot call {:?}", outer_function);
+            }
+        }
+    }
+
+    pub fn exec_func(
+      &mut self,
+      call_function: Object,
+      outer_arguments: Vec<Expression>,
+      outer_env: &mut Environment,
+    ) -> Object {
+        match call_function {
+            Object::Function(func) => {
+                let mut func_env = func.env.clone();
+                for (index, parameter) in func.parameters.into_iter().enumerate() {
+                    let actual_param =
+                        self.eval_expression(outer_arguments[index].clone(), outer_env);
+                    func_env.set(parameter.0.to_string(), actual_param);
+                }
+                self.eval_program(func.body, &mut func_env)
+            }
+            _ => {
+                call_function
             }
         }
     }
@@ -398,4 +429,17 @@ fn eval_return_function() {
   return hoi(2);
 "#;
     assert!("3" == format!("{}", compile_input(input)));
+}
+
+#[test]
+fn eval_returned_function() {
+    let input = r#"
+    let x = fn() {
+      return fn() {
+        return 1;
+      };
+    };
+    return x()();
+  "#;
+    assert!("1" == format!("{}", compile_input(input)));
 }
