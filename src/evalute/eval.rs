@@ -93,41 +93,24 @@ impl Eval {
                 let mut call_function = outer_env.get(string);
                 self.exec_func(call_function, outer_arguments, outer_env)
             },
-            Expression::Function{parameters: _, body} => {
-              let mut env = outer_env.clone();
-              self.eval_program(body, &mut env)
-            },
             Expression::Call(call) => {
-              match *call.function.clone() {
+              match *call.function {
                 Expression::Identifier(Identifier(ref string)) => {
                   let mut call_function = outer_env.get(string);
-                  let maybe_func = self.exec_func(call_function, outer_arguments.clone(), outer_env);
-
-                  match maybe_func.clone() {
-                    Object::Function(func) => {
-                      let new_func = Expression::Call(Call{
-                        function: Box::new(
-                          Expression::Function {
-                            parameters: func.parameters,
-                            body: func.body,
-                        }),
-                        arguments: outer_arguments
-                      });
-                      let mut func_env = func.env.clone();
-                      self.eval_expression(new_func, &mut func_env)
-                    },
-                    _ => maybe_func
-                  }
+                  let maybe_func = self.exec_func(call_function, call.arguments, outer_env);
+                  self.exec_func(maybe_func, outer_arguments, outer_env)
+                },
+                Expression::Call(inner_call) => {
+                  let maybe_func = self.eval_call(inner_call.function, inner_call.arguments.clone(), outer_env);
+                  self.exec_func(maybe_func, outer_arguments, outer_env)
                 },
                 _ => {
-                  panic!("nay-n");
+                  panic!("[in] cannot call {:?}", call.function);
                 }
               }
-              
-              
             },
             _ => {
-                panic!("cannot call {:?}", outer_function);
+                panic!("[out] cannot call {:?}", outer_function);
             }
         }
     }
@@ -441,12 +424,12 @@ fn eval_return_function() {
 #[test]
 fn eval_returned_function() {
     let input = r#"
-    let x = fn() {
-      return fn() {
-        return 1;
+    let x = fn(a) {
+      return fn(b) {
+        return a + b;
       };
     };
-    return x()();
+    return x(1)(2);
   "#;
-    assert!("1" == format!("{}", compile_input(input)));
+    assert!("3" == format!("{}", compile_input(input)));
 }
