@@ -93,6 +93,10 @@ impl Eval {
                 let mut call_function = outer_env.get(string);
                 self.exec_func(call_function, outer_arguments, outer_env)
             },
+            Expression::Function{parameters: _, body} => {
+              let mut env = outer_env.clone();
+              self.eval_program(body, &mut env)
+            },
             Expression::Call(call) => {
               match *call.function.clone() {
                 Expression::Identifier(Identifier(ref string)) => {
@@ -101,13 +105,16 @@ impl Eval {
 
                   match maybe_func.clone() {
                     Object::Function(func) => {
+                      let new_func = Expression::Call(Call{
+                        function: Box::new(
+                          Expression::Function {
+                            parameters: func.parameters,
+                            body: func.body,
+                        }),
+                        arguments: outer_arguments
+                      });
                       let mut func_env = func.env.clone();
-                      for (index, parameter) in func.parameters.into_iter().enumerate() {
-                          let actual_param =
-                              self.eval_expression(outer_arguments[index].clone(), outer_env);
-                          func_env.set(parameter.0.to_string(), actual_param);
-                      }
-                      self.eval_program(func.body, &mut func_env)
+                      self.eval_expression(new_func, &mut func_env)
                     },
                     _ => maybe_func
                   }
