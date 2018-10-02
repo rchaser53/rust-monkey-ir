@@ -99,7 +99,7 @@ impl Expression {
                     }
                 }
 
-                format!("{}({})", function.string(), ret_string)
+                format!("{}({})", call.function.string(), ret_string)
             }
         }
     }
