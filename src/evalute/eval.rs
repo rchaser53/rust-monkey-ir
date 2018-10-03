@@ -92,7 +92,7 @@ impl Eval {
         outer_arguments: Vec<Expression>,
         outer_env: &mut Environment,
     ) -> Object {
-        match *outer_function.clone() {
+        match *outer_function {
             Expression::Identifier(Identifier(ref string)) => {
                 let mut call_function = outer_env.get(string);
                 self.exec_func(call_function, outer_arguments, outer_env)
@@ -102,7 +102,7 @@ impl Eval {
               self.call_func(call.clone(), call.arguments, outer_env)
             },
             _ => {
-                panic!("[out] cannot call {:?}", outer_function);
+                panic!("cannot call {:?}", outer_function);
             }
         }
     }
@@ -151,10 +151,10 @@ impl Eval {
         match call_function {
             Object::Function(func) => {
                 let mut func_env = func.env.clone();
-                for (index, parameter) in func.parameters.into_iter().enumerate() {
+                for (index, Identifier(string)) in func.parameters.into_iter().enumerate() {
                     let actual_param =
                         self.eval_expression(outer_arguments[index].clone(), outer_env);
-                    func_env.set(parameter.0.to_string(), actual_param);
+                    func_env.set(string, actual_param);
                 }
                 self.eval_program(func.body, &mut func_env)
             }
@@ -460,3 +460,19 @@ fn eval_returned_function() {
   "#;
     assert!("3" == format!("{}", compile_input(input)));
 }
+
+#[test]
+fn eval_returned_returned_function() {
+    let input = r#"
+    let x = fn(a) {
+      return fn(b) {
+        return fn(c) {
+          return c * b + a;
+        };
+      };
+    };
+    return x(1)(2)(3);
+  "#;
+    assert!("7" == format!("{}", compile_input(input)));
+}
+
