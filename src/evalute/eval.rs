@@ -6,11 +6,15 @@ use parser::statements::*;
 
 use evalute::object::*;
 
-pub struct Eval {}
+pub struct Eval {
+  pub stack_arg: Vec<Vec<Expression>>
+}
 
 impl Eval {
     pub fn new() -> Self {
-        Eval {}
+        Eval {
+          stack_arg: Vec::new()
+        }
     }
 
     pub fn eval_program(&mut self, program: Program, env: &mut Environment) -> Object {
@@ -88,30 +92,53 @@ impl Eval {
         outer_arguments: Vec<Expression>,
         outer_env: &mut Environment,
     ) -> Object {
-        match *outer_function {
+        match *outer_function.clone() {
             Expression::Identifier(Identifier(ref string)) => {
                 let mut call_function = outer_env.get(string);
                 self.exec_func(call_function, outer_arguments, outer_env)
             },
             Expression::Call(call) => {
-              match *call.function {
-                Expression::Identifier(Identifier(ref string)) => {
-                  let mut call_function = outer_env.get(string);
-                  let maybe_func = self.exec_func(call_function, call.arguments, outer_env);
-                  self.exec_func(maybe_func, outer_arguments, outer_env)
-                },
-                Expression::Call(inner_call) => {
-                  let maybe_func = self.eval_call(inner_call.function, inner_call.arguments.clone(), outer_env);
-                  self.exec_func(maybe_func, outer_arguments, outer_env)
-                },
-                _ => {
-                  panic!("[in] cannot call {:?}", call.function);
-                }
-              }
+              self.stack_arg.push(outer_arguments);
+              self.call_func(call.clone(), call.arguments, outer_env)
             },
             _ => {
                 panic!("[out] cannot call {:?}", outer_function);
             }
+        }
+    }
+
+    pub fn call_func(
+      &mut self,
+      call: Call,
+      outer_arguments: Vec<Expression>,
+      outer_env: &mut Environment,
+    ) -> Object {
+        match *call.function {
+          Expression::Identifier(Identifier(ref string)) => {
+            let mut call_function = outer_env.get(string);
+            self.stack_arg.push(call.arguments);
+
+            while let Some(arg) = self.stack_arg.pop() {
+              call_function = self.exec_func(call_function, arg, outer_env);
+
+              match call_function {
+                Object::Function(_) => {
+                  continue;
+                },
+                _ => {
+                  return call_function;
+                }
+              }
+            }
+            call_function
+          },
+          Expression::Call(inner_call) => {
+            self.stack_arg.push(outer_arguments);
+            self.call_func(inner_call.clone(), inner_call.arguments, outer_env)
+          },
+          _ => {
+            panic!("[in] cannot call {:?}", call.function);
+          }
         }
     }
 
