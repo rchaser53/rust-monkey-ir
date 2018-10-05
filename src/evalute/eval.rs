@@ -36,43 +36,42 @@ impl Eval {
         match statement {
             Statement::Let(ident, expr) => {
                 let obj = self.eval_let_staement(ident, expr, env);
-                match obj {
-                  Object::Error(_) => {
-                    self.error_stack.push(obj);
-                  },
-                  _ => {}
-                };
+                let _ = self.accumultae_error(obj);
                 None
-            }
+            },
             Statement::Return(expr) => {
               let obj = self.eval_return_statement(expr, env);
-              match obj {
-                Object::Error(_) => {
-                  self.error_stack.push(obj);
-                  None
-                },
-                _ => {
-                  return Some(obj);
-                }
-              }
+              self.accumultae_error(obj)
             },
             Statement::Expression(expr) => match expr {
                 Expression::If {
                     condition,
                     consequence,
                     alternative,
-                } => self.eval_if(condition, consequence, alternative, env),
+                } => {
+                  let obj = self.eval_if(condition, consequence, alternative, env);
+                  if let Some(obj) = obj {
+                    self.accumultae_error(obj)
+                  } else {
+                    None
+                  }
+                },
                 _ => {
                     let obj = self.eval_expression(expr, env);
-                    match obj {
-                      Object::Error(_) => {
-                        self.error_stack.push(obj);
-                      },
-                      _ => {}
-                    };
+                    let _ = self.accumultae_error(obj);
                     None
                 }
             },
+        }
+    }
+
+    pub fn accumultae_error(&mut self, obj: Object) -> Option<Object> {
+        match obj {
+          Object::Error(_) => {
+            self.error_stack.push(obj);
+            None
+          },
+          _ => Some(obj),
         }
     }
 
@@ -127,7 +126,7 @@ impl Eval {
               self.call_func(call.clone(), call.arguments, outer_env)
             },
             _ => {
-                Object::Error(format!("cannot call {:?}", outer_function))
+                Object::Error(format!("cannot call {}", outer_function.string()))
             }
         }
     }
@@ -162,7 +161,7 @@ impl Eval {
             self.call_func(inner_call.clone(), inner_call.arguments, outer_env)
           },
           _ => {
-            Object::Error(format!("cannot call {:?}", call.function))
+            Object::Error(format!("cannot call {}", call.function.string()))
           }
         }
     }
@@ -201,7 +200,7 @@ impl Eval {
         match expr_value {
             Object::Integer(expr) => self.calculate_prefix_integer(prefix, expr),
             Object::Boolean(expr) => self.calculate_prefix_boolean(prefix, expr),
-            _ => Object::Error(format!("expr value should be integer, but actually {:?}", expr_value))
+            _ => Object::Error(format!("expr value should be integer, but actually {}", expr_value))
         }
     }
 
@@ -218,13 +217,13 @@ impl Eval {
         match left_value {
             Object::Integer(left) => match right_value {
                 Object::Integer(right) => self.calculate_infix_integer(infix, left, right),
-                _ => Object::Error(format!("right value should be integer, but actually {:?}", right_value))
+                _ => Object::Error(format!("right value should be integer, but actually {}", right_value))
             },
             Object::String(left) => match right_value {
                 Object::String(right) => Object::String(left + &right),
-                _ => Object::Error(format!("right value should be integer, but actually {:?}", right_value))
+                _ => Object::Error(format!("right value should be integer, but actually {}", right_value))
             },
-            _ => Object::Error(format!("left value should be integer, but actually {:?}", left_value))
+            _ => Object::Error(format!("left value should be integer, but actually {}", left_value))
         }
     }
 
@@ -237,7 +236,6 @@ impl Eval {
     ) -> Option<Object> {
         let condition_obj = self.eval_expression(*condition, env);
         let mut return_obj = Object::Null;
-
         match condition_obj {
             Object::Boolean(boolean) => {
                 if boolean {
@@ -248,7 +246,7 @@ impl Eval {
                 }
             }
             _ => {
-                return_obj = Object::Error(format!("condition should be boolean. actually {:?}", condition_obj));
+                return_obj = Object::Error(format!("condition should be boolean. actually {}", condition_obj));
             }
         };
 
@@ -261,7 +259,7 @@ impl Eval {
     pub fn calculate_prefix_boolean(&self, prefix: Prefix, value: bool) -> Object {
         match prefix {
             Prefix::Bang => Object::Boolean(!value),
-            _ => Object::Error(format!("{:?} cannot be use for prefix", prefix)),
+            _ => Object::Error(format!("{} cannot be use for prefix", prefix)),
         }
     }
 
@@ -289,7 +287,7 @@ impl Eval {
             Infix::Lte => Object::Boolean(left <= right),
             Infix::Gt => Object::Boolean(left > right),
             Infix::Gte => Object::Boolean(left >= right),
-            _ => Object::Error(format!("{:?} cannot be calculate for integer", infix)),
+            _ => Object::Error(format!("{} cannot be calculate for integer", infix)),
         }
     }
 }
@@ -500,4 +498,22 @@ fn eval_variable_not_found() {
     x;
   "#;
     compile_and_emit_error(input, vec!["x is not found"]);
+}
+
+#[test]
+fn eval_variable_cannot_call_variable() {
+    let input = r#"
+    3();
+  "#;
+    compile_and_emit_error(input, vec!["cannot call 3"]);
+}
+
+// #[test]
+fn eval_variable_conditoin_is_not_boolean() {
+    let input = r#"
+    if (1) {
+      return 3;
+    };
+  "#;
+    compile_and_emit_error(input, vec!["condition should be boolean. actually 1"]);
 }
