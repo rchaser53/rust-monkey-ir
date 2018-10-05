@@ -221,7 +221,11 @@ impl Eval {
             },
             Object::String(left) => match right_value {
                 Object::String(right) => Object::String(left + &right),
-                _ => Object::Error(format!("right value should be integer, but actually {}", right_value))
+                _ => Object::Error(format!("right value should be string, but actually {}", right_value))
+            },
+            Object::Boolean(left) => match right_value {
+                Object::Boolean(right) => Object::Boolean(left == right),
+                _ => Object::Error(format!("right value should be boolean, but actually {}", right_value))
             },
             _ => Object::Error(format!("left value should be integer, but actually {}", left_value))
         }
@@ -362,6 +366,15 @@ fn eval_infix_string() {
   "#;
 
     assert!("hello world" == format!("{}", compile_input(input)));
+}
+
+#[test]
+fn eval_infix_bool() {
+    let input = r#"
+    return false == !!!3;
+  "#;
+
+    assert!("true" == format!("{}", compile_input(input)));
 }
 
 #[test]
