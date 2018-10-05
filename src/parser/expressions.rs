@@ -21,9 +21,7 @@ pub enum Expression {
         body: BlockStatement,
     },
     Call(Call),
-    // Error {
-
-    // },
+    Error(String),
 }
 
 #[derive(PartialEq, Clone, Debug)]
@@ -100,7 +98,8 @@ impl Expression {
                 }
 
                 format!("{}({})", call.function.string(), ret_string)
-            }
+            },
+            Expression::Error(message) => format!(r#""{}""#, message.to_string()),
         }
     }
 }

@@ -11,6 +11,7 @@ pub enum Object {
     Boolean(bool),
     Function(Function),
     Null,
+    Error(String),
 }
 
 #[derive(Debug, Clone)]
@@ -47,6 +48,7 @@ impl fmt::Display for Object {
                 write!(f, "fn({}) {{ {} }}", param_string, body_string)
             }
             Object::Null => write!(f, "Null"),
+            Object::Error(string) => write!(f, "{}", string),
         }
     }
 }
@@ -64,7 +66,10 @@ impl Environment {
     }
 
     pub fn get(&self, name: &str) -> Object {
-        self.store[name].clone()
+        if let Some(obj) = self.store.get(name) {
+          return obj.clone();
+        };
+        Object::Error(format!("{} is not found", name))
     }
 
     pub fn set(&mut self, name: String, value: Object) -> Object {

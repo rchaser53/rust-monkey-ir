@@ -7,13 +7,15 @@ use parser::statements::*;
 use evalute::object::*;
 
 pub struct Eval {
-  pub stack_arg: Vec<Vec<Expression>>
+  pub stack_arg: Vec<Vec<Expression>>,
+  pub error_stack: Vec<Object>
 }
 
 impl Eval {
     pub fn new() -> Self {
         Eval {
-          stack_arg: Vec::new()
+          stack_arg: Vec::new(),
+          error_stack: Vec::new(),
         }
     }
 
@@ -33,10 +35,27 @@ impl Eval {
     ) -> Option<Object> {
         match statement {
             Statement::Let(ident, expr) => {
-                self.eval_let_staement(ident, expr, env);
+                let obj = self.eval_let_staement(ident, expr, env);
+                match obj {
+                  Object::Error(_) => {
+                    self.error_stack.push(obj);
+                  },
+                  _ => {}
+                };
                 None
             }
-            Statement::Return(expr) => Some(self.eval_return_statement(expr, env)),
+            Statement::Return(expr) => {
+              let obj = self.eval_return_statement(expr, env);
+              match obj {
+                Object::Error(_) => {
+                  self.error_stack.push(obj);
+                  None
+                },
+                _ => {
+                  return Some(obj);
+                }
+              }
+            },
             Statement::Expression(expr) => match expr {
                 Expression::If {
                     condition,
@@ -44,7 +63,13 @@ impl Eval {
                     alternative,
                 } => self.eval_if(condition, consequence, alternative, env),
                 _ => {
-                    self.eval_expression(expr, env);
+                    let obj = self.eval_expression(expr, env);
+                    match obj {
+                      Object::Error(_) => {
+                        self.error_stack.push(obj);
+                      },
+                      _ => {}
+                    };
                     None
                 }
             },
@@ -102,7 +127,7 @@ impl Eval {
               self.call_func(call.clone(), call.arguments, outer_env)
             },
             _ => {
-                panic!("cannot call {:?}", outer_function);
+                Object::Error(format!("cannot call {:?}", outer_function))
             }
         }
     }
@@ -137,7 +162,7 @@ impl Eval {
             self.call_func(inner_call.clone(), inner_call.arguments, outer_env)
           },
           _ => {
-            panic!("[in] cannot call {:?}", call.function);
+            Object::Error(format!("cannot call {:?}", call.function))
           }
         }
     }
@@ -158,9 +183,7 @@ impl Eval {
                 }
                 self.eval_program(func.body, &mut func_env)
             }
-            _ => {
-                call_function
-            }
+            _ => call_function
         }
     }
 
@@ -175,16 +198,10 @@ impl Eval {
         env: &mut Environment,
     ) -> Object {
         let expr_value = self.eval_expression(*expr, env);
-
         match expr_value {
             Object::Integer(expr) => self.calculate_prefix_integer(prefix, expr),
             Object::Boolean(expr) => self.calculate_prefix_boolean(prefix, expr),
-            _ => {
-                panic!(
-                    "expr value should be integer, but actually {:?}",
-                    expr_value
-                );
-            }
+            _ => Object::Error(format!("expr value should be integer, but actually {:?}", expr_value))
         }
     }
 
@@ -201,28 +218,13 @@ impl Eval {
         match left_value {
             Object::Integer(left) => match right_value {
                 Object::Integer(right) => self.calculate_infix_integer(infix, left, right),
-                _ => {
-                    panic!(
-                        "right value should be integer, but actually {:?}",
-                        right_value
-                    );
-                }
+                _ => Object::Error(format!("right value should be integer, but actually {:?}", right_value))
             },
             Object::String(left) => match right_value {
                 Object::String(right) => Object::String(left + &right),
-                _ => {
-                    panic!(
-                        "right value should be integer, but actually {:?}",
-                        right_value
-                    );
-                }
+                _ => Object::Error(format!("right value should be integer, but actually {:?}", right_value))
             },
-            _ => {
-                panic!(
-                    "left value should be integer, but actually {:?}",
-                    left_value
-                );
-            }
+            _ => Object::Error(format!("left value should be integer, but actually {:?}", left_value))
         }
     }
 
@@ -246,7 +248,7 @@ impl Eval {
                 }
             }
             _ => {
-                panic!("condition should be boolean. actually {:?}", condition_obj);
+                return_obj = Object::Error(format!("condition should be boolean. actually {:?}", condition_obj));
             }
         };
 
@@ -259,9 +261,7 @@ impl Eval {
     pub fn calculate_prefix_boolean(&self, prefix: Prefix, value: bool) -> Object {
         match prefix {
             Prefix::Bang => Object::Boolean(!value),
-            _ => {
-                panic!("{:?} cannot be use for prefix", prefix);
-            }
+            _ => Object::Error(format!("{:?} cannot be use for prefix", prefix)),
         }
     }
 
@@ -289,9 +289,7 @@ impl Eval {
             Infix::Lte => Object::Boolean(left <= right),
             Infix::Gt => Object::Boolean(left > right),
             Infix::Gte => Object::Boolean(left >= right),
-            _ => {
-                panic!("{:?} cannot be calculate for integer", infix);
-            }
+            _ => Object::Error(format!("{:?} cannot be calculate for integer", infix)),
         }
     }
 }
@@ -303,6 +301,26 @@ fn compile_input(input: &str) -> Object {
     let statements = parser.parse_program();
     let mut eval = Eval::new();
     eval.eval_program(statements, &mut Environment::new())
+}
+
+#[warn(dead_code)]
+fn compile_and_emit_error(input: &str, error_messages: Vec<&str>) {
+    let mut lexer = Lexer::new(input);
+    let mut parser = Parser::new(&mut lexer);
+    let statements = parser.parse_program();
+    let mut eval = Eval::new();
+    eval.eval_program(statements, &mut Environment::new());
+    
+    let error_stack = eval.error_stack;
+
+    for (index, error_message) in error_messages.into_iter().enumerate() {
+        assert!(
+            format!("{}", error_stack[index]) == format!("{}", error_message),
+            "\r\nexpected: {:?} \r\nactual: {:?}",
+            error_stack[index],
+            error_message
+        );
+    }
 }
 
 #[test]
@@ -476,3 +494,10 @@ fn eval_returned_returned_function() {
     assert!("7" == format!("{}", compile_input(input)));
 }
 
+#[test]
+fn eval_variable_not_found() {
+    let input = r#"
+    x;
+  "#;
+    compile_and_emit_error(input, vec!["x is not found"]);
+}
