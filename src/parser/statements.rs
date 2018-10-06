@@ -79,7 +79,6 @@ impl Statement {
         match self {
             Statement::Let(Identifier(ref string), expr) => {
                 format!("let {} = {}", string, &expr.string())
-                // ("let ".to_owned() + &ident.0 + " = " + &expr.string()).to_string()
             }
             Statement::Return(expr) => ("return ".to_owned() + &expr.string()).to_string(),
             Statement::Expression(expr) => expr.string(),

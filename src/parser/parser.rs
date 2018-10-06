@@ -39,11 +39,6 @@ impl<'a> Parser<'a> {
             }
             self.next_token();
         }
-
-        if self.errors.len() > 0 {
-            self.emit_error();
-        }
-
         program
     }
 
@@ -202,40 +197,43 @@ impl<'a> Parser<'a> {
         if let Some(token) = self.cur_token.to_owned() {
             self.next_token();
             if let Some(right) = self.parse_expression(Precedences::Prefix) {
-                return Some(Expression::Prefix(
-                    self.convert_token_to_prefix(token.kind),
-                    Box::new(right),
-                ));
+                if let Some(prefix) = self.convert_token_to_prefix(token.kind) {
+                    return Some(Expression::Prefix(prefix, Box::new(right)));
+                }
             }
         }
         None
     }
 
-    pub fn convert_token_to_prefix(&self, token: TokenType) -> Prefix {
+    pub fn convert_token_to_prefix(&mut self, token: TokenType) -> Option<Prefix> {
         match token {
-            TokenType::Plus => Prefix::Plus,
-            TokenType::Minus => Prefix::Minus,
-            TokenType::Bang => Prefix::Bang,
+            TokenType::Plus => Some(Prefix::Plus),
+            TokenType::Minus => Some(Prefix::Minus),
+            TokenType::Bang => Some(Prefix::Bang),
             _ => {
-                panic!("nya-n");
+                self.errors
+                    .push(format!("{:?} is not a token for prefix", token));
+                None
             }
         }
     }
 
-    pub fn convert_token_to_infix(&self, token: TokenType) -> Infix {
+    pub fn convert_token_to_infix(&mut self, token: TokenType) -> Option<Infix> {
         match token {
-            TokenType::Plus => Infix::Plus,
-            TokenType::Minus => Infix::Minus,
-            TokenType::Divide => Infix::Divide,
-            TokenType::Multiply => Infix::Multiply,
-            TokenType::Eq => Infix::Eq,
-            TokenType::NotEq => Infix::NotEq,
-            TokenType::Gte => Infix::Gte,
-            TokenType::Gt => Infix::Gt,
-            TokenType::Lte => Infix::Lte,
-            TokenType::Lt => Infix::Lt,
+            TokenType::Plus => Some(Infix::Plus),
+            TokenType::Minus => Some(Infix::Minus),
+            TokenType::Divide => Some(Infix::Divide),
+            TokenType::Multiply => Some(Infix::Multiply),
+            TokenType::Eq => Some(Infix::Eq),
+            TokenType::NotEq => Some(Infix::NotEq),
+            TokenType::Gte => Some(Infix::Gte),
+            TokenType::Gt => Some(Infix::Gt),
+            TokenType::Lte => Some(Infix::Lte),
+            TokenType::Lt => Some(Infix::Lt),
             _ => {
-                panic!("nya-n");
+                self.errors
+                    .push(format!("{:?} is not a token for infix", token));
+                None
             }
         }
     }
@@ -249,11 +247,13 @@ impl<'a> Parser<'a> {
             let precedence = self.cur_precedence();
             self.next_token();
             if let Some(right) = self.parse_expression(precedence) {
-                return Some(Expression::Infix(
-                    self.convert_token_to_infix(token.kind),
-                    Box::new(left.unwrap()),
-                    Box::new(right),
-                ));
+                if let Some(infix) = self.convert_token_to_infix(token.kind) {
+                    return Some(Expression::Infix(
+                        infix,
+                        Box::new(left.unwrap()),
+                        Box::new(right),
+                    ));
+                }
             }
         }
         None
@@ -331,30 +331,28 @@ impl<'a> Parser<'a> {
 
     pub fn parse_call_expression(&mut self, function: Option<Expression>) -> Option<Expression> {
         if let Some(function) = function {
-            let expr = Expression::Call(
-              Call{
+            let expr = Expression::Call(Call {
                 function: Box::new(function),
                 arguments: self.parse_call_arguments(),
             });
-        
+
             match expr.clone() {
-              Expression::Function{ parameters: _, body: _ } => {
-                if let Some(token) = self.peek_token.to_owned() {
-                  return match token.kind {
-                    TokenType::Lparen => {
-                        self.next_token();
-                        self.parse_call_expression(Some(expr))
-                    },
-                    _ => {
-                      Some(expr)
+                Expression::Function {
+                    parameters: _,
+                    body: _,
+                } => {
+                    if let Some(token) = self.peek_token.to_owned() {
+                        return match token.kind {
+                            TokenType::Lparen => {
+                                self.next_token();
+                                self.parse_call_expression(Some(expr))
+                            }
+                            _ => Some(expr),
+                        };
                     }
-                  };
+                    None
                 }
-                None
-              },
-              _ => {
-                Some(expr)
-              }
+                _ => Some(expr),
             }
         } else {
             None
@@ -472,10 +470,12 @@ impl<'a> Parser<'a> {
         Precedences::Lowest
     }
 
-    pub fn emit_error(&self) {
-        for error in self.errors.iter() {
-            println!("{}", error);
-        }
+    pub fn has_error(&self) -> bool {
+        self.errors.len() > 0
+    }
+
+    pub fn emit_error(&self) -> String {
+        self.errors.join("\n")
     }
 
     pub fn peek_error(&mut self, t: TokenType) {
@@ -485,7 +485,7 @@ impl<'a> Parser<'a> {
 
     pub fn no_prefix_parse_fn_error(&mut self, t: TokenType) {
         self.errors
-            .push(format!("no prefix parse function for {:?} found", t));
+            .push(format!("no prefix parse function for {:?}", t));
     }
 }
 
@@ -500,6 +500,25 @@ fn parse_input(input: &str) -> Program {
     let mut lexer = Lexer::new(input);
     let mut parser = Parser::new(&mut lexer);
     parser.parse_program()
+}
+
+#[warn(dead_code)]
+fn parse_and_emit_error(input: &str, error_stack: Vec<&str>) {
+    let mut lexer = Lexer::new(input);
+    let mut parser = Parser::new(&mut lexer);
+    let program = parser.parse_program();
+
+    if parser.has_error() == false {
+      panic!("no errors found. return program is {:?}", program);
+    }
+
+    assert!(
+      parser.emit_error() == error_stack.join("\n"),
+      "\r\nexpected: {:?} \r\nactual: {:?}",
+      parser.emit_error(),
+      error_stack.join("\n")
+    );
+    
 }
 
 #[test]
@@ -616,4 +635,12 @@ fn test_call_parsing() {
         "add(a, b, 1, (2 * 3), (4 + 5), add(6, (7 * 8)))",
     );
     statement_assert(&program[2], "add((((a + b) + ((c * d) / f)) + g))");
+}
+
+#[test]
+fn test_wrong_prefix() {
+    let input = r#"
+    return > 3;
+  "#;
+    parse_and_emit_error(input, vec!["no prefix parse function for Gt"]);
 }
