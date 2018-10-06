@@ -227,7 +227,17 @@ impl Eval {
                 Object::Boolean(right) => Object::Boolean(left == right),
                 _ => Object::Error(format!("right value should be boolean, but actually {}", right_value))
             },
-            _ => Object::Error(format!("left value should be integer, but actually {}", left_value))
+            _ => {
+              let right_type_str = match right_value {
+                Object::Integer(_right) => "integer",
+                Object::String(_right) => "string",
+                Object::Boolean(_right) => "boolean",
+                _ => {
+                  return Object::Error(format!("{} {} {} cannot be culculated", left_value, infix, right_value));
+                }
+              };
+              Object::Error(format!("left value should be {}, but actually {}", right_type_str, left_value))
+            }
         }
     }
 
@@ -521,7 +531,7 @@ fn eval_variable_cannot_call_variable() {
     compile_and_emit_error(input, vec!["cannot call 3"]);
 }
 
-// #[test]
+#[test]
 fn eval_variable_conditoin_is_not_boolean() {
     let input = r#"
     if (1) {
@@ -529,4 +539,20 @@ fn eval_variable_conditoin_is_not_boolean() {
     };
   "#;
     compile_and_emit_error(input, vec!["condition should be boolean. actually 1"]);
+}
+
+#[test]
+fn eval_wrong_infix_left() {
+    let input = r#"
+    return fn() {} + "a";
+  "#;
+    compile_and_emit_error(input, vec!["left value should be string, but actually fn() {  }"]);
+}
+
+#[test]
+fn eval_wrong_infix_right() {
+    let input = r#"
+    return true + 3;
+  "#;
+    compile_and_emit_error(input, vec!["right value should be boolean, but actually 3"]);
 }
