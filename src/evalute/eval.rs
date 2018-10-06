@@ -4,6 +4,7 @@ use parser::expressions::*;
 use parser::parser::*;
 use parser::statements::*;
 
+use evalute::environment::*;
 use evalute::object::*;
 
 pub struct Eval {
@@ -420,6 +421,14 @@ fn eval_boolean() {
 fn eval_null() {
     let input = r#"
   let a = 1;
+"#;
+    assert!("Null" == format!("{}", compile_input(input)));
+}
+
+#[test]
+fn eval_return_null() {
+    let input = r#"
+  return Null;
 "#;
     assert!("Null" == format!("{}", compile_input(input)));
 }
