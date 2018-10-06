@@ -21,7 +21,6 @@ pub struct Function {
     pub env: Environment,
 }
 
-
 impl fmt::Display for Object {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
@@ -67,7 +66,7 @@ impl Environment {
 
     pub fn get(&self, name: &str) -> Object {
         if let Some(obj) = self.store.get(name) {
-          return obj.clone();
+            return obj.clone();
         };
         Object::Error(format!("{} is not found", name))
     }

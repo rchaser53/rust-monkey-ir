@@ -7,15 +7,15 @@ use parser::statements::*;
 use evalute::object::*;
 
 pub struct Eval {
-  pub stack_arg: Vec<Vec<Expression>>,
-  pub error_stack: Vec<Object>
+    pub stack_arg: Vec<Vec<Expression>>,
+    pub error_stack: Vec<Object>,
 }
 
 impl Eval {
     pub fn new() -> Self {
         Eval {
-          stack_arg: Vec::new(),
-          error_stack: Vec::new(),
+            stack_arg: Vec::new(),
+            error_stack: Vec::new(),
         }
     }
 
@@ -38,24 +38,24 @@ impl Eval {
                 let obj = self.eval_let_staement(ident, expr, env);
                 let _ = self.accumultae_error(obj);
                 None
-            },
+            }
             Statement::Return(expr) => {
-              let obj = self.eval_return_statement(expr, env);
-              self.accumultae_error(obj)
-            },
+                let obj = self.eval_return_statement(expr, env);
+                self.accumultae_error(obj)
+            }
             Statement::Expression(expr) => match expr {
                 Expression::If {
                     condition,
                     consequence,
                     alternative,
                 } => {
-                  let obj = self.eval_if(condition, consequence, alternative, env);
-                  if let Some(obj) = obj {
-                    self.accumultae_error(obj)
-                  } else {
-                    None
-                  }
-                },
+                    let obj = self.eval_if(condition, consequence, alternative, env);
+                    if let Some(obj) = obj {
+                        self.accumultae_error(obj)
+                    } else {
+                        None
+                    }
+                }
                 _ => {
                     let obj = self.eval_expression(expr, env);
                     let _ = self.accumultae_error(obj);
@@ -67,11 +67,11 @@ impl Eval {
 
     pub fn accumultae_error(&mut self, obj: Object) -> Option<Object> {
         match obj {
-          Object::Error(_) => {
-            self.error_stack.push(obj);
-            None
-          },
-          _ => Some(obj),
+            Object::Error(_) => {
+                self.error_stack.push(obj);
+                None
+            }
+            _ => Some(obj),
         }
     }
 
@@ -97,12 +97,12 @@ impl Eval {
             Expression::Prefix(prefix, expr) => self.eval_prefix(prefix, expr, env),
             Expression::Infix(infix, left, right) => self.eval_infix(infix, left, right, env),
             Expression::Identifier(ident) => self.eval_identifier(ident, env),
-            Expression::Function { parameters, body } => Object::Function(Function{
+            Expression::Function { parameters, body } => Object::Function(Function {
                 parameters: parameters,
                 body: body,
                 env: env.clone(),
             }),
-            Expression::Call(Call{
+            Expression::Call(Call {
                 function,
                 arguments,
             }) => self.eval_call(function, arguments, env),
@@ -120,57 +120,53 @@ impl Eval {
             Expression::Identifier(Identifier(ref string)) => {
                 let mut call_function = outer_env.get(string);
                 self.exec_func(call_function, outer_arguments, outer_env)
-            },
-            Expression::Call(call) => {
-              self.stack_arg.push(outer_arguments);
-              self.call_func(call.clone(), call.arguments, outer_env)
-            },
-            _ => {
-                Object::Error(format!("cannot call {}", outer_function.string()))
             }
+            Expression::Call(call) => {
+                self.stack_arg.push(outer_arguments);
+                self.call_func(call.clone(), call.arguments, outer_env)
+            }
+            _ => Object::Error(format!("cannot call {}", outer_function.string())),
         }
     }
 
     pub fn call_func(
-      &mut self,
-      call: Call,
-      outer_arguments: Vec<Expression>,
-      outer_env: &mut Environment,
+        &mut self,
+        call: Call,
+        outer_arguments: Vec<Expression>,
+        outer_env: &mut Environment,
     ) -> Object {
         match *call.function {
-          Expression::Identifier(Identifier(ref string)) => {
-            let mut call_function = outer_env.get(string);
-            self.stack_arg.push(call.arguments);
+            Expression::Identifier(Identifier(ref string)) => {
+                let mut call_function = outer_env.get(string);
+                self.stack_arg.push(call.arguments);
 
-            while let Some(arg) = self.stack_arg.pop() {
-              call_function = self.exec_func(call_function, arg, outer_env);
+                while let Some(arg) = self.stack_arg.pop() {
+                    call_function = self.exec_func(call_function, arg, outer_env);
 
-              match call_function {
-                Object::Function(_) => {
-                  continue;
-                },
-                _ => {
-                  return call_function;
+                    match call_function {
+                        Object::Function(_) => {
+                            continue;
+                        }
+                        _ => {
+                            return call_function;
+                        }
+                    }
                 }
-              }
+                call_function
             }
-            call_function
-          },
-          Expression::Call(inner_call) => {
-            self.stack_arg.push(outer_arguments);
-            self.call_func(inner_call.clone(), inner_call.arguments, outer_env)
-          },
-          _ => {
-            Object::Error(format!("cannot call {}", call.function.string()))
-          }
+            Expression::Call(inner_call) => {
+                self.stack_arg.push(outer_arguments);
+                self.call_func(inner_call.clone(), inner_call.arguments, outer_env)
+            }
+            _ => Object::Error(format!("cannot call {}", call.function.string())),
         }
     }
 
     pub fn exec_func(
-      &mut self,
-      call_function: Object,
-      outer_arguments: Vec<Expression>,
-      outer_env: &mut Environment,
+        &mut self,
+        call_function: Object,
+        outer_arguments: Vec<Expression>,
+        outer_env: &mut Environment,
     ) -> Object {
         match call_function {
             Object::Function(func) => {
@@ -182,7 +178,7 @@ impl Eval {
                 }
                 self.eval_program(func.body, &mut func_env)
             }
-            _ => call_function
+            _ => call_function,
         }
     }
 
@@ -200,7 +196,10 @@ impl Eval {
         match expr_value {
             Object::Integer(expr) => self.calculate_prefix_integer(prefix, expr),
             Object::Boolean(expr) => self.calculate_prefix_boolean(prefix, expr),
-            _ => Object::Error(format!("expr value should be integer, but actually {}", expr_value))
+            _ => Object::Error(format!(
+                "expr value should be integer, but actually {}",
+                expr_value
+            )),
         }
     }
 
@@ -217,26 +216,41 @@ impl Eval {
         match left_value {
             Object::Integer(left) => match right_value {
                 Object::Integer(right) => self.calculate_infix_integer(infix, left, right),
-                _ => Object::Error(format!("right value should be integer, but actually {}", right_value))
+                _ => Object::Error(format!(
+                    "right value should be integer, but actually {}",
+                    right_value
+                )),
             },
             Object::String(left) => match right_value {
                 Object::String(right) => Object::String(left + &right),
-                _ => Object::Error(format!("right value should be string, but actually {}", right_value))
+                _ => Object::Error(format!(
+                    "right value should be string, but actually {}",
+                    right_value
+                )),
             },
             Object::Boolean(left) => match right_value {
                 Object::Boolean(right) => Object::Boolean(left == right),
-                _ => Object::Error(format!("right value should be boolean, but actually {}", right_value))
+                _ => Object::Error(format!(
+                    "right value should be boolean, but actually {}",
+                    right_value
+                )),
             },
             _ => {
-              let right_type_str = match right_value {
-                Object::Integer(_right) => "integer",
-                Object::String(_right) => "string",
-                Object::Boolean(_right) => "boolean",
-                _ => {
-                  return Object::Error(format!("{} {} {} cannot be culculated", left_value, infix, right_value));
-                }
-              };
-              Object::Error(format!("left value should be {}, but actually {}", right_type_str, left_value))
+                let right_type_str = match right_value {
+                    Object::Integer(_right) => "integer",
+                    Object::String(_right) => "string",
+                    Object::Boolean(_right) => "boolean",
+                    _ => {
+                        return Object::Error(format!(
+                            "{} {} {} cannot be culculated",
+                            left_value, infix, right_value
+                        ));
+                    }
+                };
+                Object::Error(format!(
+                    "left value should be {}, but actually {}",
+                    right_type_str, left_value
+                ))
             }
         }
     }
@@ -260,7 +274,10 @@ impl Eval {
                 }
             }
             _ => {
-                return_obj = Object::Error(format!("condition should be boolean. actually {}", condition_obj));
+                return_obj = Object::Error(format!(
+                    "condition should be boolean. actually {}",
+                    condition_obj
+                ));
             }
         };
 
@@ -321,17 +338,21 @@ fn compile_and_emit_error(input: &str, error_messages: Vec<&str>) {
     let mut parser = Parser::new(&mut lexer);
     let statements = parser.parse_program();
     let mut eval = Eval::new();
-    eval.eval_program(statements, &mut Environment::new());
-    
+    let result = eval.eval_program(statements, &mut Environment::new());
+
     let error_stack = eval.error_stack;
 
     for (index, error_message) in error_messages.into_iter().enumerate() {
-        assert!(
-            format!("{}", error_stack[index]) == format!("{}", error_message),
-            "\r\nexpected: {:?} \r\nactual: {:?}",
-            error_stack[index],
-            error_message
-        );
+        if let Some(stacked_message) = error_stack.get(index) {
+            assert!(
+                format!("{}", stacked_message) == format!("{}", error_message),
+                "\r\nexpected: {:?} \r\nactual: {:?}",
+                stacked_message,
+                error_message
+            );
+        } else {
+            panic!("failed to emit error message. return {:?}", result);
+        }
     }
 }
 
@@ -546,7 +567,10 @@ fn eval_wrong_infix_left() {
     let input = r#"
     return fn() {} + "a";
   "#;
-    compile_and_emit_error(input, vec!["left value should be string, but actually fn() {  }"]);
+    compile_and_emit_error(
+        input,
+        vec!["left value should be string, but actually fn() {  }"],
+    );
 }
 
 #[test]

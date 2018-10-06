@@ -98,7 +98,7 @@ impl Expression {
                 }
 
                 format!("{}({})", call.function.string(), ret_string)
-            },
+            }
             Expression::Error(message) => format!(r#""{}""#, message.to_string()),
         }
     }
