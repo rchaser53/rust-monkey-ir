@@ -319,6 +319,7 @@ impl Eval {
             Infix::Lte => Object::Boolean(left <= right),
             Infix::Gt => Object::Boolean(left > right),
             Infix::Gte => Object::Boolean(left >= right),
+            Infix::Eq => Object::Boolean(left == right),
             _ => Object::Error(format!("{} cannot be calculate for integer", infix)),
         }
     }
