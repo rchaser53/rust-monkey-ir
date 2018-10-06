@@ -326,6 +326,18 @@ impl Eval {
     pub fn has_error(&self) -> bool {
       self.error_stack.len() > 0
     }
+
+    pub fn emit_error(&mut self) -> String {
+      let mut error_message = String::new();
+      for (index, err_obj) in self.error_stack.iter().enumerate() {
+        if index == 0 {
+          error_message = format!("{}", err_obj);
+        } else {
+          error_message = format!("{}\n{}", error_message, err_obj);
+        }
+      }
+      error_message.to_string()
+    }
 }
 
 #[warn(dead_code)]
