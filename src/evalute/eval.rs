@@ -322,6 +322,10 @@ impl Eval {
             _ => Object::Error(format!("{} cannot be calculate for integer", infix)),
         }
     }
+
+    pub fn has_error(&self) -> bool {
+      self.error_stack.len() > 0
+    }
 }
 
 #[warn(dead_code)]
@@ -330,7 +334,11 @@ fn compile_input(input: &str) -> Object {
     let mut parser = Parser::new(&mut lexer);
     let statements = parser.parse_program();
     let mut eval = Eval::new();
-    eval.eval_program(statements, &mut Environment::new())
+    let return_obj = eval.eval_program(statements, &mut Environment::new());
+    if eval.has_error() {
+      panic!("error found {:?}", eval.error_stack);
+    }
+    return_obj
 }
 
 #[warn(dead_code)]
