@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 
 use evalute::object::*;
+use parser::expressions::*;
 
 #[derive(Debug, Clone)]
 pub struct Environment {
@@ -18,11 +19,11 @@ impl Environment {
         }
     }
 
-    pub fn get(&self, name: &str) -> Object {
+    pub fn get(&self, name: &str, location: Location) -> Object {
         if let Some(obj) = self.store.get(name) {
             return obj.clone();
         };
-        Object::Error(format!("{} is not found", name))
+        Object::Error(format!("{} is not found. row: {}", name, location.row))
     }
 
     pub fn set(&mut self, name: String, value: Object) -> Object {

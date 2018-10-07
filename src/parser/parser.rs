@@ -6,19 +6,19 @@ use parser::precedence::*;
 use parser::statements::*;
 
 pub struct Parser<'a> {
-    pub l: &'a mut Lexer<'a>,
+    pub lexer: &'a mut Lexer<'a>,
     pub cur_token: Option<Token>,
     pub peek_token: Option<Token>,
     pub errors: Vec<String>,
 }
 
 impl<'a> Parser<'a> {
-    pub fn new(l: &'a mut Lexer<'a>) -> Parser<'a> {
-        let current_token = l.next_token();
-        let peek_token = l.next_token();
+    pub fn new(lexer: &'a mut Lexer<'a>) -> Parser<'a> {
+        let current_token = lexer.next_token();
+        let peek_token = lexer.next_token();
 
         Parser {
-            l: l,
+            lexer: lexer,
             cur_token: current_token,
             peek_token: peek_token,
             errors: Vec::new(),
@@ -27,7 +27,7 @@ impl<'a> Parser<'a> {
 
     pub fn next_token(&mut self) {
         self.cur_token = self.peek_token.to_owned();
-        self.peek_token = self.l.next_token();
+        self.peek_token = self.lexer.next_token();
     }
 
     pub fn parse_program(&mut self) -> Program {
@@ -113,7 +113,9 @@ impl<'a> Parser<'a> {
 
     pub fn parse_identifier(&self) -> Option<Expression> {
         if let Some(token) = &self.cur_token {
-            return Some(Expression::Identifier(Identifier(token.value.to_owned())));
+            return Some(Expression::Identifier(
+              Identifier(token.value.to_owned()), Location::new(self.lexer.current_row),
+            ));
         }
         None
     }
@@ -121,7 +123,9 @@ impl<'a> Parser<'a> {
     pub fn parse_integer_literal(&mut self) -> Option<Expression> {
         if let Some(token) = &self.cur_token {
             if let Ok(value) = token.value.parse::<i64>() {
-                return Some(Expression::IntegerLiteral(value));
+                return Some(Expression::IntegerLiteral(
+                  value, Location::new(self.lexer.current_row),
+                ));
             } else {
                 self.errors
                     .push(format!("could not parse {} as integer. row: {}", token.value, token.current_row));
@@ -132,13 +136,17 @@ impl<'a> Parser<'a> {
 
     pub fn parse_string_literal(&mut self) -> Option<Expression> {
         if let Some(token) = &self.cur_token {
-            return Some(Expression::StringLiteral(token.value.to_owned()));
+            return Some(Expression::StringLiteral(
+              token.value.to_owned(), Location::new(self.lexer.current_row),
+            ));
         }
         None
     }
 
     pub fn parse_boolean(&mut self) -> Option<Expression> {
-        return Some(Expression::Boolean(self.cur_token_is(TokenType::True)));
+        return Some(Expression::Boolean(
+          self.cur_token_is(TokenType::True), Location::new(self.lexer.current_row),
+        ));
     }
 
     pub fn parse_expression(&mut self, precedence: Precedences) -> Option<Expression> {
@@ -198,7 +206,9 @@ impl<'a> Parser<'a> {
             self.next_token();
             if let Some(right) = self.parse_expression(Precedences::Prefix) {
                 if let Some(prefix) = self.convert_token_to_prefix(token) {
-                    return Some(Expression::Prefix(prefix, Box::new(right)));
+                    return Some(Expression::Prefix(
+                      prefix, Box::new(right), Location::new(self.lexer.current_row),
+                    ));
                 }
             }
         }
@@ -252,6 +262,7 @@ impl<'a> Parser<'a> {
                         infix,
                         Box::new(left.unwrap()),
                         Box::new(right),
+                        Location::new(self.lexer.current_row),
                     ));
                 } else {
                     self.errors
@@ -269,6 +280,7 @@ impl<'a> Parser<'a> {
         self.next_token();
 
         if let Some(condition) = self.parse_expression(Precedences::Lowest) {
+            let if_row = self.lexer.current_row;
             if self.expect_peek(TokenType::Rparen) == false {
                 return None;
             }
@@ -292,6 +304,7 @@ impl<'a> Parser<'a> {
                     condition: Box::new(condition),
                     consequence: consequence,
                     alternative: alternative,
+                    location: Location::new(if_row),
                 });
             }
         }
@@ -327,6 +340,7 @@ impl<'a> Parser<'a> {
             return Some(Expression::Function {
                 parameters: parameters,
                 body: body,
+                location: Location::new(self.lexer.current_row),
             });
         }
         None
@@ -337,12 +351,14 @@ impl<'a> Parser<'a> {
             let expr = Expression::Call(Call {
                 function: Box::new(function),
                 arguments: self.parse_call_arguments(),
+                location: Location::new(self.lexer.current_row),
             });
 
             match expr.clone() {
                 Expression::Function {
                     parameters: _,
                     body: _,
+                    location: _,
                 } => {
                     if let Some(token) = self.peek_token.to_owned() {
                         return match token.kind {
