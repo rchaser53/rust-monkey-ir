@@ -588,6 +588,20 @@ fn eval_returned_returned_function() {
 }
 
 #[test]
+fn eval_parameter_function() {
+    let input = r#"
+    let x = fn(a) {
+      return a * 2;
+    };
+    let y = fn(b) {
+      return b(3) + 1; 
+    }
+    return y(x);
+  "#;
+    assert!("7" == format!("{}", compile_input(input)));
+}
+
+#[test]
 fn eval_variable_not_found() {
     let input = r#"
     x;
