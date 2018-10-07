@@ -13,6 +13,23 @@ pub enum Object {
     Function(Function),
     Null,
     Error(String),
+    BuildIn(BuildIn),
+}
+
+#[derive(Debug, Clone)]
+pub enum BuildIn {
+  Print
+}
+
+#[derive(Debug, Clone)]
+pub struct BuildInPrint {}
+impl BuildInPrint {
+  pub fn new() -> Self {
+    BuildInPrint{}
+  }
+  pub fn print(&self, print_str: &str) {
+    println!("{}", print_str);
+  }
 }
 
 #[derive(Debug, Clone)]
@@ -49,6 +66,11 @@ impl fmt::Display for Object {
             }
             Object::Null => write!(f, "Null"),
             Object::Error(string) => write!(f, "{}", string),
+            Object::BuildIn(build_in) => {
+                match build_in {
+                  BuildIn::Print => write!(f, "print"),
+                }
+            }
         }
     }
 }

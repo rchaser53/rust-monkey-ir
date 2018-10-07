@@ -11,6 +11,7 @@ impl Environment {
     pub fn new() -> Self {
         let mut store = HashMap::new();
         store.insert("Null".to_string(), Object::Null);
+        store.insert("print".to_string(), Object::BuildIn(BuildIn::Print));
 
         Environment {
             store: store,

@@ -179,6 +179,15 @@ impl Eval {
                 }
                 self.eval_program(func.body, &mut func_env)
             }
+            Object::BuildIn(build_in) => {
+                match build_in {
+                  BuildIn::Print => {
+                    let print_struct = BuildInPrint::new();
+                    print_struct.print(&outer_arguments[0].clone().string());
+                    Object::Null
+                  }
+                }
+            }
             _ => call_function,
         }
     }
