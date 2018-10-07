@@ -44,13 +44,15 @@ pub enum TokenType {
 pub struct Token {
     pub kind: TokenType,
     pub value: String,
+    pub current_row: usize,
 }
 
 impl Token {
-    pub fn new(kind: TokenType, value: String) -> Token {
+    pub fn new(kind: TokenType, value: String, row: usize) -> Token {
         Token {
             kind: kind,
             value: value,
+            current_row: row,
         }
     }
 }

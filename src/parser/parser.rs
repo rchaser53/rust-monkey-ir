@@ -124,7 +124,7 @@ impl<'a> Parser<'a> {
                 return Some(Expression::IntegerLiteral(value));
             } else {
                 self.errors
-                    .push(format!("could not parse {:?} as integer", token.value));
+                    .push(format!("could not parse {} as integer. row: {}", token.value, token.current_row));
             }
         }
         None
@@ -154,7 +154,7 @@ impl<'a> Parser<'a> {
                 TokenType::If => self.parse_if_expression(),
                 TokenType::Fn => self.parse_function_literal(),
                 _ => {
-                    self.no_prefix_parse_fn_error(token.kind);
+                    self.no_prefix_parse_fn_error(token);
                     return None;
                 }
             };
@@ -183,7 +183,7 @@ impl<'a> Parser<'a> {
                         self.parse_call_expression(left_exp)
                     }
                     _ => {
-                        self.no_prefix_parse_fn_error(token.kind);
+                        self.no_prefix_parse_fn_error(token);
                         return left_exp;
                     }
                 };
@@ -197,7 +197,7 @@ impl<'a> Parser<'a> {
         if let Some(token) = self.cur_token.to_owned() {
             self.next_token();
             if let Some(right) = self.parse_expression(Precedences::Prefix) {
-                if let Some(prefix) = self.convert_token_to_prefix(token.kind) {
+                if let Some(prefix) = self.convert_token_to_prefix(token) {
                     return Some(Expression::Prefix(prefix, Box::new(right)));
                 }
             }
@@ -205,21 +205,21 @@ impl<'a> Parser<'a> {
         None
     }
 
-    pub fn convert_token_to_prefix(&mut self, token: TokenType) -> Option<Prefix> {
-        match token {
+    pub fn convert_token_to_prefix(&mut self, token: Token) -> Option<Prefix> {
+        match token.kind {
             TokenType::Plus => Some(Prefix::Plus),
             TokenType::Minus => Some(Prefix::Minus),
             TokenType::Bang => Some(Prefix::Bang),
             _ => {
                 self.errors
-                    .push(format!("{:?} is not a token for prefix", token));
+                    .push(format!("{:?} is not a token for prefix. row: {}", token.kind, token.current_row));
                 None
             }
         }
     }
 
-    pub fn convert_token_to_infix(&mut self, token: TokenType) -> Option<Infix> {
-        match token {
+    pub fn convert_token_to_infix(&mut self, token: Token) -> Option<Infix> {
+        match token.kind {
             TokenType::Plus => Some(Infix::Plus),
             TokenType::Minus => Some(Infix::Minus),
             TokenType::Divide => Some(Infix::Divide),
@@ -232,7 +232,7 @@ impl<'a> Parser<'a> {
             TokenType::Lt => Some(Infix::Lt),
             _ => {
                 self.errors
-                    .push(format!("{:?} is not a token for infix", token));
+                    .push(format!("{:?} is not a token for infix. row: {}", token.kind, token.current_row));
                 None
             }
         }
@@ -247,12 +247,15 @@ impl<'a> Parser<'a> {
             let precedence = self.cur_precedence();
             self.next_token();
             if let Some(right) = self.parse_expression(precedence) {
-                if let Some(infix) = self.convert_token_to_infix(token.kind) {
+                if let Some(infix) = self.convert_token_to_infix(token.clone()) {
                     return Some(Expression::Infix(
                         infix,
                         Box::new(left.unwrap()),
                         Box::new(right),
                     ));
+                } else {
+                    self.errors
+                        .push(format!("{:?} {:?} {:?} cannot be parsed. row: {}", left, token.kind, right, token.current_row));
                 }
             }
         }
@@ -427,26 +430,28 @@ impl<'a> Parser<'a> {
         return Some(block);
     }
 
-    pub fn cur_token_is(&self, t: TokenType) -> bool {
+    pub fn cur_token_is(&self, token_type: TokenType) -> bool {
         if let Some(token) = &self.cur_token {
-            return token.kind == t;
+            return token.kind == token_type;
         }
         false
     }
 
-    pub fn peek_token_is(&self, t: TokenType) -> bool {
+    pub fn peek_token_is(&self, token_type: TokenType) -> bool {
         if let Some(token) = &self.peek_token {
-            return token.kind == t;
+            return token.kind == token_type;
         }
         false
     }
 
-    pub fn expect_peek(&mut self, t: TokenType) -> bool {
-        if self.peek_token_is(t) {
+    pub fn expect_peek(&mut self, token_type: TokenType) -> bool {
+        if self.peek_token_is(token_type) {
             self.next_token();
             return true;
         } else {
-            self.peek_error(t);
+            if let Some(token) = self.peek_token.clone() {
+                self.peek_error(token);
+            }
             return false;
         }
     }
@@ -478,14 +483,14 @@ impl<'a> Parser<'a> {
         self.errors.join("\n")
     }
 
-    pub fn peek_error(&mut self, t: TokenType) {
+    pub fn peek_error(&mut self, token: Token) {
         self.errors
-            .push(format!("expected next token to be {:?} instead", t));
+            .push(format!("expected next token to be {:?} instead. row: {}", token.kind, token.current_row));
     }
 
-    pub fn no_prefix_parse_fn_error(&mut self, t: TokenType) {
+    pub fn no_prefix_parse_fn_error(&mut self, token: Token) {
         self.errors
-            .push(format!("no prefix parse function for {:?}", t));
+            .push(format!("no prefix parse function for {:?}. row: {}", token.kind, token.current_row));
     }
 }
 
@@ -640,7 +645,8 @@ fn test_call_parsing() {
 #[test]
 fn test_wrong_prefix() {
     let input = r#"
+
     return > 3;
   "#;
-    parse_and_emit_error(input, vec!["no prefix parse function for Gt"]);
+    parse_and_emit_error(input, vec!["no prefix parse function for Gt. row: 2"]);
 }

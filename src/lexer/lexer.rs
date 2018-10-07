@@ -4,6 +4,7 @@ use lexer::token::*;
 pub struct Lexer<'a> {
     pub bytes: &'a [u8],
     pub position: usize,
+    pub current_row: usize,
 }
 
 impl<'a> Lexer<'a> {
@@ -12,11 +13,12 @@ impl<'a> Lexer<'a> {
         Lexer {
             bytes: bytes,
             position: 0,
+            current_row: 0,
         }
     }
 
     pub fn create_eof_token(&mut self) -> Token {
-        Token::new(TokenType::Eof, String::new())
+        Token::new(TokenType::Eof, String::new(), self.position)
     }
 
     pub fn handle_reserved_word(&self, word: &str, token: TokenType) -> TokenType {
@@ -101,6 +103,7 @@ impl<'a> Lexer<'a> {
         Token::new(
             self.handle_reserved_word(&ret_string, token),
             ret_string.to_owned(),
+            self.current_row,
         )
     }
 
@@ -257,7 +260,11 @@ impl<'a> Lexer<'a> {
                         ret_val = self.create_token_by_value(TokenType::Semicolon, vec![byte]);
                         true
                     }
-                    b'\n' | b'\r' | b' ' => false,
+                    b'\n' | b'\r' => {
+                        self.current_row += 1;
+                        false
+                    },
+                    b' ' => false,
                     _ => {
                         panic!("{} cannot be handled.", byte);
                     }
@@ -278,7 +285,7 @@ impl<'a> Lexer<'a> {
 
 #[warn(dead_code)]
 fn lexer_assert(token: Token, token_type: TokenType, value: &str) {
-    let expected = Token::new(token_type, value.to_string());
+    let expected = Token::new(token_type, value.to_string(), 0);
     assert!(
         token == expected,
         "\r\nexpected: {:?} \r\nactual: {:?}",
