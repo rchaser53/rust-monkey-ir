@@ -15,8 +15,3 @@ rustc-llvm-proxy = "0.1"
 [dependencies.llvm-sys]
 features = ["no-llvm-linking"]
 version = "60.2"
-
-[dev-dependencies.cargo-husky]
-version = "1"
-default-features = false
-features = []
