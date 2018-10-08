@@ -35,13 +35,26 @@ pub fn sub_variable(
     unsafe { LLVMBuildSub(builder, var_a, var_b, c_string!(name).as_ptr()) }
 } 
 
+
+
+#[warn(dead_code)]
+fn int_arithmetic_assert(actual: *mut LLVMValue, expect: *mut LLVMValue) {
+    unsafe {
+      assert!(
+          actual == expect,
+          "\r\nexpected: {:?} \r\nactual: {:?}",
+          LLVMConstIntGetZExtValue(actual),
+          LLVMConstIntGetZExtValue(expect)
+      );
+    }
+}
+
 #[test]
 fn try_to_know_how_to_test_ir() {
     unsafe {
-      assert!(
-          LLVMConstInt(int32_type(), 3, 0) == LLVMConstInt(int32_type(), 3, 0),
-          "nya-n"
+      int_arithmetic_assert(
+          LLVMConstInt(int32_type(), 3, 0),
+          LLVMConstInt(int32_type(), 3, 0)
       );
     }
-
 }
