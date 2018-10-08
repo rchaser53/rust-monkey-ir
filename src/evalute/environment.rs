@@ -14,9 +14,7 @@ impl Environment {
         store.insert("Null".to_string(), Object::Null);
         store.insert("print".to_string(), Object::BuildIn(BuildIn::Print));
 
-        Environment {
-            store: store,
-        }
+        Environment { store: store }
     }
 
     pub fn get(&self, name: &str, location: Location) -> Object {

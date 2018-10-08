@@ -96,10 +96,18 @@ impl Eval {
             Expression::IntegerLiteral(int, _location) => Object::Integer(int),
             Expression::StringLiteral(string, _location) => Object::String(string),
             Expression::Boolean(boolean, _location) => Object::Boolean(boolean),
-            Expression::Prefix(prefix, expr, location) => self.eval_prefix(prefix, expr, env, location),
-            Expression::Infix(infix, left, right, location) => self.eval_infix(infix, left, right, env, location),
+            Expression::Prefix(prefix, expr, location) => {
+                self.eval_prefix(prefix, expr, env, location)
+            }
+            Expression::Infix(infix, left, right, location) => {
+                self.eval_infix(infix, left, right, env, location)
+            }
             Expression::Identifier(ident, location) => self.eval_identifier(ident, env, location),
-            Expression::Function { parameters, body, location: _ } => Object::Function(Function {
+            Expression::Function {
+                parameters,
+                body,
+                location: _,
+            } => Object::Function(Function {
                 parameters: parameters,
                 body: body,
                 env: env.clone(),
@@ -129,7 +137,11 @@ impl Eval {
                 self.stack_arg.push(outer_arguments);
                 self.call_func(call.clone(), call.arguments, outer_env, location)
             }
-            _ => Object::Error(format!("cannot call {}. row: {}", outer_function.string(), location.row)),
+            _ => Object::Error(format!(
+                "cannot call {}. row: {}",
+                outer_function.string(),
+                location.row
+            )),
         }
     }
 
@@ -138,7 +150,7 @@ impl Eval {
         call: Call,
         outer_arguments: Vec<Expression>,
         outer_env: &mut Environment,
-        location: Location
+        location: Location,
     ) -> Object {
         match *call.function {
             Expression::Identifier(Identifier(ref string), ref _location) => {
@@ -161,9 +173,18 @@ impl Eval {
             }
             Expression::Call(inner_call) => {
                 self.stack_arg.push(outer_arguments);
-                self.call_func(inner_call.clone(), inner_call.arguments, outer_env, location)
+                self.call_func(
+                    inner_call.clone(),
+                    inner_call.arguments,
+                    outer_env,
+                    location,
+                )
             }
-            _ => Object::Error(format!("cannot call {}. row: {}", call.function.string(), location.row)),
+            _ => Object::Error(format!(
+                "cannot call {}. row: {}",
+                call.function.string(),
+                location.row
+            )),
         }
     }
 
@@ -183,20 +204,23 @@ impl Eval {
                 }
                 self.eval_program(func.body, &mut func_env)
             }
-            Object::BuildIn(build_in) => {
-                match build_in {
-                  BuildIn::Print => {
+            Object::BuildIn(build_in) => match build_in {
+                BuildIn::Print => {
                     let print_struct = BuildInPrint::new();
                     print_struct.print(&outer_arguments[0].clone().string());
                     Object::Null
-                  }
                 }
-            }
+            },
             _ => maybe_func_obj,
         }
     }
 
-    pub fn eval_identifier(&self, ident: Identifier, env: &mut Environment, location: Location) -> Object {
+    pub fn eval_identifier(
+        &self,
+        ident: Identifier,
+        env: &mut Environment,
+        location: Location,
+    ) -> Object {
         env.get(&ident.0, location)
     }
 
@@ -213,8 +237,7 @@ impl Eval {
             Object::Boolean(expr) => self.calculate_prefix_boolean(prefix, expr, location),
             _ => Object::Error(format!(
                 "expr value should be integer, but actually {}. row: {}",
-                expr_value,
-                location.row,
+                expr_value, location.row,
             )),
         }
     }
@@ -232,27 +255,26 @@ impl Eval {
 
         match left_value {
             Object::Integer(left) => match right_value {
-                Object::Integer(right) => self.calculate_infix_integer(infix, left, right, location),
+                Object::Integer(right) => {
+                    self.calculate_infix_integer(infix, left, right, location)
+                }
                 _ => Object::Error(format!(
                     "right value should be integer, but actually {}. row: {}",
-                    right_value,
-                    location.row,
+                    right_value, location.row,
                 )),
             },
             Object::String(left) => match right_value {
                 Object::String(right) => Object::String(left + &right),
                 _ => Object::Error(format!(
                     "right value should be string, but actually {}. row: {}",
-                    right_value,
-                    location.row,
+                    right_value, location.row,
                 )),
             },
             Object::Boolean(left) => match right_value {
                 Object::Boolean(right) => Object::Boolean(left == right),
                 _ => Object::Error(format!(
                     "right value should be boolean, but actually {}. row: {}",
-                    right_value,
-                    location.row,
+                    right_value, location.row,
                 )),
             },
             _ => {
@@ -297,8 +319,7 @@ impl Eval {
             _ => {
                 return_obj = Object::Error(format!(
                     "condition should be boolean. actually {}. row: {}",
-                    condition_obj,
-                    location.row,
+                    condition_obj, location.row,
                 ));
             }
         };
@@ -309,10 +330,18 @@ impl Eval {
         }
     }
 
-    pub fn calculate_prefix_boolean(&self, prefix: Prefix, value: bool, location: Location) -> Object {
+    pub fn calculate_prefix_boolean(
+        &self,
+        prefix: Prefix,
+        value: bool,
+        location: Location,
+    ) -> Object {
         match prefix {
             Prefix::Bang => Object::Boolean(!value),
-            _ => Object::Error(format!("{} cannot be use for prefix. row: {}", prefix, location.row)),
+            _ => Object::Error(format!(
+                "{} cannot be use for prefix. row: {}",
+                prefix, location.row
+            )),
         }
     }
 
@@ -330,7 +359,13 @@ impl Eval {
         }
     }
 
-    pub fn calculate_infix_integer(&self, infix: Infix, left: i64, right: i64, location: Location) -> Object {
+    pub fn calculate_infix_integer(
+        &self,
+        infix: Infix,
+        left: i64,
+        right: i64,
+        location: Location,
+    ) -> Object {
         match infix {
             Infix::Plus => Object::Integer(left + right),
             Infix::Minus => Object::Integer(left - right),
@@ -341,24 +376,27 @@ impl Eval {
             Infix::Gt => Object::Boolean(left > right),
             Infix::Gte => Object::Boolean(left >= right),
             Infix::Eq => Object::Boolean(left == right),
-            _ => Object::Error(format!("{} cannot be calculate for integer. row: {}", infix, location.row)),
+            _ => Object::Error(format!(
+                "{} cannot be calculate for integer. row: {}",
+                infix, location.row
+            )),
         }
     }
 
     pub fn has_error(&self) -> bool {
-      self.error_stack.len() > 0
+        self.error_stack.len() > 0
     }
 
     pub fn emit_error(&mut self) -> String {
-      let mut error_message = String::new();
-      for (index, err_obj) in self.error_stack.iter().enumerate() {
-        if index == 0 {
-          error_message = format!("{}", err_obj);
-        } else {
-          error_message = format!("{}\n{}", error_message, err_obj);
+        let mut error_message = String::new();
+        for (index, err_obj) in self.error_stack.iter().enumerate() {
+            if index == 0 {
+                error_message = format!("{}", err_obj);
+            } else {
+                error_message = format!("{}\n{}", error_message, err_obj);
+            }
         }
-      }
-      error_message.to_string()
+        error_message.to_string()
     }
 }
 
@@ -370,7 +408,7 @@ fn compile_input(input: &str) -> Object {
     let mut eval = Eval::new();
     let return_obj = eval.eval_program(statements, &mut Environment::new());
     if eval.has_error() {
-      panic!("error found {:?}", eval.error_stack);
+        panic!("error found {:?}", eval.error_stack);
     }
     return_obj
 }
@@ -624,7 +662,10 @@ fn eval_variable_conditoin_is_not_boolean() {
       return 3;
     };
   "#;
-    compile_and_emit_error(input, vec!["condition should be boolean. actually 1. row: 1"]);
+    compile_and_emit_error(
+        input,
+        vec!["condition should be boolean. actually 1. row: 1"],
+    );
 }
 
 #[test]
@@ -643,5 +684,8 @@ fn eval_wrong_infix_right() {
     let input = r#"
     return true + 3;
   "#;
-    compile_and_emit_error(input, vec!["right value should be boolean, but actually 3. row: 1"]);
+    compile_and_emit_error(
+        input,
+        vec!["right value should be boolean, but actually 3. row: 1"],
+    );
 }

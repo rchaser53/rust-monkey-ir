@@ -20,7 +20,7 @@ pub enum Expression {
     Function {
         parameters: Vec<Identifier>,
         body: BlockStatement,
-        location: Location
+        location: Location,
     },
     Call(Call),
     Error(String),
@@ -39,11 +39,9 @@ pub struct Location {
 }
 
 impl Location {
-  pub fn new(row: usize) -> Self {
-    Location{
-      row: row
+    pub fn new(row: usize) -> Self {
+        Location { row: row }
     }
-  }
 }
 
 impl Expression {
@@ -51,7 +49,9 @@ impl Expression {
         match self {
             Expression::Identifier(ident, _location) => ident.0.to_string(),
             Expression::IntegerLiteral(int, _location) => int.to_string(),
-            Expression::StringLiteral(literal, _location) => format!(r#""{}""#, literal.to_string()),
+            Expression::StringLiteral(literal, _location) => {
+                format!(r#""{}""#, literal.to_string())
+            }
             Expression::Boolean(boolean, _location) => boolean.to_string(),
             Expression::Prefix(prefix, expr, _location) => format!("({}{})", prefix, expr.string()),
             Expression::Infix(infix, left, right, _location) => {
@@ -84,7 +84,11 @@ impl Expression {
                 }
                 format!("if{} {{ {} }}", &condition.string(), consequence_string)
             }
-            Expression::Function { parameters, body, location: _, } => {
+            Expression::Function {
+                parameters,
+                body,
+                location: _,
+            } => {
                 let mut param_string = String::new();
                 for (index, Identifier(ref string)) in parameters.iter().enumerate() {
                     if index == 0 {

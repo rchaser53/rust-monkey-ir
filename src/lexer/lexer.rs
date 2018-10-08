@@ -263,7 +263,7 @@ impl<'a> Lexer<'a> {
                     b'\n' | b'\r' => {
                         self.current_row += 1;
                         false
-                    },
+                    }
                     b' ' => false,
                     _ => {
                         panic!("{} cannot be handled.", byte);

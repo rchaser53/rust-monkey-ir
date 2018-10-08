@@ -114,7 +114,8 @@ impl<'a> Parser<'a> {
     pub fn parse_identifier(&self) -> Option<Expression> {
         if let Some(token) = &self.cur_token {
             return Some(Expression::Identifier(
-              Identifier(token.value.to_owned()), Location::new(self.lexer.current_row),
+                Identifier(token.value.to_owned()),
+                Location::new(self.lexer.current_row),
             ));
         }
         None
@@ -124,11 +125,14 @@ impl<'a> Parser<'a> {
         if let Some(token) = &self.cur_token {
             if let Ok(value) = token.value.parse::<i64>() {
                 return Some(Expression::IntegerLiteral(
-                  value, Location::new(self.lexer.current_row),
+                    value,
+                    Location::new(self.lexer.current_row),
                 ));
             } else {
-                self.errors
-                    .push(format!("could not parse {} as integer. row: {}", token.value, token.current_row));
+                self.errors.push(format!(
+                    "could not parse {} as integer. row: {}",
+                    token.value, token.current_row
+                ));
             }
         }
         None
@@ -137,7 +141,8 @@ impl<'a> Parser<'a> {
     pub fn parse_string_literal(&mut self) -> Option<Expression> {
         if let Some(token) = &self.cur_token {
             return Some(Expression::StringLiteral(
-              token.value.to_owned(), Location::new(self.lexer.current_row),
+                token.value.to_owned(),
+                Location::new(self.lexer.current_row),
             ));
         }
         None
@@ -145,7 +150,8 @@ impl<'a> Parser<'a> {
 
     pub fn parse_boolean(&mut self) -> Option<Expression> {
         return Some(Expression::Boolean(
-          self.cur_token_is(TokenType::True), Location::new(self.lexer.current_row),
+            self.cur_token_is(TokenType::True),
+            Location::new(self.lexer.current_row),
         ));
     }
 
@@ -207,7 +213,9 @@ impl<'a> Parser<'a> {
             if let Some(right) = self.parse_expression(Precedences::Prefix) {
                 if let Some(prefix) = self.convert_token_to_prefix(token) {
                     return Some(Expression::Prefix(
-                      prefix, Box::new(right), Location::new(self.lexer.current_row),
+                        prefix,
+                        Box::new(right),
+                        Location::new(self.lexer.current_row),
                     ));
                 }
             }
@@ -221,8 +229,10 @@ impl<'a> Parser<'a> {
             TokenType::Minus => Some(Prefix::Minus),
             TokenType::Bang => Some(Prefix::Bang),
             _ => {
-                self.errors
-                    .push(format!("{:?} is not a token for prefix. row: {}", token.kind, token.current_row));
+                self.errors.push(format!(
+                    "{:?} is not a token for prefix. row: {}",
+                    token.kind, token.current_row
+                ));
                 None
             }
         }
@@ -241,8 +251,10 @@ impl<'a> Parser<'a> {
             TokenType::Lte => Some(Infix::Lte),
             TokenType::Lt => Some(Infix::Lt),
             _ => {
-                self.errors
-                    .push(format!("{:?} is not a token for infix. row: {}", token.kind, token.current_row));
+                self.errors.push(format!(
+                    "{:?} is not a token for infix. row: {}",
+                    token.kind, token.current_row
+                ));
                 None
             }
         }
@@ -265,8 +277,10 @@ impl<'a> Parser<'a> {
                         Location::new(self.lexer.current_row),
                     ));
                 } else {
-                    self.errors
-                        .push(format!("{:?} {:?} {:?} cannot be parsed. row: {}", left, token.kind, right, token.current_row));
+                    self.errors.push(format!(
+                        "{:?} {:?} {:?} cannot be parsed. row: {}",
+                        left, token.kind, right, token.current_row
+                    ));
                 }
             }
         }
@@ -500,13 +514,17 @@ impl<'a> Parser<'a> {
     }
 
     pub fn peek_error(&mut self, token: Token) {
-        self.errors
-            .push(format!("expected next token to be {:?} instead. row: {}", token.kind, token.current_row));
+        self.errors.push(format!(
+            "expected next token to be {:?} instead. row: {}",
+            token.kind, token.current_row
+        ));
     }
 
     pub fn no_prefix_parse_fn_error(&mut self, token: Token) {
-        self.errors
-            .push(format!("no prefix parse function for {:?}. row: {}", token.kind, token.current_row));
+        self.errors.push(format!(
+            "no prefix parse function for {:?}. row: {}",
+            token.kind, token.current_row
+        ));
     }
 }
 
@@ -530,16 +548,15 @@ fn parse_and_emit_error(input: &str, error_stack: Vec<&str>) {
     let program = parser.parse_program();
 
     if parser.has_error() == false {
-      panic!("no errors found. return program is {:?}", program);
+        panic!("no errors found. return program is {:?}", program);
     }
 
     assert!(
-      parser.emit_error() == error_stack.join("\n"),
-      "\r\nexpected: {:?} \r\nactual: {:?}",
-      parser.emit_error(),
-      error_stack.join("\n")
+        parser.emit_error() == error_stack.join("\n"),
+        "\r\nexpected: {:?} \r\nactual: {:?}",
+        parser.emit_error(),
+        error_stack.join("\n")
     );
-    
 }
 
 #[test]

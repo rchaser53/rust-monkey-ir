@@ -88,9 +88,9 @@ impl LlvmBuilder {
         unsafe { LLVMBuildMul(self.builder, var_a, var_b, c_str.as_ptr()) }
     }
 
-    pub fn return_variable(&mut self, res: *mut LLVMValue) {
+    pub fn return_variable(&mut self, res: *mut LLVMValue) -> *mut LLVMValue {
         unsafe {
-            LLVMBuildRet(self.builder, res);
+            LLVMBuildRet(self.builder, res)
         }
     }
 
