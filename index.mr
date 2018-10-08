@@ -1,1 +1,3 @@
-return 3;
+
+print("asfs");
+return 3 - 3;

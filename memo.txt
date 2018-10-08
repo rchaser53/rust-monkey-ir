@@ -11,3 +11,5 @@ If you need to have this software first in your PATH run:
 For compilers to find this software you may need to set:
     LDFLAGS:  -L/usr/local/opt/llvm/lib
     CPPFLAGS: -I/usr/local/opt/llvm/include
+
+rustup run nightly cargo run

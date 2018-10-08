@@ -4,6 +4,9 @@ mod macros;
 #[macro_use]
 extern crate lazy_static;
 extern crate clap;
+extern crate libc;
+extern crate llvm_sys;
+extern crate rustc_llvm_proxy;
 
 use std::fs::File;
 use std::io::prelude::*;
@@ -19,6 +22,14 @@ use parser::parser::*;
 mod evalute;
 use evalute::eval::*;
 use evalute::environment::*;
+
+mod ir;
+use ir::builder::*;
+use ir::llvm_type::*;
+
+use llvm_sys::core::*;
+use llvm_sys::*;
+
 
 fn read_file(file_name: &str) -> Result<String, String> {
     if let Ok(mut file) = File::open(file_name) {
