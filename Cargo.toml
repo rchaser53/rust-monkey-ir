@@ -3,9 +3,6 @@ authors = ["rchaser53 <tayoshizawa29@gmail.com>"]
 name = "rust-monkey-ir"
 version = "0.1.0"
 
-[build-dependencies]
-cc = "1.0"
-
 [dependencies]
 clap = "2.32.0"
 lazy_static = "1.1.0"
