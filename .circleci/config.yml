@@ -3,8 +3,8 @@ jobs:
   build:
     working_directory: ~/workspace
     docker:
-      - image: clux/muslrust
+      - image: clux/muslrust:1.28.0-nightly
 
     steps:
       - checkout
-      - run: rustup run nightly cargo run
+      - run: cargo test
