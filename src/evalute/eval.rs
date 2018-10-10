@@ -400,7 +400,7 @@ impl Eval {
     }
 }
 
-#[warn(dead_code)]
+#[allow(dead_code)]
 fn compile_input(input: &str) -> Object {
     let mut lexer = Lexer::new(input);
     let mut parser = Parser::new(&mut lexer);
@@ -413,7 +413,7 @@ fn compile_input(input: &str) -> Object {
     return_obj
 }
 
-#[warn(dead_code)]
+#[allow(dead_code)]
 fn compile_and_emit_error(input: &str, error_messages: Vec<&str>) {
     let mut lexer = Lexer::new(input);
     let mut parser = Parser::new(&mut lexer);

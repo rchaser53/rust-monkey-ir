@@ -529,19 +529,19 @@ impl<'a> Parser<'a> {
 }
 
 /* below the test implementation */
-#[warn(dead_code)]
+#[allow(dead_code)]
 fn statement_assert(statement: &Statement, expect: &str) {
     assert!(statement.string() == expect, statement.emit_debug_info());
 }
 
-#[warn(dead_code)]
+#[allow(dead_code)]
 fn parse_input(input: &str) -> Program {
     let mut lexer = Lexer::new(input);
     let mut parser = Parser::new(&mut lexer);
     parser.parse_program()
 }
 
-#[warn(dead_code)]
+#[allow(dead_code)]
 fn parse_and_emit_error(input: &str, error_stack: Vec<&str>) {
     let mut lexer = Lexer::new(input);
     let mut parser = Parser::new(&mut lexer);

@@ -60,7 +60,7 @@ pub type BlockStatement = Vec<Statement>;
 pub type Program = BlockStatement;
 
 impl Statement {
-    #[warn(dead_code)]
+    #[allow(dead_code)]
     pub fn emit_debug_info(&self) -> String {
         match self {
             Statement::Let(Identifier(ref string), expr) => write_string!(format!(
