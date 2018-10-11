@@ -18,7 +18,7 @@ impl LlvmBuilder {
             let mod_name = c_string!(module_name);
 
             LlvmBuilder {
-                builder: LLVMCreateBuilder(),
+                builder: LLVMCreateBuilderInContext(context),
                 module: LLVMModuleCreateWithName(mod_name.as_ptr()),
                 context: context,
             }
