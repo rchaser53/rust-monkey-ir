@@ -44,3 +44,23 @@ pub fn build_br(
     LLVMPositionBuilderAtEnd(builder, block);
   };
 }
+
+
+#[test]
+fn cond() {
+    unsafe {
+      let mut lb = LlvmBuilder::new("test_module");
+      let main = lb.add_function(int32_type(), &mut [], "main");
+      let block = lb.append_basic_block("main", "entry");
+
+      let left_block = append_basic_block_in_context(lb.context, main, "");
+      let right_block = append_basic_block_in_context(lb.context, main, "");
+      let mut llvm_bool = LLVMConstInt(int32_type(), 1, 0);
+
+      build_cond_br(lb.builder, llvm_bool, left_block, right_block);
+      build_position_at_end(lb.builder, left_block);
+
+      build_br(lb.builder, right_block);
+      build_position_at_end(lb.builder, right_block);
+    }
+}

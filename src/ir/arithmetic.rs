@@ -35,7 +35,7 @@ pub fn multiple_variable(
     unsafe { LLVMBuildMul(builder, var_a, var_b, c_string!(name).as_ptr()) }
 }
 
-#[warn(dead_code)]
+#[allow(dead_code)]
 fn setup_llvm() -> LlvmBuilder {
     unsafe {
       let mut lb = LlvmBuilder::new("test_module");
@@ -44,7 +44,7 @@ fn setup_llvm() -> LlvmBuilder {
     }
 }
 
-#[warn(dead_code)]
+#[allow(dead_code)]
 fn int_arithmetic_assert(actual: *mut LLVMValue, expect: *mut LLVMValue) {
     unsafe {
       assert!(
