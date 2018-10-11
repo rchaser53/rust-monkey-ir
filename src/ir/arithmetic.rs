@@ -57,7 +57,7 @@ fn int_arithmetic_assert(actual: *mut LLVMValue, expect: *mut LLVMValue) {
 }
 
 #[test]
-fn try_to_know_how_to_test_ir() {
+fn add() {
     unsafe {
       let lb = setup_llvm();
       int_arithmetic_assert(
