@@ -17,7 +17,7 @@ matrix:
 
 script:
   - cargo check
-  - cargo test
+  - cargo test -- --test-threads=1
 
 branches:
   only:
