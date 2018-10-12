@@ -16,6 +16,15 @@ pub fn append_basic_block_in_context(
   }
 }
 
+pub fn append_basic_block(
+    function: *mut LLVMValue,
+    function_name: &str
+) -> *mut LLVMBasicBlock {
+  unsafe {
+    LLVMAppendBasicBlock(function, c_string!(function_name).as_ptr())
+  }
+}
+
 pub fn build_cond_br(
   builder: *mut LLVMBuilder,
   condition: *mut LLVMValue,
@@ -71,5 +80,6 @@ fn cond() {
       build_br(lb.builder, right_block);
       build_position_at_end(lb.builder, right_block);
       LLVMBuildStore(lb.builder, LLVMConstInt(int32_type(), 3, 0), llvm_value);
+
     }
 }
