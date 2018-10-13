@@ -11,7 +11,7 @@ pub enum SignedFlag {
     False = 0,
 }
 
-pub fn SignedFlagConverter(flag: SignedFlag) -> i32 {
+fn signed_flag_converter(flag: SignedFlag) -> i32 {
     match flag {
         SignedFlag::True => 1,
         SignedFlag::False => 0,
@@ -19,5 +19,5 @@ pub fn SignedFlagConverter(flag: SignedFlag) -> i32 {
 }
 
 pub fn const_int(llvm_type: *mut LLVMType, value: u64, signed_flag: SignedFlag) -> *mut LLVMValue {
-    unsafe { LLVMConstInt(llvm_type, value, SignedFlagConverter(signed_flag)) }
+    unsafe { LLVMConstInt(llvm_type, value, signed_flag_converter(signed_flag)) }
 }

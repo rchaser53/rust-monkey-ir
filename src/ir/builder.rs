@@ -95,10 +95,12 @@ impl LlvmBuilder {
 
     /* need refactoring above */
 
+    #[allow(dead_code)]
     pub fn dump(&self) {
         unsafe { LLVMDumpModule(self.module) }
     }
 
+    #[allow(dead_code)]
     pub fn emit_file(&self, filename: &str) {
         unsafe {
             LLVMPrintModuleToFile(

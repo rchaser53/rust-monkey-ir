@@ -1,6 +1,7 @@
 use std::ffi::CString;
 
 use llvm_sys::core::*;
+use llvm_sys::execution_engine::*;
 use llvm_sys::*;
 
 pub fn build_alloca(
@@ -29,4 +30,13 @@ pub fn build_load(
 
 pub fn build_ret(builder: *mut LLVMBuilder, llvm_value: *mut LLVMValue) -> *mut LLVMValue {
     unsafe { LLVMBuildRet(builder, llvm_value) }
+}
+
+pub fn run_function(
+    engine: LLVMExecutionEngineRef,
+    function: *mut LLVMValue,
+    args_length: u32,
+    args: *mut LLVMGenericValueRef,
+) -> LLVMGenericValueRef {
+    unsafe { LLVMRunFunction(engine, function, args_length, args) }
 }
