@@ -25,12 +25,6 @@ impl LlvmBuilder {
         }
     }
 
-    pub fn setup_main(&mut self) {
-        self.add_function(int32_type(), &mut [], "main");
-        let block = self.append_basic_block("main", "entry");
-        self.end_basic_block(block);
-    }
-
     pub fn add_function(
         &mut self,
         ret_type: *mut LLVMType,
@@ -89,9 +83,14 @@ impl LlvmBuilder {
     }
 
     pub fn return_variable(&mut self, res: *mut LLVMValue) -> *mut LLVMValue {
-        unsafe {
-            LLVMBuildRet(self.builder, res)
-        }
+        unsafe { LLVMBuildRet(self.builder, res) }
+    }
+
+    pub fn setup_main(&mut self) -> *mut LLVMValue {
+        let mut main_function = self.add_function(int32_type(), &mut [], "main");
+        let block = self.append_basic_block("main", "entry");
+        self.end_basic_block(block);
+        main_function
     }
 
     /* need refactoring above */
@@ -147,11 +146,7 @@ impl BuilderFunctions {
             let mut printf_args_type_list = [LLVMPointerType(LLVMInt8Type(), 0)];
             let printf_type =
                 LLVMFunctionType(LLVMInt32Type(), printf_args_type_list.as_mut_ptr(), 1, 0);
-            return LLVMAddFunction(
-                module,
-                c_string!("printf").as_ptr() as *mut _,
-                printf_type,
-            );
+            return LLVMAddFunction(module, c_string!("printf").as_ptr() as *mut _, printf_type);
         }
     }
 }
