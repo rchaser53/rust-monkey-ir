@@ -25,7 +25,7 @@ use evalute::eval::*;
 
 mod ir;
 use ir::arithmetic::*;
-use ir::builder::*;
+use ir::creator::*;
 use ir::condition::*;
 use ir::llvm_type::*;
 

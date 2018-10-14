@@ -5,7 +5,7 @@ use llvm_sys::core::*;
 use llvm_sys::execution_engine::*;
 use llvm_sys::*;
 
-use ir::builder::*;
+use ir::creator::*;
 use ir::const_value::*;
 use ir::llvm_type::*;
 use ir::operate::*;
@@ -48,35 +48,35 @@ pub fn build_br(builder: *mut LLVMBuilder, block: *mut LLVMBasicBlock) {
 
 #[allow(dead_code)]
 pub fn create_if_else_test(llvm_bool: *mut LLVMValue) -> u64 {
-    let mut lb = LlvmBuilder::new("test_module");
-    let main = lb.setup_main();
+    let mut lc = LLVMCreator::new("test_module");
+    let main = lc.setup_main();
 
-    let left_block = append_basic_block_in_context(lb.context, main, "");
-    let right_block = append_basic_block_in_context(lb.context, main, "");
+    let left_block = append_basic_block_in_context(lc.context, main, "");
+    let right_block = append_basic_block_in_context(lc.context, main, "");
 
-    build_cond_br(lb.builder, llvm_bool, left_block, right_block);
-    build_position_at_end(lb.builder, left_block);
-    let llvm_value = build_alloca(lb.builder, int32_type(), "");
+    build_cond_br(lc.builder, llvm_bool, left_block, right_block);
+    build_position_at_end(lc.builder, left_block);
+    let llvm_value = build_alloca(lc.builder, int32_type(), "");
     build_store(
-        lb.builder,
+        lc.builder,
         const_int(int32_type(), 1, SignedFlag::False),
         llvm_value,
     );
-    let return_value = build_load(lb.builder, llvm_value, "");
-    build_ret(lb.builder, return_value);
+    let return_value = build_load(lc.builder, llvm_value, "");
+    build_ret(lc.builder, return_value);
 
-    build_br(lb.builder, right_block);
-    build_position_at_end(lb.builder, right_block);
-    let llvm_value = build_alloca(lb.builder, int32_type(), "");
+    build_br(lc.builder, right_block);
+    build_position_at_end(lc.builder, right_block);
+    let llvm_value = build_alloca(lc.builder, int32_type(), "");
     build_store(
-        lb.builder,
+        lc.builder,
         const_int(int32_type(), 2, SignedFlag::False),
         llvm_value,
     );
-    let return_value = build_load(lb.builder, llvm_value, "");
-    build_ret(lb.builder, return_value);
+    let return_value = build_load(lc.builder, llvm_value, "");
+    build_ret(lc.builder, return_value);
 
-    execute_test_ir_function(lb.module, main)
+    execute_test_ir_function(lc.module, main)
 }
 
 #[test]

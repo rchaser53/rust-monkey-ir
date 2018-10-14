@@ -5,19 +5,19 @@ use llvm_sys::*;
 
 use ir::llvm_type::*;
 
-pub struct LlvmBuilder {
+pub struct LLVMCreator {
     pub builder: *mut LLVMBuilder,
     pub context: *mut LLVMContext,
     pub module: *mut LLVMModule,
 }
 
-impl LlvmBuilder {
-    pub fn new(module_name: &str) -> LlvmBuilder {
+impl LLVMCreator {
+    pub fn new(module_name: &str) -> LLVMCreator {
         unsafe {
             let context = LLVMGetGlobalContext();
             let mod_name = c_string!(module_name);
 
-            LlvmBuilder {
+            LLVMCreator {
                 builder: LLVMCreateBuilderInContext(context),
                 module: LLVMModuleCreateWithName(mod_name.as_ptr()),
                 context: context,
@@ -112,7 +112,7 @@ impl LlvmBuilder {
     }
 }
 
-impl Drop for LlvmBuilder {
+impl Drop for LLVMCreator {
     fn drop(&mut self) {
         unsafe {
             LLVMDisposeBuilder(self.builder);

@@ -3,7 +3,7 @@ use std::ffi::CString;
 use llvm_sys::core::*;
 use llvm_sys::*;
 
-use ir::builder::*;
+use ir::creator::*;
 use ir::llvm_type::*;
 
 pub enum SignedFlag {

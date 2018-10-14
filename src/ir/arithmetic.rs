@@ -3,7 +3,7 @@ use std::ffi::CString;
 use llvm_sys::core::*;
 use llvm_sys::*;
 
-use ir::builder::*;
+use ir::creator::*;
 use ir::llvm_type::*;
 
 pub fn add_variable(
@@ -36,11 +36,11 @@ pub fn multiple_variable(
 }
 
 #[allow(dead_code)]
-fn setup_llvm() -> LlvmBuilder {
+fn setup_llvm() -> LLVMCreator {
     unsafe {
-        let mut lb = LlvmBuilder::new("test_module");
-        lb.setup_main();
-        lb
+        let mut lc = LLVMCreator::new("test_module");
+        lc.setup_main();
+        lc
     }
 }
 
@@ -59,10 +59,10 @@ fn int_arithmetic_assert(actual: *mut LLVMValue, expect: *mut LLVMValue) {
 #[test]
 fn add() {
     unsafe {
-        let lb = setup_llvm();
+        let lc = setup_llvm();
         int_arithmetic_assert(
             add_variable(
-                lb.builder,
+                lc.builder,
                 LLVMConstInt(int32_type(), 1, 0),
                 LLVMConstInt(int32_type(), 2, 0),
                 "",
