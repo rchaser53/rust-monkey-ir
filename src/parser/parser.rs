@@ -488,8 +488,8 @@ impl<'a> Parser<'a> {
     pub fn peek_precedence(&mut self) -> Precedences {
         if let Some(token) = &self.peek_token {
             let token_type = token.kind;
-            if PrecedenceTokenMap.contains_key(&token_type) {
-                return PrecedenceTokenMap[&token_type].to_owned();
+            if PRECEDENCE_TOKEN_MAP.contains_key(&token_type) {
+                return PRECEDENCE_TOKEN_MAP[&token_type].to_owned();
             }
         }
         Precedences::Lowest
@@ -498,8 +498,8 @@ impl<'a> Parser<'a> {
     pub fn cur_precedence(&self) -> Precedences {
         if let Some(token) = &self.cur_token {
             let token_type = token.kind;
-            if PrecedenceTokenMap.contains_key(&token_type) {
-                return PrecedenceTokenMap[&token_type].to_owned();
+            if PRECEDENCE_TOKEN_MAP.contains_key(&token_type) {
+                return PRECEDENCE_TOKEN_MAP[&token_type].to_owned();
             }
         }
         Precedences::Lowest

@@ -2,7 +2,7 @@ use lexer::token::*;
 use std::collections::HashMap;
 
 lazy_static! {
-  pub static ref PrecedenceTokenMap: HashMap<TokenType, Precedences>  = {
+  pub static ref PRECEDENCE_TOKEN_MAP: HashMap<TokenType, Precedences>  = {
     let mut m = HashMap::new();
     // ==, !=
     m.insert(TokenType::Eq, Precedences::Equals);

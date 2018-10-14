@@ -2,6 +2,7 @@ pub mod arithmetic;
 pub mod creator;
 pub mod condition;
 pub mod const_value;
+pub mod function;
 pub mod llvm_struct;
 pub mod llvm_type;
 pub mod operate;

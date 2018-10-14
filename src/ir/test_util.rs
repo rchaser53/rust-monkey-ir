@@ -10,6 +10,7 @@ use ir::operate::*;
 
 const LLVM_ERROR: i32 = 1;
 
+#[allow(dead_code)]
 fn create_llvm_engine(module: *mut LLVMModule) -> LLVMExecutionEngineRef {
     let mut error: *mut c_char = 0 as *mut c_char;
     let mut engine: LLVMExecutionEngineRef = 0 as LLVMExecutionEngineRef;
@@ -28,6 +29,7 @@ fn create_llvm_engine(module: *mut LLVMModule) -> LLVMExecutionEngineRef {
     engine
 }
 
+#[allow(dead_code)]
 fn validation_llvm_test(module: *mut LLVMModule) {
     unsafe {
         let mut error: *mut c_char = 0 as *mut c_char;

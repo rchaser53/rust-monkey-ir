@@ -4,6 +4,7 @@ use llvm_sys::core::*;
 use llvm_sys::*;
 
 use ir::llvm_type::*;
+use ir::function::*;
 
 pub struct LLVMCreator {
     pub builder: *mut LLVMBuilder,
@@ -22,20 +23,6 @@ impl LLVMCreator {
                 module: LLVMModuleCreateWithName(mod_name.as_ptr()),
                 context: context,
             }
-        }
-    }
-
-    pub fn add_function(
-        &mut self,
-        ret_type: *mut LLVMType,
-        args: &mut [*mut LLVMType],
-        fn_name: &str,
-    ) -> *mut LLVMValue {
-        unsafe {
-            let fn_type = LLVMFunctionType(ret_type, args.as_mut_ptr(), args.len() as u32, 0);
-            let cstring = c_string!(fn_name);
-            let ptr = cstring.as_ptr() as *mut _;
-            LLVMAddFunction(self.module, ptr, fn_type)
         }
     }
 
@@ -73,21 +60,9 @@ impl LLVMCreator {
         unsafe { LLVMBuildLoad(self.builder, llvm_value, val_name.as_ptr()) }
     }
 
-    pub fn multiple_variable(
-        &mut self,
-        var_a: *mut LLVMValue,
-        var_b: *mut LLVMValue,
-        c_str: CString,
-    ) -> *mut LLVMValue {
-        unsafe { LLVMBuildMul(self.builder, var_a, var_b, c_str.as_ptr()) }
-    }
-
-    pub fn return_variable(&mut self, res: *mut LLVMValue) -> *mut LLVMValue {
-        unsafe { LLVMBuildRet(self.builder, res) }
-    }
-
     pub fn setup_main(&mut self) -> *mut LLVMValue {
-        let mut main_function = self.add_function(int32_type(), &mut [], "main");
+        let fn_type = create_function_type(int32_type(), &mut []);
+        let mut main_function = add_function(self.module, fn_type, "main");
         let block = self.append_basic_block("main", "entry");
         self.end_basic_block(block);
         main_function
@@ -116,39 +91,6 @@ impl Drop for LLVMCreator {
     fn drop(&mut self) {
         unsafe {
             LLVMDisposeBuilder(self.builder);
-        }
-    }
-}
-
-pub struct BuilderFunctions {}
-
-impl BuilderFunctions {
-    pub fn hello_world(
-        &mut self,
-        builder: *mut LLVMBuilder,
-        context: *mut LLVMContext,
-        module: *mut LLVMModule,
-    ) {
-        unsafe {
-            let print = self.create_printf(module);
-            let mut printf_args = [codegen_string(builder, context, "hello world\n\r")];
-
-            LLVMBuildCall(
-                builder,
-                print,
-                printf_args.as_mut_ptr(),
-                1,
-                c_string!("").as_ptr(),
-            );
-        }
-    }
-
-    pub fn create_printf(&mut self, module: *mut LLVMModule) -> *mut LLVMValue {
-        unsafe {
-            let mut printf_args_type_list = [LLVMPointerType(LLVMInt8Type(), 0)];
-            let printf_type =
-                LLVMFunctionType(LLVMInt32Type(), printf_args_type_list.as_mut_ptr(), 1, 0);
-            return LLVMAddFunction(module, c_string!("printf").as_ptr() as *mut _, printf_type);
         }
     }
 }
