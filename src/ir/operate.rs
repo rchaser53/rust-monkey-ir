@@ -50,3 +50,20 @@ pub fn build_position_at_end(builder: *mut LLVMBuilder, block: *mut LLVMBasicBlo
         LLVMPositionBuilderAtEnd(builder, block);
     };
 }
+
+pub fn build_gep(
+    builder: *mut LLVMBuilder,
+    llvm_value: *mut LLVMValue,
+    mut args: Vec<*mut LLVMValue>,
+    name: &str,
+) -> *mut LLVMValue {
+    unsafe {
+        LLVMBuildGEP(
+            builder,
+            llvm_value,
+            args.as_mut_ptr(),
+            args.len() as u32,
+            c_string!(name).as_ptr(),
+        )
+    }
+}

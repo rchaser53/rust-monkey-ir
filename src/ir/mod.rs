@@ -6,4 +6,5 @@ pub mod function;
 pub mod llvm_struct;
 pub mod llvm_type;
 pub mod operate;
+pub mod string;
 pub mod test_util;
