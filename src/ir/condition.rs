@@ -59,7 +59,7 @@ pub fn create_if_else_test(llvm_bool: *mut LLVMValue) -> u64 {
     let llvm_value = build_alloca(lc.builder, int32_type(), "");
     build_store(
         lc.builder,
-        const_int(int32_type(), 1, SignedFlag::False),
+        const_int(int32_type(), 1),
         llvm_value,
     );
     let return_value = build_load(lc.builder, llvm_value, "");
@@ -70,7 +70,7 @@ pub fn create_if_else_test(llvm_bool: *mut LLVMValue) -> u64 {
     let llvm_value = build_alloca(lc.builder, int32_type(), "");
     build_store(
         lc.builder,
-        const_int(int32_type(), 2, SignedFlag::False),
+        const_int(int32_type(), 2),
         llvm_value,
     );
     let return_value = build_load(lc.builder, llvm_value, "");
@@ -81,7 +81,7 @@ pub fn create_if_else_test(llvm_bool: *mut LLVMValue) -> u64 {
 
 #[test]
 fn cond_if_true() {
-    let mut llvm_bool_true = const_int(int1_type(), 1, SignedFlag::False);
+    let mut llvm_bool_true = const_int(int1_type(), 1);
     assert!(
         create_if_else_test(llvm_bool_true) == 1,
         "failed cond_if_true"
@@ -90,7 +90,7 @@ fn cond_if_true() {
 
 #[test]
 fn cond_if_false() {
-    let mut llvm_bool_false = const_int(int1_type(), 0, SignedFlag::False);
+    let mut llvm_bool_false = const_int(int1_type(), 0);
     assert!(
         create_if_else_test(llvm_bool_false) == 2,
         "failed cond_if_false"

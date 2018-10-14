@@ -90,7 +90,7 @@ fn strcut_test() {
           lc.builder,
           target_struct,
           0,
-          const_int(int32_type(), 2, SignedFlag::False),
+          const_int(int32_type(), 2),
           "",
       );
       let llvm_value = get_field_value(lc.builder, target_struct, 0, "");
