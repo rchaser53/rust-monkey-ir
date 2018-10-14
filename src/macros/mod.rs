@@ -1,5 +1,3 @@
-use std::ffi::CString;
-
 #[macro_use]
 pub mod macros {
     #[macro_export]

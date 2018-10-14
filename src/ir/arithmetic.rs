@@ -5,6 +5,7 @@ use llvm_sys::*;
 
 use ir::creator::*;
 use ir::llvm_type::*;
+use ir::test_util::*;
 
 pub fn add_variable(
     builder: *mut LLVMBuilder,
@@ -37,11 +38,9 @@ pub fn multiple_variable(
 
 #[allow(dead_code)]
 fn setup_llvm() -> LLVMCreator {
-    unsafe {
-        let mut lc = LLVMCreator::new("test_module");
-        lc.setup_main();
-        lc
-    }
+    let lc = LLVMCreator::new("test_module");
+    setup_main(lc.builder, lc.module);
+    lc
 }
 
 #[allow(dead_code)]

@@ -23,16 +23,6 @@ mod evalute;
 use evalute::environment::*;
 use evalute::eval::*;
 
-mod ir;
-use ir::arithmetic::*;
-use ir::creator::*;
-use ir::condition::*;
-use ir::llvm_type::*;
-
-use llvm_sys::core::*;
-use llvm_sys::execution_engine::*;
-use llvm_sys::*;
-
 fn read_file(file_name: &str) -> Result<String, String> {
     if let Ok(mut file) = File::open(file_name) {
         let mut contents = String::new();

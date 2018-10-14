@@ -40,3 +40,13 @@ pub fn run_function(
 ) -> LLVMGenericValueRef {
     unsafe { LLVMRunFunction(engine, function, args_length, args) }
 }
+
+pub fn append_basic_block(function: *mut LLVMValue, function_name: &str) -> *mut LLVMBasicBlock {
+    unsafe { LLVMAppendBasicBlock(function, c_string!(function_name).as_ptr()) }
+}
+
+pub fn build_position_at_end(builder: *mut LLVMBuilder, block: *mut LLVMBasicBlock) {
+    unsafe {
+        LLVMPositionBuilderAtEnd(builder, block);
+    };
+}

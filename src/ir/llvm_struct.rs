@@ -3,8 +3,8 @@ use std::ffi::CString;
 use llvm_sys::core::*;
 use llvm_sys::*;
 
-use ir::creator::*;
 use ir::const_value::*;
+use ir::creator::*;
 use ir::llvm_type::*;
 use ir::operate::*;
 use ir::test_util::*;
@@ -56,7 +56,7 @@ pub fn set_field_value(
             LLVMConstInt(int32_type(), 0, 0),
             LLVMConstInt(int32_type(), target_index, 0),
         ];
-        let mut field = LLVMBuildInBoundsGEP(
+        let field = LLVMBuildInBoundsGEP(
             builder,
             target_struct,
             range.as_mut_ptr(),
@@ -69,33 +69,25 @@ pub fn set_field_value(
 
 #[allow(dead_code)]
 fn assert_llvm_struct<F>(test_func: F)
-  where F: Fn(LLVMCreator, *mut LLVMValue) -> u64
+where
+    F: Fn(LLVMCreator, *mut LLVMValue) -> u64,
 {
-    let mut lc = LLVMCreator::new("test_module");
-    let main = lc.setup_main();
+    let lc = LLVMCreator::new("test_module");
+    let main = setup_main(lc.builder, lc.module);
 
-    assert!(
-        test_func(lc, main) == 2,
-        "failed cond_if_false"
-    );
-} 
+    assert!(test_func(lc, main) == 2, "failed cond_if_false");
+}
 
 #[test]
 fn strcut_test() {
     assert_llvm_struct(|lc, main| {
-      let elements = vec![int32_type(), int32_type()];
-      let mut target_struct = create_struct(lc.builder, lc.context, elements, "test");
+        let elements = vec![int32_type(), int32_type()];
+        let target_struct = create_struct(lc.builder, lc.context, elements, "test");
 
-      set_field_value(
-          lc.builder,
-          target_struct,
-          0,
-          const_int(int32_type(), 2),
-          "",
-      );
-      let llvm_value = get_field_value(lc.builder, target_struct, 0, "");
-      let return_value = build_load(lc.builder, llvm_value, "");
-      build_ret(lc.builder, return_value);
-      execute_test_ir_function(lc.module, main)
+        set_field_value(lc.builder, target_struct, 0, const_int(int32_type(), 2), "");
+        let llvm_value = get_field_value(lc.builder, target_struct, 0, "");
+        let return_value = build_load(lc.builder, llvm_value, "");
+        build_ret(lc.builder, return_value);
+        execute_test_ir_function(lc.module, main)
     });
 }
