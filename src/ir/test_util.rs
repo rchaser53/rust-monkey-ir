@@ -6,6 +6,7 @@ use llvm_sys::core::*;
 use llvm_sys::execution_engine::*;
 use llvm_sys::*;
 
+use ir::block::*;
 use ir::function::*;
 use ir::llvm_type::*;
 use ir::operate::*;

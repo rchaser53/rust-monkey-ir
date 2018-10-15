@@ -3,19 +3,14 @@ use std::ffi::CString;
 use llvm_sys::core::*;
 use llvm_sys::*;
 
+use llvm_sys::LLVMIntPredicate;
+
+use ir::block::*;
 use ir::const_value::*;
 use ir::creator::*;
 use ir::llvm_type::*;
 use ir::operate::*;
 use ir::test_util::*;
-
-pub fn append_basic_block_in_context(
-    context: *mut LLVMContext,
-    function: *mut LLVMValue,
-    function_name: &str,
-) -> *mut LLVMBasicBlock {
-    unsafe { LLVMAppendBasicBlockInContext(context, function, c_string!(function_name).as_ptr()) }
-}
 
 pub fn build_cond_br(
     builder: *mut LLVMBuilder,
@@ -33,6 +28,38 @@ pub fn build_br(builder: *mut LLVMBuilder, block: *mut LLVMBasicBlock) {
         LLVMPositionBuilderAtEnd(builder, block);
     };
 }
+
+macro_rules! create_build_i_cmp {
+    ($name:ident, $condition:expr) => {
+        pub fn $name(
+            builder: *mut LLVMBuilder,
+            left_val: *mut LLVMValue,
+            right_val: *mut LLVMValue,
+            name: &str,
+        ) -> *mut LLVMValue {
+            unsafe {
+                LLVMBuildICmp(
+                    builder,
+                    $condition,
+                    left_val,
+                    right_val,
+                    c_string!(name).as_ptr(),
+                )
+            }
+        }
+    };
+}
+
+create_build_i_cmp!(build_int_eq, LLVMIntPredicate::LLVMIntEQ);
+create_build_i_cmp!(build_int_ne, LLVMIntPredicate::LLVMIntNE);
+create_build_i_cmp!(build_int_ugt, LLVMIntPredicate::LLVMIntUGT);
+create_build_i_cmp!(build_int_uge, LLVMIntPredicate::LLVMIntUGE);
+create_build_i_cmp!(build_int_ult, LLVMIntPredicate::LLVMIntULT);
+create_build_i_cmp!(build_int_ule, LLVMIntPredicate::LLVMIntULE);
+create_build_i_cmp!(build_int_sgt, LLVMIntPredicate::LLVMIntSGT);
+create_build_i_cmp!(build_int_sge, LLVMIntPredicate::LLVMIntSGE);
+create_build_i_cmp!(build_int_slt, LLVMIntPredicate::LLVMIntSLT);
+create_build_i_cmp!(build_int_sle, LLVMIntPredicate::LLVMIntSLE);
 
 #[allow(dead_code)]
 pub fn create_if_else_test(llvm_bool: *mut LLVMValue) -> u64 {

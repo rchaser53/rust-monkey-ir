@@ -1,10 +1,12 @@
+use std::ffi::CStr;
 use std::ffi::CString;
+use std::os::raw::c_char;
 
 use llvm_sys::core::*;
 use llvm_sys::*;
 
-use ir::creator::*;
 use ir::const_value::*;
+use ir::creator::*;
 use ir::llvm_type::*;
 use ir::operate::*;
 use ir::test_util::*;
