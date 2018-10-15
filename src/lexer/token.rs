@@ -25,6 +25,7 @@ pub enum TokenType {
     Else,   // else
     Let,    // let
     Return, // return
+    While,  // while
 
     // for Arithmetic
     Eq,       // =

@@ -23,6 +23,7 @@ impl<'a> Lexer<'a> {
 
     pub fn handle_reserved_word(&self, word: &str, token: TokenType) -> TokenType {
         match word {
+            "while" => TokenType::While,
             "let" => TokenType::Let,
             "fn" => TokenType::Fn,
             "true" => TokenType::True,

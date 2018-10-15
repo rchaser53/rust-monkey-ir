@@ -22,6 +22,11 @@ pub enum Expression {
         body: BlockStatement,
         location: Location,
     },
+    While {
+      condition: Box<Expression>,
+      body: BlockStatement,
+      location: Location,
+    },
     Call(Call),
     Error(String),
 }
@@ -121,6 +126,21 @@ impl Expression {
                 format!("{}({})", call.function.string(), ret_string)
             }
             Expression::Error(message) => format!(r#""{}""#, message.to_string()),
+            Expression::While {
+                condition,
+                body,
+                location: _,
+            } => {
+                let mut ret_string = String::new();
+                for (index, statement) in body.iter().enumerate() {
+                    if index == 0 {
+                        ret_string.push_str(&format!("{}", statement.string()));
+                    } else {
+                        ret_string.push_str(&format!(" {}", statement.string()));
+                    }
+                }
+                format!("while({}) {{ {} }}", &condition.string(), ret_string)
+            }
         }
     }
 }
