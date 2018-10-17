@@ -31,6 +31,7 @@ impl<'a> Lexer<'a> {
             "if" => TokenType::If,
             "else" => TokenType::Else,
             "return" => TokenType::Return,
+            "break" => TokenType::Break,
             _ => token,
         }
     }
