@@ -54,6 +54,7 @@ pub enum Statement {
     Let(Identifier, Expression),
     Return(Expression),
     Expression(Expression),
+    While(Expression, BlockStatement),
 }
 
 pub type BlockStatement = Vec<Statement>;
@@ -71,7 +72,18 @@ impl Statement {
             Statement::Return(expr) => write_string!(format!("[ expression: {} ]", expr.string())),
             Statement::Expression(expr) => {
                 write_string!(format!("[ expression: {} ]", expr.string()))
-            }
+            },
+            Statement::While(expr, body) => {
+                let mut ret_string = String::new();
+                for (index, statement) in body.iter().enumerate() {
+                    if index == 0 {
+                        ret_string.push_str(&format!("{}", statement.string()));
+                    } else {
+                        ret_string.push_str(&format!(" {}", statement.string()));
+                    }
+                }
+                write_string!(format!("[ expression: {}, block: {} ]", expr.string(), ret_string))
+            },
         }
     }
 
@@ -82,6 +94,17 @@ impl Statement {
             }
             Statement::Return(expr) => ("return ".to_owned() + &expr.string()).to_string(),
             Statement::Expression(expr) => expr.string(),
+            Statement::While(expr, body) => {
+                let mut ret_string = String::new();
+                for (index, statement) in body.iter().enumerate() {
+                    if index == 0 {
+                        ret_string.push_str(&format!("{}", statement.string()));
+                    } else {
+                        ret_string.push_str(&format!(" {}", statement.string()));
+                    }
+                }
+                format!("while ({}) {{ {} }}", expr.string(), ret_string)
+            }
         }
     }
 }

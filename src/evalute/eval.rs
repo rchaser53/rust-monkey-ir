@@ -64,6 +64,7 @@ impl Eval {
                     None
                 }
             },
+            Statement::While(expr, block) => None,
         }
     }
 

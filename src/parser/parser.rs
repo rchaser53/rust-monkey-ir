@@ -47,11 +47,37 @@ impl<'a> Parser<'a> {
             return match token.kind {
                 TokenType::Let => self.parse_let_statement(),
                 TokenType::Return => self.parse_return_statement(),
+                TokenType::While => self.parse_while_statement(),
                 _ => self.parse_expression_statement(),
             };
         } else {
             return None;
         }
+    }
+
+    pub fn parse_while_statement(&mut self) -> Option<Statement> {
+        if self.expect_peek(TokenType::Lparen) == false {
+            return None;
+        }
+        self.next_token();
+
+        if let Some(condition) = self.parse_expression(Precedences::Lowest) {
+            let if_row = self.lexer.current_row;
+            if self.expect_peek(TokenType::Rparen) == false {
+                return None;
+            }
+
+            if self.expect_peek(TokenType::Lbrace) == false {
+                return None;
+            }
+
+            if let Some(block) = self.parse_block_statement() {
+                return Some(Statement::While(
+                  condition, block
+                ));
+            }
+        }
+        None
     }
 
     pub fn parse_let_statement(&mut self) -> Option<Statement> {
@@ -557,7 +583,10 @@ impl<'a> Parser<'a> {
 /* below the test implementation */
 #[allow(dead_code)]
 fn statement_assert(statement: &Statement, expect: &str) {
-    assert!(statement.string() == expect, statement.emit_debug_info());
+    assert!(statement.string() == expect,
+            "\r\nexpected: {:?} \r\nactual: {:?}",
+            expect,
+            statement.string());
 }
 
 #[allow(dead_code)]
@@ -611,6 +640,17 @@ fn test_return_statements() {
     statement_assert(&program[0], "return 5");
     statement_assert(&program[1], "return 10");
     statement_assert(&program[2], "return 939393");
+}
+
+#[test]
+fn test_while_statements() {
+    let input = r#"
+  while (true) {
+    let i = i + 1;
+  }
+"#;
+    let program = parse_input(input);
+    statement_assert(&program[0], "while (true) { let i = (i + 1) }");
 }
 
 #[test]
