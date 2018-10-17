@@ -72,7 +72,7 @@ impl Statement {
             Statement::Return(expr) => write_string!(format!("[ expression: {} ]", expr.string())),
             Statement::Expression(expr) => {
                 write_string!(format!("[ expression: {} ]", expr.string()))
-            },
+            }
             Statement::While(expr, body) => {
                 let mut ret_string = String::new();
                 for (index, statement) in body.iter().enumerate() {
@@ -82,8 +82,12 @@ impl Statement {
                         ret_string.push_str(&format!(" {}", statement.string()));
                     }
                 }
-                write_string!(format!("[ expression: {}, block: {} ]", expr.string(), ret_string))
-            },
+                write_string!(format!(
+                    "[ expression: {}, block: {} ]",
+                    expr.string(),
+                    ret_string
+                ))
+            }
         }
     }
 

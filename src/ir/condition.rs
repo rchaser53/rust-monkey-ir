@@ -62,8 +62,11 @@ create_build_i_cmp!(build_int_slt, LLVMIntPredicate::LLVMIntSLT);
 create_build_i_cmp!(build_int_sle, LLVMIntPredicate::LLVMIntSLE);
 
 #[allow(dead_code)]
-pub fn create_if_else_test(lc: &mut LLVMCreator, main: *mut LLVMValue, llvm_bool: *mut LLVMValue) -> u64 {
-
+pub fn create_if_else_test(
+    lc: &mut LLVMCreator,
+    main: *mut LLVMValue,
+    llvm_bool: *mut LLVMValue,
+) -> u64 {
     let left_block = append_basic_block_in_context(lc.context, main, "");
     let right_block = append_basic_block_in_context(lc.context, main, "");
 
@@ -111,7 +114,12 @@ fn cond_int_cmp_true() {
     let mut lc = LLVMCreator::new("test_module");
     let main = setup_main(lc.builder, lc.module);
 
-    let llvm_bool_true = build_int_eq(lc.builder, const_int(int32_type(), 0), const_int(int32_type(), 0), "");
+    let llvm_bool_true = build_int_eq(
+        lc.builder,
+        const_int(int32_type(), 0),
+        const_int(int32_type(), 0),
+        "",
+    );
     assert!(
         create_if_else_test(&mut lc, main, llvm_bool_true) == 1,
         "failed cond_int_cmp_true"
@@ -123,7 +131,12 @@ fn cond_int_cmp_false() {
     let mut lc = LLVMCreator::new("test_module");
     let main = setup_main(lc.builder, lc.module);
 
-    let llvm_bool_true = build_int_eq(lc.builder, const_int(int32_type(), 1), const_int(int32_type(), 0), "");
+    let llvm_bool_true = build_int_eq(
+        lc.builder,
+        const_int(int32_type(), 1),
+        const_int(int32_type(), 0),
+        "",
+    );
     assert!(
         create_if_else_test(&mut lc, main, llvm_bool_true) == 2,
         "failed cond_int_cmp_false"

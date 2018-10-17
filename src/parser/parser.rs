@@ -72,9 +72,7 @@ impl<'a> Parser<'a> {
             }
 
             if let Some(block) = self.parse_block_statement() {
-                return Some(Statement::While(
-                  condition, block
-                ));
+                return Some(Statement::While(condition, block));
             }
         }
         None

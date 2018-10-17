@@ -23,9 +23,9 @@ pub enum Expression {
         location: Location,
     },
     While {
-      condition: Box<Expression>,
-      body: BlockStatement,
-      location: Location,
+        condition: Box<Expression>,
+        body: BlockStatement,
+        location: Location,
     },
     Call(Call),
     Error(String),
