@@ -581,10 +581,12 @@ impl<'a> Parser<'a> {
 /* below the test implementation */
 #[allow(dead_code)]
 fn statement_assert(statement: &Statement, expect: &str) {
-    assert!(statement.string() == expect,
-            "\r\nexpected: {:?} \r\nactual: {:?}",
-            expect,
-            statement.string());
+    assert!(
+        statement.string() == expect,
+        "\r\nexpected: {:?} \r\nactual: {:?}",
+        expect,
+        statement.string()
+    );
 }
 
 #[allow(dead_code)]
