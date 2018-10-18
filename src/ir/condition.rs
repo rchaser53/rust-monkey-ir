@@ -5,9 +5,11 @@ use llvm_sys::*;
 
 use llvm_sys::LLVMIntPredicate;
 
+use ir::arithmetic::*;
 use ir::block::*;
 use ir::const_value::*;
 use ir::creator::*;
+use ir::function::*;
 use ir::llvm_type::*;
 use ir::operate::*;
 use ir::test_util::*;
@@ -141,4 +143,35 @@ fn cond_int_cmp_false() {
         create_if_else_test(&mut lc, main, llvm_bool_true) == 2,
         "failed cond_int_cmp_false"
     );
+}
+
+#[test]
+fn build_while() {
+    let mut lc = LLVMCreator::new("test_module");
+    let fn_type = create_function_type(int32_type(), &mut []);
+    let main = add_function(lc.module, fn_type, "main");
+
+    let entry = append_basic_block(main, "entry");
+    let left_block = append_basic_block_in_context(lc.context, main, "left");
+    let right_block = append_basic_block_in_context(lc.context, main, "right");
+
+    build_position_at_end(lc.builder, entry);
+
+    let llvm_increment_ref = build_alloca(lc.builder, int32_type(), "a");
+    build_store(lc.builder, const_int(int32_type(), 0), llvm_increment_ref);
+
+    build_br(lc.builder, left_block);
+    build_position_at_end(lc.builder, left_block);
+
+    let llvm_increment = build_load(lc.builder, llvm_increment_ref, "b");
+    let added_value = add_variable(lc.builder, const_int(int32_type(), 1), llvm_increment, "c");
+    build_store(lc.builder, added_value, llvm_increment_ref);
+
+    let llvm_bool = build_int_eq(lc.builder, const_int(int32_type(), 3), llvm_increment, "d");
+    build_cond_br(lc.builder, llvm_bool, left_block, right_block);
+    build_position_at_end(lc.builder, right_block);
+
+    build_ret(lc.builder, const_int(int32_type(), 3));
+
+    assert!(1 == 1, "failed build_while");
 }
