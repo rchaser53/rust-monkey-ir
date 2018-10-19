@@ -12,7 +12,7 @@ pub struct LLVMCreator {
 impl LLVMCreator {
     pub fn new(module_name: &str) -> LLVMCreator {
         unsafe {
-            let context = LLVMGetGlobalContext();
+            let context = LLVMContextCreate();
             let mod_name = c_string!(module_name);
 
             LLVMCreator {
@@ -44,6 +44,7 @@ impl Drop for LLVMCreator {
     fn drop(&mut self) {
         unsafe {
             LLVMDisposeBuilder(self.builder);
+            LLVMContextDispose(self.context);
         }
     }
 }
