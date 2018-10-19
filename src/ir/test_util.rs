@@ -59,7 +59,11 @@ pub fn execute_test_ir_function(module: *mut LLVMModule, target_function: *mut L
         params.len() as u32,
         params.as_mut_ptr(),
     );
-    unsafe { LLVMGenericValueToInt(func_result, 0) }
+
+    unsafe {
+        LLVMDisposeExecutionEngine(engine);
+        LLVMGenericValueToInt(func_result, 0)
+    }
 }
 
 pub fn setup_main(builder: *mut LLVMBuilder, module: *mut LLVMModule) -> *mut LLVMValue {
