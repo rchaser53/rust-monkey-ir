@@ -27,7 +27,7 @@ pub fn build_cond_br(
 
 pub fn build_br(builder: *mut LLVMBuilder, block: *mut LLVMBasicBlock) {
     unsafe {
-        LLVMPositionBuilderAtEnd(builder, block);
+        LLVMBuildBr(builder, block);
     };
 }
 
