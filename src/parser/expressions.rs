@@ -75,7 +75,8 @@ impl Expression {
                     .join("\n");
 
                 if let Some(alt) = alternative {
-                    let alternative_string = alt.iter()
+                    let alternative_string = alt
+                        .iter()
                         .map(|s| s.string())
                         .collect::<Vec<_>>()
                         .join("\n");

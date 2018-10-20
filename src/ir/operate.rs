@@ -4,8 +4,6 @@ use llvm_sys::core::*;
 use llvm_sys::execution_engine::*;
 use llvm_sys::*;
 
-use ir::block::*;
-
 pub fn build_alloca(
     builder: *mut LLVMBuilder,
     llvm_type: *mut LLVMType,

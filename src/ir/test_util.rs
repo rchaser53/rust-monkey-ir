@@ -2,11 +2,11 @@ use std::ffi::CString;
 use std::os::raw::c_char;
 
 use llvm_sys::analysis::{LLVMVerifierFailureAction, LLVMVerifyModule};
-use llvm_sys::core::*;
 use llvm_sys::execution_engine::*;
 use llvm_sys::*;
 
 use ir::block::*;
+use ir::creator::*;
 use ir::function::*;
 use ir::llvm_type::*;
 use ir::operate::*;
@@ -66,10 +66,10 @@ pub fn execute_test_ir_function(module: *mut LLVMModule, target_function: *mut L
     }
 }
 
-pub fn setup_main(builder: *mut LLVMBuilder, module: *mut LLVMModule) -> *mut LLVMValue {
+pub fn setup_main(lc: &mut LLVMCreator) -> *mut LLVMValue {
     let fn_type = create_function_type(int32_type(), &mut []);
-    let main_function = add_function(module, fn_type, "main");
-    let block = append_basic_block(main_function, "entry");
-    build_position_at_end(builder, block);
+    let main_function = add_function(lc.module, fn_type, "main");
+    let block = append_basic_block_in_context(lc.context, main_function, "entry");
+    build_position_at_end(lc.builder, block);
     main_function
 }

@@ -28,7 +28,8 @@ mod ir;
 fn read_file(file_name: &str) -> Result<String, String> {
     if let Ok(mut file) = File::open(file_name) {
         let mut contents = String::new();
-        let _ = file.read_to_string(&mut contents)
+        let _ = file
+            .read_to_string(&mut contents)
             .map_err(|err| format!("{}", err))?;
         Ok(contents)
     } else {

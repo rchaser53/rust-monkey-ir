@@ -38,8 +38,8 @@ pub fn multiple_variable(
 
 #[allow(dead_code)]
 fn setup_llvm() -> LLVMCreator {
-    let lc = LLVMCreator::new("test_module");
-    setup_main(lc.builder, lc.module);
+    let mut lc = LLVMCreator::new("test_module");
+    setup_main(&mut lc);
     lc
 }
 
