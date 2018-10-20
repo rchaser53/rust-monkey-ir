@@ -1,12 +1,16 @@
+use std::collections::HashMap;
 use std::ffi::CString;
 
 use llvm_sys::core::*;
 use llvm_sys::*;
 
+use ir::built_in::*;
+
 pub struct LLVMCreator {
     pub builder: *mut LLVMBuilder,
     pub context: *mut LLVMContext,
     pub module: *mut LLVMModule,
+    pub built_ins: HashMap<&'static str, *mut LLVMValue>,
 }
 
 impl LLVMCreator {
@@ -19,8 +23,13 @@ impl LLVMCreator {
                 builder: LLVMCreateBuilderInContext(context),
                 module: LLVMModuleCreateWithName(mod_name.as_ptr()),
                 context: context,
+                built_ins: HashMap::new(),
             }
         }
+    }
+
+    pub fn setup_builtin(&mut self) {
+        self.built_ins.insert("printf", create_printf(self.module));
     }
 
     #[allow(dead_code)]

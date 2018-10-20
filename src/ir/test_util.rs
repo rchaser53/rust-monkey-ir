@@ -67,7 +67,7 @@ pub fn execute_test_ir_function(module: *mut LLVMModule, target_function: *mut L
 }
 
 pub fn setup_main(lc: &mut LLVMCreator) -> *mut LLVMValue {
-    let fn_type = create_function_type(int32_type(), &mut []);
+    let fn_type = function_type(int32_type(), &mut []);
     let main_function = add_function(lc.module, fn_type, "main");
     let block = append_basic_block_in_context(lc.context, main_function, "entry");
     build_position_at_end(lc.builder, block);

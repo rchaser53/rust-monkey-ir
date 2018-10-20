@@ -7,6 +7,7 @@ use ir::creator::*;
 use ir::llvm_type::*;
 use ir::test_util::*;
 
+#[allow(dead_code)]
 pub fn add_variable(
     builder: *mut LLVMBuilder,
     var_a: *mut LLVMValue,
@@ -18,6 +19,7 @@ pub fn add_variable(
     };
 }
 
+#[allow(dead_code)]
 pub fn sub_variable(
     builder: *mut LLVMBuilder,
     var_a: *mut LLVMValue,
@@ -27,6 +29,7 @@ pub fn sub_variable(
     unsafe { LLVMBuildSub(builder, var_a, var_b, c_string!(name).as_ptr()) }
 }
 
+#[allow(dead_code)]
 pub fn multiple_variable(
     builder: *mut LLVMBuilder,
     var_a: *mut LLVMValue,

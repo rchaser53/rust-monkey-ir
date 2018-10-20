@@ -33,6 +33,7 @@ pub fn build_br(builder: *mut LLVMBuilder, block: *mut LLVMBasicBlock) {
 
 macro_rules! create_build_i_cmp {
     ($name:ident, $condition:expr) => {
+        #[allow(dead_code)]
         pub fn $name(
             builder: *mut LLVMBuilder,
             left_val: *mut LLVMValue,
@@ -151,7 +152,7 @@ fn cond_int_cmp_false() {
 #[test]
 fn build_while() {
     let lc = LLVMCreator::new("test_module");
-    let fn_type = create_function_type(int32_type(), &mut []);
+    let fn_type = function_type(int32_type(), &mut []);
     let main = add_function(lc.module, fn_type, "main");
 
     let entry = append_basic_block(main, "entry");

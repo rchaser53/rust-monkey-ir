@@ -1,15 +1,11 @@
-use std::ffi::CStr;
 use std::ffi::CString;
-use std::os::raw::c_char;
 
 use llvm_sys::core::*;
 use llvm_sys::*;
 
 use ir::const_value::*;
-use ir::creator::*;
 use ir::llvm_type::*;
 use ir::operate::*;
-use ir::test_util::*;
 
 pub fn const_string_in_context(context: *mut LLVMContext, input_str: &str) -> *mut LLVMValue {
     let length = input_str.len() as u32;
@@ -27,7 +23,7 @@ pub fn codegen_string(
     let llvm_value = build_alloca(builder, array_type(int8_type(), length), "");
     build_store(builder, str_val, llvm_value);
 
-    let mut args = vec![const_int(int32_type(), 0), const_int(int32_type(), 0)];
+    let args = vec![const_int(int32_type(), 0), const_int(int32_type(), 0)];
 
     return build_gep(builder, llvm_value, args, name);
 }
