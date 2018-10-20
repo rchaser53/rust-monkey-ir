@@ -4,6 +4,9 @@ use llvm_sys::core::*;
 use llvm_sys::execution_engine::*;
 use llvm_sys::*;
 
+use ir::const_value::*;
+use ir::llvm_type::*;
+
 pub fn build_alloca(
     builder: *mut LLVMBuilder,
     llvm_type: *mut LLVMType,
@@ -66,4 +69,9 @@ pub fn build_gep(
             c_string!(name).as_ptr(),
         )
     }
+}
+
+pub fn build_const_gep(llvm_const_value: *mut LLVMValue) -> *mut LLVMValue {
+    let mut args = vec![const_int(int32_type(), 0), const_int(int32_type(), 0)];
+    unsafe { LLVMConstInBoundsGEP(llvm_const_value, args.as_mut_ptr(), args.len() as u32) }
 }

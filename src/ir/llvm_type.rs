@@ -24,3 +24,7 @@ pub fn pointer_type() -> *mut LLVMType {
 pub fn function_type(ret_type: *mut LLVMType, args: &mut [*mut LLVMType]) -> *mut LLVMType {
     unsafe { LLVMFunctionType(ret_type, args.as_mut_ptr(), args.len() as u32, 0) }
 }
+
+pub fn type_of(value: *mut LLVMValue) -> *mut LLVMType {
+    unsafe { LLVMTypeOf(value) }
+}
