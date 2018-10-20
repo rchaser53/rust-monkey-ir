@@ -50,4 +50,3 @@ fn call_function_test() {
 
     execute_test_ir_function(lc.module, main);
 }
-}

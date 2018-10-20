@@ -7,13 +7,10 @@ use ir::function::*;
 use ir::llvm_type::*;
 
 pub fn create_printf(module: *mut LLVMModule) -> *mut LLVMValue {
-    unsafe {
-        let mut printf_args_type_list = vec![LLVMPointerType(LLVMInt8Type(), 0)];
-        let printf_type =
-            LLVMFunctionType(LLVMInt32Type(), printf_args_type_list.as_mut_ptr(), 0, 1);
+    let mut printf_args_type_list = vec![pointer_type()];
+    let printf_type = function_type_var_arg(pointer_type(), &mut printf_args_type_list);
 
-        return LLVMAddFunction(module, c_string!("printf").as_ptr(), printf_type);
-    }
+    add_function(module, printf_type, "printf")
 }
 
 pub fn create_strcmp(module: *mut LLVMModule) -> *mut LLVMValue {
