@@ -150,31 +150,34 @@ fn cond_int_cmp_false() {
 
 #[test]
 fn build_while() {
-    let mut lc = LLVMCreator::new("test_module");
+    let lc = LLVMCreator::new("test_module");
     let fn_type = create_function_type(int32_type(), &mut []);
     let main = add_function(lc.module, fn_type, "main");
 
     let entry = append_basic_block(main, "entry");
-    let left_block = append_basic_block_in_context(lc.context, main, "left");
-    let right_block = append_basic_block_in_context(lc.context, main, "right");
+    let loop_block = append_basic_block_in_context(lc.context, main, "loop");
+    let loop_end_block = append_basic_block_in_context(lc.context, main, "loop_end");
 
     build_position_at_end(lc.builder, entry);
 
-    let llvm_increment_ref = build_alloca(lc.builder, int32_type(), "a");
+    let llvm_increment_ref = build_alloca(lc.builder, int32_type(), "");
     build_store(lc.builder, const_int(int32_type(), 0), llvm_increment_ref);
 
-    build_br(lc.builder, left_block);
-    build_position_at_end(lc.builder, left_block);
+    build_br(lc.builder, loop_block);
+    build_position_at_end(lc.builder, loop_block);
 
-    let llvm_increment = build_load(lc.builder, llvm_increment_ref, "b");
-    let added_value = add_variable(lc.builder, const_int(int32_type(), 1), llvm_increment, "c");
+    let llvm_increment = build_load(lc.builder, llvm_increment_ref, "");
+    let added_value = add_variable(lc.builder, const_int(int32_type(), 1), llvm_increment, "");
     build_store(lc.builder, added_value, llvm_increment_ref);
 
-    let llvm_bool = build_int_eq(lc.builder, const_int(int32_type(), 3), llvm_increment, "d");
-    build_cond_br(lc.builder, llvm_bool, left_block, right_block);
-    build_position_at_end(lc.builder, right_block);
+    let llvm_bool = build_int_eq(lc.builder, const_int(int32_type(), 3), llvm_increment, "");
+    build_cond_br(lc.builder, llvm_bool, loop_end_block, loop_block);
+    build_position_at_end(lc.builder, loop_end_block);
 
-    build_ret(lc.builder, const_int(int32_type(), 3));
+    build_ret(lc.builder, llvm_increment);
 
-    assert!(1 == 1, "failed build_while");
+    assert!(
+        execute_test_ir_function(lc.module, main) == 3,
+        "build_while failed",
+    );
 }
