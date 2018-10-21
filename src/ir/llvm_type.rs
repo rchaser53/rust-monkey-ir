@@ -1,3 +1,5 @@
+use std::ffi::CString;
+
 use llvm_sys::core::*;
 use llvm_sys::*;
 
@@ -31,4 +33,15 @@ pub fn function_type_var_arg(ret_type: *mut LLVMType, args: &mut [*mut LLVMType]
 
 pub fn type_of(value: *mut LLVMValue) -> *mut LLVMType {
     unsafe { LLVMTypeOf(value) }
+}
+
+pub fn cast_type(
+    builder: *mut LLVMBuilder,
+    value: *mut LLVMValue,
+    dest_type: *mut LLVMType,
+    name: &str
+) -> *mut LLVMValue {
+  unsafe {
+    LLVMBuildBitCast(builder, value, pointer_type(), c_string!(name).as_ptr())
+  }
 }
