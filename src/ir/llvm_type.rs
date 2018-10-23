@@ -39,9 +39,7 @@ pub fn cast_type(
     builder: *mut LLVMBuilder,
     value: *mut LLVMValue,
     dest_type: *mut LLVMType,
-    name: &str
+    name: &str,
 ) -> *mut LLVMValue {
-  unsafe {
-    LLVMBuildBitCast(builder, value, pointer_type(), c_string!(name).as_ptr())
-  }
+    unsafe { LLVMBuildBitCast(builder, value, pointer_type(), c_string!(name).as_ptr()) }
 }

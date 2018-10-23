@@ -3,6 +3,8 @@ use std::ffi::CString;
 use llvm_sys::core::*;
 use llvm_sys::*;
 
+use ir::block::*;
+use ir::condition::*;
 use ir::const_value::*;
 use ir::creator::*;
 use ir::llvm_type::*;
@@ -49,4 +51,31 @@ fn call_function_test() {
     build_ret(lc.builder, const_int(int32_type(), 2));
 
     execute_test_ir_function(lc.module, main);
+}
+
+#[test]
+fn call_strcmp_test() {
+    let mut lc = LLVMCreator::new("test_module");
+    lc.setup_builtin();
+
+    let main = setup_main(&mut lc);
+    let strcmp = lc.built_ins["strcmp"];
+    let printf = lc.built_ins["printf"];
+    let mut strcmp_args = vec![
+        codegen_string_gep(&mut lc, "hello world", ""),
+        codegen_string_gep(&mut lc, "hello world", ""),
+    ];
+
+    let llvm_value = build_alloca(lc.builder, int32_type(), "");
+    let called = call_function(lc.builder, strcmp, strcmp_args, "");
+    build_store(lc.builder, called, llvm_value);
+    let print_int = build_load(lc.builder, llvm_value, "");
+
+    let printf_args = vec![codegen_string_gep(&mut lc, "resulte %d", ""), print_int];
+
+    call_function(lc.builder, printf, printf_args, "");
+
+    build_ret(lc.builder, const_int(int32_type(), 0));
+    // LLVM ERROR: Calling external var arg function 'strcmp' is not supported by the Interpreter.
+    // let for_assert = execute_test_ir_function(lc.module, main);
 }
