@@ -6,6 +6,7 @@ extern crate lazy_static;
 extern crate clap;
 extern crate libc;
 extern crate llvm_sys;
+extern crate rustc_llvm_proxy;
 
 use std::fs::File;
 use std::io::prelude::*;

@@ -7,7 +7,12 @@ version = "0.1.0"
 clap = "2.32.0"
 lazy_static = "1.1.0"
 libc = "0.2"
-llvm-sys = "60.2"
+rustc-llvm-proxy = "0.1"
+
+[dependencies.llvm-sys]
+features = ["no-llvm-linking"]
+version = "60.2"
 
 [build-dependencies]
 cc = "1.0.25"
+

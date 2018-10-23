@@ -9,3 +9,6 @@
 !hoge2.ll
 !temp.ll
 !for_struct.ll
+
+*.o
+*.a
