@@ -10,13 +10,15 @@ use ir::llvm_type::*;
 use ir::operate::*;
 use ir::scope::*;
 
-pub fn const_string_in_context(context: *mut LLVMContext, input_str: &str) -> *mut LLVMValue {
-    let length = input_str.len() as u32;
-    unsafe { LLVMConstStringInContext(context, c_string!(input_str).as_ptr(), length, 1) }
+pub fn const_string_in_context(context: *mut LLVMContext, input_str: String) -> *mut LLVMValue {
+    let temp_str = input_str + "\0";
+    let byte = temp_str.as_bytes();
+    let length = byte.len() as u32;
+    unsafe { LLVMConstStringInContext(context, byte.as_ptr() as *const _, length, 1) }
 }
 
 pub fn codegen_string(lc: &mut LLVMCreator, input_str: &str, name: &str) -> *mut LLVMValue {
-    let str_val = const_string_in_context(lc.context, input_str);
+    let str_val = const_string_in_context(lc.context, input_str.to_string());
     let global_str_val = add_global(lc.module, type_of(str_val), name);
     set_linkage(global_str_val, LLVMPrivateLinkage);
     set_initializer(global_str_val, str_val);
@@ -27,7 +29,7 @@ pub fn codegen_string(lc: &mut LLVMCreator, input_str: &str, name: &str) -> *mut
 }
 
 pub fn codegen_string_gep(lc: &mut LLVMCreator, input_str: &str, name: &str) -> *mut LLVMValue {
-    let str_val = const_string_in_context(lc.context, input_str);
+    let str_val = const_string_in_context(lc.context, input_str.to_string());
     let global_str_val = add_global(lc.module, type_of(str_val), name);
     set_linkage(global_str_val, LLVMPrivateLinkage);
     set_initializer(global_str_val, str_val);
