@@ -5,15 +5,20 @@ use llvm_sys::*;
 
 use llvm_sys::LLVMIntPredicate;
 
-use ir::arithmetic::*;
 use ir::block::*;
 use ir::const_value::*;
 use ir::creator::*;
-use ir::function::*;
 use ir::llvm_type::*;
 use ir::operate::*;
 use ir::test_util::*;
 
+#[allow(unused_imports)]
+use ir::function::*;
+
+#[allow(unused_imports)]
+use ir::arithmetic::*;
+
+#[allow(dead_code)]
 pub fn build_cond_br(
     builder: *mut LLVMBuilder,
     condition: *mut LLVMValue,
@@ -25,6 +30,7 @@ pub fn build_cond_br(
     };
 }
 
+#[allow(dead_code)]
 pub fn build_br(builder: *mut LLVMBuilder, block: *mut LLVMBasicBlock) {
     unsafe {
         LLVMBuildBr(builder, block);

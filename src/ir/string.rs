@@ -10,6 +10,7 @@ use ir::llvm_type::*;
 use ir::operate::*;
 use ir::scope::*;
 
+#[allow(dead_code)]
 pub fn const_string_in_context(context: *mut LLVMContext, input_str: String) -> *mut LLVMValue {
     let temp_str = input_str + "\0";
     let byte = temp_str.as_bytes();
@@ -17,6 +18,7 @@ pub fn const_string_in_context(context: *mut LLVMContext, input_str: String) -> 
     unsafe { LLVMConstStringInContext(context, byte.as_ptr() as *const _, length, 1) }
 }
 
+#[allow(dead_code)]
 pub fn codegen_string(lc: &mut LLVMCreator, input_str: &str, name: &str) -> *mut LLVMValue {
     let str_val = const_string_in_context(lc.context, input_str.to_string());
     let global_str_val = add_global(lc.module, type_of(str_val), name);
@@ -28,6 +30,7 @@ pub fn codegen_string(lc: &mut LLVMCreator, input_str: &str, name: &str) -> *mut
     return build_const_gep(global_str_val);
 }
 
+#[allow(dead_code)]
 pub fn codegen_string_gep(lc: &mut LLVMCreator, input_str: &str, name: &str) -> *mut LLVMValue {
     let str_val = const_string_in_context(lc.context, input_str.to_string());
     let global_str_val = add_global(lc.module, type_of(str_val), name);

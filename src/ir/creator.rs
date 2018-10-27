@@ -28,6 +28,7 @@ impl LLVMCreator {
         }
     }
 
+    #[allow(dead_code)]
     pub fn setup_builtin(&mut self) {
         self.built_ins.insert("printf", create_printf(self.module));
         self.built_ins.insert("strcmp", create_strcmp(self.module));

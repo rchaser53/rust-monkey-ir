@@ -3,12 +3,17 @@ use std::ffi::CString;
 use llvm_sys::core::*;
 use llvm_sys::*;
 
-use ir::const_value::*;
 use ir::creator::*;
 use ir::llvm_type::*;
-use ir::operate::*;
 use ir::test_util::*;
 
+#[allow(unused_imports)]
+use ir::const_value::*;
+
+#[allow(unused_imports)]
+use ir::operate::*;
+
+#[allow(dead_code)]
 pub fn create_struct(
     builder: *mut LLVMBuilder,
     context: *mut LLVMContext,
@@ -23,6 +28,7 @@ pub fn create_struct(
     }
 }
 
+#[allow(dead_code)]
 pub fn get_field_value(
     builder: *mut LLVMBuilder,
     target_struct: *mut LLVMValue,
@@ -44,6 +50,7 @@ pub fn get_field_value(
     }
 }
 
+#[allow(dead_code)]
 pub fn set_field_value(
     builder: *mut LLVMBuilder,
     target_struct: *mut LLVMValue,

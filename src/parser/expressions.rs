@@ -28,7 +28,6 @@ pub enum Expression {
         location: Location,
     },
     Call(Call),
-    Error(String),
 }
 
 #[derive(PartialEq, Clone, Debug)]
@@ -126,7 +125,6 @@ impl Expression {
 
                 format!("{}({})", call.function.string(), ret_string)
             }
-            Expression::Error(message) => format!(r#""{}""#, message.to_string()),
             Expression::While {
                 condition,
                 body,

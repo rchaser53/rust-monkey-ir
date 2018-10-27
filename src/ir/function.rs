@@ -3,15 +3,28 @@ use std::ffi::CString;
 use llvm_sys::core::*;
 use llvm_sys::*;
 
-use ir::block::*;
-use ir::condition::*;
-use ir::const_value::*;
 use ir::creator::*;
-use ir::llvm_type::*;
 use ir::operate::*;
-use ir::string::*;
+
+#[allow(unused_imports)]
+use ir::block::*;
+
+#[allow(unused_imports)]
+use ir::condition::*;
+
+#[allow(unused_imports)]
+use ir::const_value::*;
+
+#[allow(unused_imports)]
 use ir::test_util::*;
 
+#[allow(unused_imports)]
+use ir::llvm_type::*;
+
+#[allow(unused_imports)]
+use ir::string::*;
+
+#[allow(dead_code)]
 pub fn add_function(
     target_module: *mut LLVMModule,
     function_type: *mut LLVMType,
@@ -20,6 +33,7 @@ pub fn add_function(
     unsafe { LLVMAddFunction(target_module, c_string!(name).as_ptr(), function_type) }
 }
 
+#[allow(dead_code)]
 pub fn call_function(
     builder: *mut LLVMBuilder,
     function: *mut LLVMValue,
@@ -37,10 +51,12 @@ pub fn call_function(
     }
 }
 
+#[allow(dead_code)]
 pub fn get_param(target_func: *mut LLVMValue, arg_index: u32) -> *mut LLVMValue {
     unsafe { LLVMGetParam(target_func, arg_index) }
 }
 
+#[allow(dead_code)]
 pub fn create_function<F>(
     lc: &mut LLVMCreator,
     fn_type: *mut LLVMType,
@@ -77,10 +93,10 @@ fn call_strcmp() {
     let mut lc = LLVMCreator::new("test_module");
     lc.setup_builtin();
 
-    let main = setup_main(&mut lc);
+    let _main = setup_main(&mut lc);
     let strcmp = lc.built_ins["strcmp"];
     let printf = lc.built_ins["printf"];
-    let mut strcmp_args = vec![
+    let strcmp_args = vec![
         codegen_string(&mut lc, "hello world", ""),
         codegen_string(&mut lc, "hello world", ""),
     ];
@@ -108,7 +124,7 @@ fn call_int_func() {
     });
 
     let main = setup_main(&mut lc);
-    let mut test_func_args = vec![const_int(int32_type(), 10)];
+    let test_func_args = vec![const_int(int32_type(), 10)];
     let called = call_function(lc.builder, test_func, test_func_args, "");
     build_ret(lc.builder, called);
 

@@ -4,8 +4,10 @@ use llvm_sys::core::*;
 use llvm_sys::*;
 
 use ir::creator::*;
-use ir::llvm_type::*;
 use ir::test_util::*;
+
+#[allow(unused_imports)]
+use ir::llvm_type::*;
 
 #[allow(dead_code)]
 pub fn add_variable(

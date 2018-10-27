@@ -62,7 +62,6 @@ impl<'a> Parser<'a> {
         self.next_token();
 
         if let Some(condition) = self.parse_expression(Precedences::Lowest) {
-            let if_row = self.lexer.current_row;
             if self.expect_peek(TokenType::Rparen) == false {
                 return None;
             }
@@ -229,32 +228,6 @@ impl<'a> Parser<'a> {
         }
 
         left_exp
-    }
-
-    pub fn parse_while(&mut self) -> Option<Expression> {
-        if self.expect_peek(TokenType::Lparen) == false {
-            return None;
-        }
-
-        self.next_token();
-        let condition = if let Some(value) = self.parse_expression(Precedences::Lowest) {
-            value
-        } else {
-            return None;
-        };
-
-        if self.expect_peek(TokenType::Lbrace) == false {
-            return None;
-        }
-
-        if let Some(body) = self.parse_block_statement() {
-            return Some(Expression::While {
-                condition: Box::new(condition),
-                body: body,
-                location: Location::new(self.lexer.current_row),
-            });
-        }
-        None
     }
 
     pub fn parse_prefix_expression(&mut self) -> Option<Expression> {

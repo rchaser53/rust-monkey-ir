@@ -3,6 +3,7 @@ use std::ffi::CString;
 use llvm_sys::core::*;
 use llvm_sys::*;
 
+#[allow(dead_code)]
 pub fn append_basic_block_in_context(
     context: *mut LLVMContext,
     function: *mut LLVMValue,
