@@ -146,7 +146,7 @@ impl<'a> Parser<'a> {
 
     pub fn parse_integer_literal(&mut self) -> Option<Expression> {
         if let Some(token) = &self.cur_token {
-            if let Ok(value) = token.value.parse::<i64>() {
+            if let Ok(value) = token.value.parse::<u64>() {
                 return Some(Expression::IntegerLiteral(
                     value,
                     Location::new(self.lexer.current_row),

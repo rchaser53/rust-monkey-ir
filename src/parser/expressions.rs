@@ -6,7 +6,7 @@ pub struct Identifier(pub String);
 #[derive(PartialEq, Clone, Debug)]
 pub enum Expression {
     Identifier(Identifier, Location),
-    IntegerLiteral(i64, Location),
+    IntegerLiteral(u64, Location),
     StringLiteral(String, Location),
     Boolean(bool, Location),
     Prefix(Prefix, Box<Expression>, Location),
