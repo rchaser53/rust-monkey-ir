@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use evalute::object::*;
+use evaluate::object::*;
 use parser::expressions::*;
 
 #[derive(Debug, Clone)]

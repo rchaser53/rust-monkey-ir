@@ -4,8 +4,8 @@ use parser::expressions::*;
 use parser::parser::*;
 use parser::statements::*;
 
-use evalute::environment::*;
-use evalute::object::*;
+use evaluate::environment::*;
+use evaluate::object::*;
 
 pub struct Eval {
     pub stack_arg: Vec<Vec<Expression>>,

@@ -19,9 +19,9 @@ use lexer::lexer::*;
 mod parser;
 use parser::parser::*;
 
-mod evalute;
-use evalute::environment::*;
-use evalute::eval::*;
+mod evaluate;
+use evaluate::environment::*;
+use evaluate::eval::*;
 
 mod ir;
 

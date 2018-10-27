@@ -1,6 +1,6 @@
 use std::fmt;
 
-use evalute::environment::*;
+use evaluate::environment::*;
 
 use parser::expressions::*;
 use parser::statements::*;
