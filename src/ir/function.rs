@@ -41,6 +41,21 @@ pub fn get_param(target_func: *mut LLVMValue, arg_index: u32) -> *mut LLVMValue 
     unsafe { LLVMGetParam(target_func, arg_index) }
 }
 
+pub fn create_function<F>(
+    lc: &mut LLVMCreator,
+    fn_type: *mut LLVMType,
+    implement: F,
+) -> *mut LLVMValue
+where
+    F: Fn(&mut LLVMCreator, *mut LLVMValue),
+{
+    let function = add_function(lc.module, fn_type, "");
+    let block = append_basic_block(function, "entry");
+    build_position_at_end(lc.builder, block);
+    implement(lc, function);
+    function
+}
+
 #[test]
 fn call_printf() {
     let mut lc = LLVMCreator::new("test_module");
@@ -87,18 +102,15 @@ fn call_strcmp() {
 #[test]
 fn call_int_func() {
     let mut lc = LLVMCreator::new("test_module");
-
-    let fn_type = function_type(int32_type(), &mut [int32_type()]);
-    let test_func = add_function(lc.module, fn_type, "test_func");
+    let test_fn_type = function_type(int32_type(), &mut [int32_type()]);
+    let test_func = create_function(&mut lc, test_fn_type, |inner_lc, test_func| {
+        build_ret(inner_lc.builder, get_param(test_func, 0));
+    });
 
     let main = setup_main(&mut lc);
     let mut test_func_args = vec![const_int(int32_type(), 10)];
     let called = call_function(lc.builder, test_func, test_func_args, "");
     build_ret(lc.builder, called);
-
-    let test_func_block_entry = append_basic_block(test_func, "entry");
-    build_position_at_end(lc.builder, test_func_block_entry);
-    build_ret(lc.builder, get_param(test_func, 0));
 
     let for_assert = execute_test_ir_function(lc.module, main);
     let expected = 10;
