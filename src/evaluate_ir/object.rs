@@ -11,7 +11,7 @@ use llvm_sys::*;
 pub enum Object {
     Integer(u64, *mut LLVMValue),
     String(String),
-    Boolean(bool),
+    Boolean(bool, *mut LLVMValue),
     Function(Function),
     Null,
     Error(String),
@@ -35,7 +35,7 @@ impl fmt::Display for Object {
         match self {
             Object::Integer(int, _) => write!(f, "{}", int.to_string()),
             Object::String(string) => write!(f, "{}", string),
-            Object::Boolean(boolean) => write!(f, "{}", boolean.to_string()),
+            Object::Boolean(boolean, _) => write!(f, "{}", boolean.to_string()),
             Object::Function(ref func) => {
                 let mut param_string = String::new();
                 for (index, Identifier(ref string)) in func.parameters.iter().enumerate() {

@@ -20,4 +20,15 @@ pub mod macros {
           const_int(int32_type(), $value)
         };
     }
+
+    #[macro_export]
+    macro_rules! llvm_bool {
+        ($flag:expr) => {
+            if $flag {
+              const_int(int1_type(), 1)
+            } else {
+              const_int(int1_type(), 0)
+            }
+        };
+    }
 }

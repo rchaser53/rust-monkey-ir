@@ -54,12 +54,15 @@ impl Eval {
         for statement in program.into_iter() {
             if let Some(obj) = self.eval_statement(statement, env) {
                 match obj {
-                  Object::Integer(_, llvm_value) => {
-                    build_ret(self.lc.builder, llvm_value);
-                  },
-                  _ => {
-                    build_ret(self.lc.builder, llvm_integer!(0));
-                  }
+                    Object::Integer(_, llvm_value) => {
+                        build_ret(self.lc.builder, llvm_value);
+                    }
+                    Object::Boolean(_, llvm_value) => {
+                        build_ret(self.lc.builder, llvm_value);
+                    }
+                    _ => {
+                        build_ret(self.lc.builder, llvm_integer!(0));
+                    }
                 };
                 return obj;
             }
@@ -144,7 +147,9 @@ impl Eval {
         match expr {
             Expression::IntegerLiteral(int, _location) => Object::Integer(int, llvm_integer!(int)),
             Expression::StringLiteral(string, _location) => Object::String(string),
-            Expression::Boolean(boolean, _location) => Object::Boolean(boolean),
+            Expression::Boolean(boolean, _location) => {
+                Object::Boolean(boolean, llvm_bool!(boolean))
+            }
             Expression::Prefix(prefix, expr, location) => {
                 self.eval_prefix(prefix, expr, env, location)
             }
@@ -189,7 +194,7 @@ impl Eval {
         let expr_value = self.eval_expression(*expr, env);
         match expr_value {
             Object::Integer(expr, _) => self.calculate_prefix_integer(prefix, expr),
-            Object::Boolean(expr) => self.calculate_prefix_boolean(prefix, expr, location),
+            Object::Boolean(expr, _) => self.calculate_prefix_boolean(prefix, expr, location),
             _ => Object::Error(format!(
                 "expr value should be integer, but actually {}. row: {}",
                 expr_value, location.row,
@@ -225,8 +230,10 @@ impl Eval {
                     right_value, location.row,
                 )),
             },
-            Object::Boolean(left) => match right_value {
-                Object::Boolean(right) => Object::Boolean(left == right),
+            Object::Boolean(left, _) => match right_value {
+                Object::Boolean(right, _) => {
+                    Object::Boolean(left == right, llvm_bool!(left == right))
+                }
                 _ => Object::Error(format!(
                     "right value should be boolean, but actually {}. row: {}",
                     right_value, location.row,
@@ -236,7 +243,7 @@ impl Eval {
                 let right_type_str = match right_value {
                     Object::Integer(_right, _) => "integer",
                     Object::String(_right) => "string",
-                    Object::Boolean(_right) => "boolean",
+                    Object::Boolean(_right, _) => "boolean",
                     _ => {
                         return Object::Error(format!(
                             "{} {} {} cannot be culculated. row: {}",
@@ -263,7 +270,7 @@ impl Eval {
         let condition_obj = self.eval_expression(*condition, env);
         let mut return_obj = Object::Null;
         match condition_obj {
-            Object::Boolean(boolean) => {
+            Object::Boolean(boolean, _) => {
                 if boolean {
                     return_obj = self.eval_program(consequence, env);
                 }
@@ -292,7 +299,7 @@ impl Eval {
         location: Location,
     ) -> Object {
         match prefix {
-            Prefix::Bang => Object::Boolean(!value),
+            Prefix::Bang => Object::Boolean(!value, llvm_bool!(!value)),
             _ => Object::Error(format!(
                 "{} cannot be use for prefix. row: {}",
                 prefix, location.row
@@ -307,9 +314,9 @@ impl Eval {
             Prefix::Plus => Object::Integer(value, llvm_integer!(value)),
             Prefix::Bang => {
                 if value < 0 {
-                    Object::Boolean(true)
+                    Object::Boolean(true, llvm_bool!(true))
                 } else {
-                    Object::Boolean(false)
+                    Object::Boolean(false, llvm_bool!(false))
                 }
             }
         }
@@ -323,15 +330,15 @@ impl Eval {
         location: Location,
     ) -> Object {
         match infix {
-            Infix::Lt => Object::Boolean(left < right),
-            Infix::Lte => Object::Boolean(left <= right),
-            Infix::Gt => Object::Boolean(left > right),
-            Infix::Gte => Object::Boolean(left >= right),
-            Infix::Eq => Object::Boolean(left == right),
             Infix::Plus => Object::Integer(left + right, llvm_integer!(left + right)),
             Infix::Minus => Object::Integer(left - right, llvm_integer!(left - right)),
             Infix::Multiply => Object::Integer(left * right, llvm_integer!(left * right)),
             Infix::Divide => Object::Integer(left / right, llvm_integer!(left / right)),
+            Infix::Lt => Object::Boolean(left < right, llvm_bool!(left < right)),
+            Infix::Lte => Object::Boolean(left <= right, llvm_bool!(left <= right)),
+            Infix::Gt => Object::Boolean(left > right, llvm_bool!(left > right)),
+            Infix::Gte => Object::Boolean(left >= right, llvm_bool!(left >= right)),
+            Infix::Eq => Object::Boolean(left == right, llvm_bool!(left == right)),
             _ => Object::Error(format!(
                 "{} cannot be calculate for integer. row: {}",
                 infix, location.row
