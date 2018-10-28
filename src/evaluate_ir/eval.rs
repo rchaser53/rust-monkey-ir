@@ -138,7 +138,29 @@ impl Eval {
         env: &mut Environment,
     ) -> Object {
         let value = self.eval_expression(expr, env);
+        let llvm_type = self.get_llvm_type(&value);
+        let llvm_value = self.get_llvm_value(&value);
+
+        let llvm_value_ref = build_alloca(self.lc.builder, llvm_type, &ident.0);
+        build_store(self.lc.builder, llvm_value, llvm_value_ref);
+
         env.set(ident.0, value)
+    }
+
+    pub fn get_llvm_type(&self, obj: &Object) -> *mut LLVMType {
+      match *obj {
+          Object::Integer(expr, _) => int32_type(),
+          Object::Boolean(expr, _) => int1_type(),
+          _ => int32_type()
+      }
+    }
+
+    pub fn get_llvm_value(&self, obj: &Object) -> *mut LLVMValue {
+      match *obj {
+          Object::Integer(_, value) => value,
+          Object::Boolean(_, value) => value,
+          _ => const_int(int32_type(), 1)
+      }
     }
 
     pub fn eval_return_statement(&mut self, expr: Expression, env: &mut Environment) -> Object {
