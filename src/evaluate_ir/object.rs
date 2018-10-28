@@ -24,17 +24,6 @@ pub enum BuildIn {
 }
 
 #[derive(Debug, Clone)]
-pub struct BuildInPrint {}
-impl BuildInPrint {
-    pub fn new() -> Self {
-        BuildInPrint {}
-    }
-    pub fn print(&self, print_str: &str) {
-        println!("{}", print_str);
-    }
-}
-
-#[derive(Debug, Clone)]
 pub struct Function {
     pub parameters: Vec<Identifier>,
     pub body: BlockStatement,
@@ -74,3 +63,14 @@ impl fmt::Display for Object {
         }
     }
 }
+
+// #[derive(Debug, Clone)]
+// pub struct BuildInPrint {}
+// impl BuildInPrint {
+//     pub fn new() -> Self {
+//         BuildInPrint {}
+//     }
+//     pub fn print(&self, print_str: &str) {
+//         println!("{}", print_str);
+//     }
+// }

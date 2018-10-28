@@ -13,4 +13,11 @@ pub mod macros {
             CString::new($w).unwrap()
         };
     }
+
+    #[macro_export]
+    macro_rules! llvm_integer {
+        ($value:expr) => {
+          const_int(int32_type(), $value)
+        };
+    }
 }

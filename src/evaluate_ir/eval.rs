@@ -58,13 +58,13 @@ impl Eval {
                     build_ret(self.lc.builder, llvm_value);
                   },
                   _ => {
-                    build_ret(self.lc.builder, const_int(int32_type(), 0));
+                    build_ret(self.lc.builder, llvm_integer!(0));
                   }
                 };
                 return obj;
             }
         }
-        build_ret(self.lc.builder, const_int(int32_type(), 0));
+        build_ret(self.lc.builder, llvm_integer!(0));
         Object::Null
     }
 
@@ -142,7 +142,7 @@ impl Eval {
 
     pub fn eval_expression(&mut self, expr: Expression, env: &mut Environment) -> Object {
         match expr {
-            Expression::IntegerLiteral(int, _location) => Object::Integer(int, const_int(int32_type(), int)),
+            Expression::IntegerLiteral(int, _location) => Object::Integer(int, llvm_integer!(int)),
             Expression::StringLiteral(string, _location) => Object::String(string),
             Expression::Boolean(boolean, _location) => Object::Boolean(boolean),
             Expression::Prefix(prefix, expr, location) => {
@@ -303,8 +303,8 @@ impl Eval {
     pub fn calculate_prefix_integer(&self, prefix: Prefix, value: u64) -> Object {
         match prefix {
             // Prefix::Minus => Object::Integer(-1 * value, const_int(int32_type(), -1 * value)),
-            Prefix::Minus => Object::Integer(value, const_int(int32_type(), value)),
-            Prefix::Plus => Object::Integer(value, const_int(int32_type(), value)),
+            Prefix::Minus => Object::Integer(value, llvm_integer!(value)),
+            Prefix::Plus => Object::Integer(value, llvm_integer!(value)),
             Prefix::Bang => {
                 if value < 0 {
                     Object::Boolean(true)
@@ -323,15 +323,15 @@ impl Eval {
         location: Location,
     ) -> Object {
         match infix {
-            Infix::Plus => Object::Integer(left + right, const_int(int32_type(), left + right)),
-            Infix::Minus => Object::Integer(left - right, const_int(int32_type(), left - right)),
-            Infix::Multiply => Object::Integer(left * right, const_int(int32_type(), left * right)),
-            Infix::Divide => Object::Integer(left / right, const_int(int32_type(), left / right)),
             Infix::Lt => Object::Boolean(left < right),
             Infix::Lte => Object::Boolean(left <= right),
             Infix::Gt => Object::Boolean(left > right),
             Infix::Gte => Object::Boolean(left >= right),
             Infix::Eq => Object::Boolean(left == right),
+            Infix::Plus => Object::Integer(left + right, llvm_integer!(left + right)),
+            Infix::Minus => Object::Integer(left - right, llvm_integer!(left - right)),
+            Infix::Multiply => Object::Integer(left * right, llvm_integer!(left * right)),
+            Infix::Divide => Object::Integer(left / right, llvm_integer!(left / right)),
             _ => Object::Error(format!(
                 "{} cannot be calculate for integer. row: {}",
                 infix, location.row
