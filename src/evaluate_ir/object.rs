@@ -9,7 +9,7 @@ use llvm_sys::*;
 
 #[derive(Debug, Clone)]
 pub enum Object {
-    Integer(u64, *mut LLVMValue),
+    Integer(*mut LLVMValue),
     String(String),
     Boolean(bool, *mut LLVMValue),
     Function(Function),
@@ -33,7 +33,7 @@ pub struct Function {
 impl fmt::Display for Object {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            Object::Integer(int, _) => write!(f, "{}", int.to_string()),
+            Object::Integer(val) => write!(f, "{}", "TODO"),
             Object::String(string) => write!(f, "{}", string),
             Object::Boolean(boolean, _) => write!(f, "{}", boolean.to_string()),
             Object::Function(ref func) => {

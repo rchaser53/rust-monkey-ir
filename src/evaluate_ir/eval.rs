@@ -56,7 +56,7 @@ impl Eval {
         for statement in program.into_iter() {
             if let Some(obj) = self.eval_statement(statement, env) {
                 match obj {
-                    Object::Integer(_, llvm_value) => {
+                    Object::Integer(llvm_value) => {
                         build_ret(self.lc.builder, llvm_value);
                     }
                     Object::Boolean(_, llvm_value) => {
@@ -144,20 +144,27 @@ impl Eval {
         let llvm_value_ref = build_alloca(self.lc.builder, llvm_type, &ident.0);
         build_store(self.lc.builder, llvm_value, llvm_value_ref);
 
-        env.set(ident.0, value)
+        let obj = match value {
+          Object::Integer(_) => {
+            Object::Integer(llvm_value_ref)
+          },
+          _ => value
+        };
+
+        env.set(ident.0, obj)
     }
 
     pub fn get_llvm_type(&self, obj: &Object) -> *mut LLVMType {
       match *obj {
-          Object::Integer(expr, _) => int32_type(),
-          Object::Boolean(expr, _) => int1_type(),
+          Object::Integer(_) => int32_type(),
+          Object::Boolean(_, _) => int1_type(),
           _ => int32_type()
       }
     }
 
     pub fn get_llvm_value(&self, obj: &Object) -> *mut LLVMValue {
       match *obj {
-          Object::Integer(_, value) => value,
+          Object::Integer(value) => value,
           Object::Boolean(_, value) => value,
           _ => const_int(int32_type(), 1)
       }
@@ -169,7 +176,7 @@ impl Eval {
 
     pub fn eval_expression(&mut self, expr: Expression, env: &mut Environment) -> Object {
         match expr {
-            Expression::IntegerLiteral(int, _location) => Object::Integer(int, llvm_integer!(int)),
+            Expression::IntegerLiteral(int, _location) => Object::Integer(llvm_integer!(int)),
             Expression::StringLiteral(string, _location) => Object::String(string),
             Expression::Boolean(boolean, _location) => {
                 Object::Boolean(boolean, llvm_bool!(boolean))
@@ -205,7 +212,16 @@ impl Eval {
         env: &mut Environment,
         location: Location,
     ) -> Object {
-        env.get(&ident.0, location)
+        let obj = env.get(&ident.0, location);
+
+        match obj {
+          Object::Integer(llvm_val_ref) => {
+            Object::Integer(
+              build_load(self.lc.builder, llvm_val_ref, "")
+            )
+          },
+          _ => obj
+        }
     }
 
     pub fn eval_prefix(
@@ -217,7 +233,7 @@ impl Eval {
     ) -> Object {
         let expr_value = self.eval_expression(*expr, env);
         match expr_value {
-            Object::Integer(expr, _) => self.calculate_prefix_integer(prefix, expr),
+            Object::Integer(value) => self.calculate_prefix_integer(prefix, value),
             Object::Boolean(expr, _) => self.calculate_prefix_boolean(prefix, expr, location),
             _ => Object::Error(format!(
                 "expr value should be integer, but actually {}. row: {}",
@@ -238,8 +254,8 @@ impl Eval {
         let right_value = self.eval_expression(*right, env);
 
         match left_value {
-            Object::Integer(left, _) => match right_value {
-                Object::Integer(right, _) => {
+            Object::Integer(left) => match right_value {
+                Object::Integer(right) => {
                     self.calculate_infix_integer(infix, left, right, location)
                 }
                 _ => Object::Error(format!(
@@ -265,7 +281,7 @@ impl Eval {
             },
             _ => {
                 let right_type_str = match right_value {
-                    Object::Integer(_right, _) => "integer",
+                    Object::Integer(_) => "integer",
                     Object::String(_right) => "string",
                     Object::Boolean(_right, _) => "boolean",
                     _ => {
@@ -331,118 +347,64 @@ impl Eval {
         }
     }
 
-    pub fn calculate_prefix_integer(&self, prefix: Prefix, value: u64) -> Object {
+    pub fn calculate_prefix_integer(&self, prefix: Prefix, value: *mut LLVMValue) -> Object {
         match prefix {
             // Prefix::Minus => Object::Integer(-1 * value, const_int(int32_type(), -1 * value)),
-            Prefix::Minus => Object::Integer(value, llvm_integer!(value)),
-            Prefix::Plus => Object::Integer(value, llvm_integer!(value)),
-            Prefix::Bang => {
-                if value < 0 {
-                    Object::Boolean(true, llvm_bool!(true))
-                } else {
-                    Object::Boolean(false, llvm_bool!(false))
-                }
-            }
+            Prefix::Minus => Object::Integer(value),
+            Prefix::Plus => Object::Integer(value),
+            Prefix::Bang => Object::Boolean(true, llvm_bool!(true)),
+                // if value < 0 {
+                    // Object::Boolean(true, llvm_bool!(true))
+                // } else {
+                    // Object::Boolean(false, llvm_bool!(false))
+                // }
+            // }
         }
     }
 
     pub fn calculate_infix_integer(
         &self,
         infix: Infix,
-        left: u64,
-        right: u64,
+        left: *mut LLVMValue,
+        right: *mut LLVMValue,
         location: Location,
     ) -> Object {
         match infix {
             Infix::Plus => Object::Integer(
-                left + right,
-                add_variable(
-                    self.lc.builder,
-                    llvm_integer!(left),
-                    llvm_integer!(right),
-                    "",
-                ),
+                add_variable(self.lc.builder, left, right, "")
             ),
             Infix::Minus => Object::Integer(
-                left - right,
-                sub_variable(
-                    self.lc.builder,
-                    llvm_integer!(left),
-                    llvm_integer!(right),
-                    "",
-                ),
+                sub_variable(self.lc.builder, left, right, "")
             ),
             Infix::Multiply => Object::Integer(
-                left * right,
-                multiple_variable(
-                    self.lc.builder,
-                    llvm_integer!(left),
-                    llvm_integer!(right),
-                    "",
-                ),
+                multiple_variable(self.lc.builder, left, right, "")
             ),
             Infix::Divide => Object::Integer(
-                left / right,
-                divide_variable(
-                    self.lc.builder,
-                    llvm_integer!(left),
-                    llvm_integer!(right),
-                    "",
-                ),
+                divide_variable(self.lc.builder, left, right, "")
             ),
             Infix::Lt => Object::Boolean(
                 left < right,
-                build_int_ult(
-                    self.lc.builder,
-                    llvm_integer!(left),
-                    llvm_integer!(right),
-                    "",
-                ),
+                build_int_ult(self.lc.builder, left, right, "")
             ),
             Infix::Lte => Object::Boolean(
                 left <= right,
-                build_int_ule(
-                    self.lc.builder,
-                    llvm_integer!(left),
-                    llvm_integer!(right),
-                    "",
-                ),
+                build_int_ule(self.lc.builder, left, right, "")
             ),
             Infix::Gt => Object::Boolean(
                 left > right,
-                build_int_ugt(
-                    self.lc.builder,
-                    llvm_integer!(left),
-                    llvm_integer!(right),
-                    "",
-                ),
+                build_int_ugt(self.lc.builder, left, right, "")
             ),
             Infix::Gte => Object::Boolean(
                 left >= right,
-                build_int_uge(
-                    self.lc.builder,
-                    llvm_integer!(left),
-                    llvm_integer!(right),
-                    "",
-                ),
+                build_int_uge(self.lc.builder, left, right, "")
             ),
             Infix::Eq => Object::Boolean(
                 left == right,
-                build_int_eq(
-                    self.lc.builder,
-                    llvm_integer!(left),
-                    llvm_integer!(right),
-                    "",
-                ),
+                build_int_eq(self.lc.builder, left, right, "")
             ),
             Infix::NotEq => Object::Boolean(
                 left != right,
-                build_int_ne(
-                    self.lc.builder,
-                    llvm_integer!(left),
-                    llvm_integer!(right),
-                    "",
-                ),
+                build_int_ne(self.lc.builder, left, right, "")
             ),
             _ => Object::Error(format!(
                 "{} cannot be calculate for integer. row: {}",
