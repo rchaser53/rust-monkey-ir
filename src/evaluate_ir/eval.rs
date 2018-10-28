@@ -9,6 +9,7 @@ use evaluate_ir::object::*;
 
 use ir::arithmetic::*;
 use ir::block::*;
+use ir::condition::*;
 use ir::const_value::*;
 use ir::creator::*;
 use ir::function::*;
@@ -367,11 +368,60 @@ impl Eval {
                     "",
                 ),
             ),
-            Infix::Lt => Object::Boolean(left < right, llvm_bool!(left < right)),
-            Infix::Lte => Object::Boolean(left <= right, llvm_bool!(left <= right)),
-            Infix::Gt => Object::Boolean(left > right, llvm_bool!(left > right)),
-            Infix::Gte => Object::Boolean(left >= right, llvm_bool!(left >= right)),
-            Infix::Eq => Object::Boolean(left == right, llvm_bool!(left == right)),
+            Infix::Lt => Object::Boolean(
+                left < right,
+                build_int_ult(
+                    self.lc.builder,
+                    llvm_integer!(left),
+                    llvm_integer!(right),
+                    "",
+                ),
+            ),
+            Infix::Lte => Object::Boolean(
+                left <= right,
+                build_int_ule(
+                    self.lc.builder,
+                    llvm_integer!(left),
+                    llvm_integer!(right),
+                    "",
+                ),
+            ),
+            Infix::Gt => Object::Boolean(
+                left > right,
+                build_int_ugt(
+                    self.lc.builder,
+                    llvm_integer!(left),
+                    llvm_integer!(right),
+                    "",
+                ),
+            ),
+            Infix::Gte => Object::Boolean(
+                left >= right,
+                build_int_uge(
+                    self.lc.builder,
+                    llvm_integer!(left),
+                    llvm_integer!(right),
+                    "",
+                ),
+            ),
+            Infix::Eq => Object::Boolean(
+                left == right,
+                build_int_eq(
+                    self.lc.builder,
+                    llvm_integer!(left),
+                    llvm_integer!(right),
+                    "",
+                ),
+            ),
+            Infix::NotEq => Object::Boolean(
+                left != right,
+                build_int_ne(
+                    self.lc.builder,
+                    llvm_integer!(left),
+                    llvm_integer!(right),
+                    "",
+                ),
+            ),
             _ => Object::Error(format!(
                 "{} cannot be calculate for integer. row: {}",
                 infix, location.row
