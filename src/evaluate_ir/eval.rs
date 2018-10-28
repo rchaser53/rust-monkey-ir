@@ -7,6 +7,7 @@ use parser::statements::*;
 use evaluate_ir::environment::*;
 use evaluate_ir::object::*;
 
+use ir::arithmetic::*;
 use ir::block::*;
 use ir::const_value::*;
 use ir::creator::*;
@@ -330,10 +331,42 @@ impl Eval {
         location: Location,
     ) -> Object {
         match infix {
-            Infix::Plus => Object::Integer(left + right, llvm_integer!(left + right)),
-            Infix::Minus => Object::Integer(left - right, llvm_integer!(left - right)),
-            Infix::Multiply => Object::Integer(left * right, llvm_integer!(left * right)),
-            Infix::Divide => Object::Integer(left / right, llvm_integer!(left / right)),
+            Infix::Plus => Object::Integer(
+                left + right,
+                add_variable(
+                    self.lc.builder,
+                    llvm_integer!(left),
+                    llvm_integer!(right),
+                    "",
+                ),
+            ),
+            Infix::Minus => Object::Integer(
+                left - right,
+                sub_variable(
+                    self.lc.builder,
+                    llvm_integer!(left),
+                    llvm_integer!(right),
+                    "",
+                ),
+            ),
+            Infix::Multiply => Object::Integer(
+                left * right,
+                multiple_variable(
+                    self.lc.builder,
+                    llvm_integer!(left),
+                    llvm_integer!(right),
+                    "",
+                ),
+            ),
+            Infix::Divide => Object::Integer(
+                left / right,
+                divide_variable(
+                    self.lc.builder,
+                    llvm_integer!(left),
+                    llvm_integer!(right),
+                    "",
+                ),
+            ),
             Infix::Lt => Object::Boolean(left < right, llvm_bool!(left < right)),
             Infix::Lte => Object::Boolean(left <= right, llvm_bool!(left <= right)),
             Infix::Gt => Object::Boolean(left > right, llvm_bool!(left > right)),

@@ -17,7 +17,7 @@ pub mod macros {
     #[macro_export]
     macro_rules! llvm_integer {
         ($value:expr) => {
-          const_int(int32_type(), $value)
+            const_int(int32_type(), $value)
         };
     }
 
@@ -25,9 +25,9 @@ pub mod macros {
     macro_rules! llvm_bool {
         ($flag:expr) => {
             if $flag {
-              const_int(int1_type(), 1)
+                const_int(int1_type(), 1)
             } else {
-              const_int(int1_type(), 0)
+                const_int(int1_type(), 0)
             }
         };
     }

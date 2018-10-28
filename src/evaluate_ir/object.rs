@@ -63,14 +63,3 @@ impl fmt::Display for Object {
         }
     }
 }
-
-// #[derive(Debug, Clone)]
-// pub struct BuildInPrint {}
-// impl BuildInPrint {
-//     pub fn new() -> Self {
-//         BuildInPrint {}
-//     }
-//     pub fn print(&self, print_str: &str) {
-//         println!("{}", print_str);
-//     }
-// }
