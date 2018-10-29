@@ -1,5 +1,6 @@
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum TokenType {
+    LLVMTokenType(LLVMTokenType),
     Identifier,
     Digit,
 
@@ -40,6 +41,14 @@ pub enum TokenType {
     Divide,   // /
     Multiply, // *
     Bang,     // !
+}
+
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub enum LLVMTokenType {
+  Int,
+  String,
+  Boolean,
+  Null
 }
 
 #[derive(Clone, Debug)]

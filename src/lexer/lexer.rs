@@ -32,6 +32,10 @@ impl<'a> Lexer<'a> {
             "else" => TokenType::Else,
             "return" => TokenType::Return,
             "break" => TokenType::Break,
+            "boolean" => TokenType::LLVMTokenType(LLVMTokenType::Boolean),
+            "int" => TokenType::LLVMTokenType(LLVMTokenType::Int),
+            "string" => TokenType::LLVMTokenType(LLVMTokenType::String),
+            "null" => TokenType::LLVMTokenType(LLVMTokenType::Null),
             _ => token,
         }
     }
@@ -392,4 +396,17 @@ fn if_test() {
     lexer_assert(lexer.next_token().unwrap(), TokenType::Digit, "123");
     lexer_assert(lexer.next_token().unwrap(), TokenType::Eq, "==");
     lexer_assert(lexer.next_token().unwrap(), TokenType::Digit, "456");
+}
+
+#[test]
+fn llvm_token_test() {
+    let mut lexer = Lexer::new(
+        r#"
+    int string boolean null
+    "#,
+    );
+    lexer_assert(lexer.next_token().unwrap(), TokenType::LLVMTokenType(LLVMTokenType::Int), "int");
+    lexer_assert(lexer.next_token().unwrap(), TokenType::LLVMTokenType(LLVMTokenType::String), "string");
+    lexer_assert(lexer.next_token().unwrap(), TokenType::LLVMTokenType(LLVMTokenType::Boolean), "boolean");
+    lexer_assert(lexer.next_token().unwrap(), TokenType::LLVMTokenType(LLVMTokenType::Null), "null");
 }
