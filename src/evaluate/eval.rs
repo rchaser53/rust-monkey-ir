@@ -94,7 +94,7 @@ impl Eval {
 
     pub fn eval_expression(&mut self, expr: Expression, env: &mut Environment) -> Object {
         match expr {
-            Expression::IntegerLiteral(int, _location) => Object::Integer(int),
+            Expression::IntegerLiteral(int, _location) => Object::Integer(int as i64),
             Expression::StringLiteral(string, _location) => Object::String(string),
             Expression::Boolean(boolean, _location) => Object::Boolean(boolean),
             Expression::Prefix(prefix, expr, location) => {
