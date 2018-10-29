@@ -367,7 +367,7 @@ impl<'a> Parser<'a> {
             return None;
         }
 
-        let parameters = self.parse_function_parameters();
+        let (parameters, _) = self.parse_function_parameters();
 
         if self.expect_peek(TokenType::Lbrace) == false {
             return None;
@@ -441,12 +441,20 @@ impl<'a> Parser<'a> {
         args
     }
 
-    pub fn parse_function_parameters(&mut self) -> Vec<Identifier> {
+    pub fn parse_function_parameters(&mut self) -> (Vec<Identifier>, LLVMExpressionType)  {
         let mut parameters = Vec::new();
 
         if self.peek_token_is(TokenType::Rparen) {
             self.next_token();
-            return parameters;
+            if self.expect_peek(TokenType::Colon) == false {
+                return (Vec::new(), LLVMExpressionType::Null);
+            }
+            if let Some(token) = self.peek_token.to_owned() {
+                self.next_token();
+                return (parameters, self.convert_token_to_expression_type(token.kind))
+            }
+
+            return (Vec::new(), LLVMExpressionType::Null);
         }
         self.next_token();
 
@@ -464,10 +472,31 @@ impl<'a> Parser<'a> {
         }
 
         if self.expect_peek(TokenType::Rparen) == false {
-            return Vec::new();
+            return (Vec::new(), LLVMExpressionType::Null);
         }
 
-        parameters
+        if self.expect_peek(TokenType::Colon) == false {
+            return (Vec::new(), LLVMExpressionType::Null);
+        }
+
+        if let Some(token) = self.peek_token.to_owned() {
+            self.next_token();
+            return (parameters, self.convert_token_to_expression_type(token.kind))
+        }
+
+        (Vec::new(), LLVMExpressionType::Null)
+    }
+
+    pub fn convert_token_to_expression_type(&mut self, token_type: TokenType) -> LLVMExpressionType {
+      match token_type {
+        TokenType::LLVMTokenType(llvm_type) => match llvm_type {
+          LLVMTokenType::Boolean => LLVMExpressionType::Boolean,
+          LLVMTokenType::Int => LLVMExpressionType::Int,
+          LLVMTokenType::String => LLVMExpressionType::String,
+          LLVMTokenType::Null => LLVMExpressionType::Null,
+        },
+        _ => LLVMExpressionType::Null
+      }
     }
 
     pub fn parse_block_statement(&mut self) -> Option<BlockStatement> {
@@ -688,9 +717,9 @@ fn test_boolean_parsing() {
 #[test]
 fn test_funciton_parsing() {
     let input = r#"
-  fn() { };
-  fn(x) {};
-  fn(x, y, z) {};
+  fn(): null {};
+  fn(x): int {};
+  fn(x, y, z): boolean {};
 "#;
     let program = parse_input(input);
     statement_assert(&program[0], "fn() {  }");

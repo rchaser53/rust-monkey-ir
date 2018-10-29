@@ -48,6 +48,14 @@ impl Location {
     }
 }
 
+#[derive(PartialEq, Clone, Debug)]
+pub enum LLVMExpressionType {
+  Int,
+  String,
+  Boolean,
+  Null
+}
+
 impl Expression {
     pub fn string(&self) -> String {
         match self {
