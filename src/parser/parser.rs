@@ -757,9 +757,9 @@ fn test_funciton_parsing() {
   fn(x: int, y: boolean, z: string): boolean {};
 "#;
     let program = parse_input(input);
-    statement_assert(&program[0], "fn() {  }");
-    statement_assert(&program[1], "fn(x) {  }");
-    statement_assert(&program[2], "fn(x, y, z) {  }");
+    statement_assert(&program[0], "fn(): null {  }");
+    statement_assert(&program[1], "fn(x: int): int {  }");
+    statement_assert(&program[2], "fn(x: int, y: boolean, z: string): boolean {  }");
 }
 
 #[test]

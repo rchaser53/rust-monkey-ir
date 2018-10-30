@@ -1,3 +1,4 @@
+use std::fmt;
 use parser::statements::*;
 
 #[derive(PartialEq, Clone, Debug)]
@@ -58,6 +59,17 @@ pub enum LLVMExpressionType {
     Null,
 }
 
+impl fmt::Display for LLVMExpressionType {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            LLVMExpressionType::Int => write!(f, "{}", "int"),
+            LLVMExpressionType::String => write!(f, "{}", "string"),
+            LLVMExpressionType::Boolean => write!(f, "{}", "boolean"),
+            LLVMExpressionType::Null => write!(f, "{}", "null"),
+        }
+    }
+}
+
 impl Expression {
     pub fn string(&self) -> String {
         match self {
@@ -102,16 +114,16 @@ impl Expression {
             Expression::Function {
                 parameters,
                 body,
-                parameter_types: _,
-                return_type: _,
+                parameter_types,
+                return_type,
                 location: _,
             } => {
                 let mut param_string = String::new();
                 for (index, Identifier(ref string)) in parameters.iter().enumerate() {
                     if index == 0 {
-                        param_string.push_str(&format!("{}", string));
+                        param_string.push_str(&format!("{}: {}", string, parameter_types[index]));
                     } else {
-                        param_string.push_str(&format!(", {}", string));
+                        param_string.push_str(&format!(", {}: {}", string, parameter_types[index]));
                     }
                 }
                 let mut ret_string = String::new();
@@ -123,7 +135,7 @@ impl Expression {
                     }
                 }
 
-                format!("fn({}) {{ {} }}", param_string, ret_string)
+                format!("fn({}): {} {{ {} }}", param_string, return_type, ret_string)
             }
             Expression::Call(call) => {
                 let mut ret_string = String::new();
