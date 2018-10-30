@@ -19,6 +19,7 @@ pub enum Expression {
     },
     Function {
         parameters: Vec<Identifier>,
+        parameter_types: Vec<LLVMExpressionType>,
         body: BlockStatement,
         return_type: LLVMExpressionType,
         location: Location,
@@ -101,6 +102,7 @@ impl Expression {
             Expression::Function {
                 parameters,
                 body,
+                parameter_types: _,
                 return_type: _,
                 location: _,
             } => {

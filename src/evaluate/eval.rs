@@ -106,6 +106,8 @@ impl Eval {
             Expression::Identifier(ident, location) => self.eval_identifier(ident, env, location),
             Expression::Function {
                 parameters,
+                parameter_types: _,
+                return_type: _,
                 body,
                 location: _,
             } => Object::Function(Function {

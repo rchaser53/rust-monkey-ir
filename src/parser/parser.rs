@@ -367,7 +367,7 @@ impl<'a> Parser<'a> {
             return None;
         }
 
-        let (parameters, return_type) = self.parse_function_parameters();
+        let (parameters, parameter_types, return_type) = self.parse_function_parameters();
 
         if self.expect_peek(TokenType::Lbrace) == false {
             return None;
@@ -376,6 +376,7 @@ impl<'a> Parser<'a> {
         if let Some(body) = self.parse_block_statement() {
             return Some(Expression::Function {
                 parameters: parameters,
+                parameter_types: parameter_types,
                 body: body,
                 return_type: return_type,
                 location: Location::new(self.lexer.current_row),
@@ -395,6 +396,7 @@ impl<'a> Parser<'a> {
             match expr.clone() {
                 Expression::Function {
                     parameters: _,
+                    parameter_types: _,
                     body: _,
                     return_type: _,
                     location: _,
@@ -443,18 +445,27 @@ impl<'a> Parser<'a> {
         args
     }
 
-    pub fn parse_function_parameters(&mut self) -> (Vec<Identifier>, LLVMExpressionType) {
+    pub fn parse_function_parameters(&mut self) -> (Vec<Identifier>, Vec<LLVMExpressionType>, LLVMExpressionType) {
         let mut parameters = Vec::new();
+        let mut parameter_types = Vec::new();
 
         if self.peek_token_is(TokenType::Rparen) {
             self.next_token();
-
-            return self.parser_return_type(parameters);
+            return self.parser_return_type(parameters, parameter_types);
         }
         self.next_token();
 
         if let Some(token) = self.cur_token.to_owned() {
             parameters.push(Identifier(token.value.to_owned()));
+
+            if self.expect_peek(TokenType::Colon) == false {
+                self.emit_error_for_funciton();
+            }
+
+            if let Some(token) = self.cur_token.to_owned() {
+                parameter_types.push(self.convert_token_to_expression_type(token.kind));
+                self.next_token();
+            }
         }
 
         while self.peek_token_is(TokenType::Comma) {
@@ -464,31 +475,48 @@ impl<'a> Parser<'a> {
             if let Some(token) = self.cur_token.to_owned() {
                 parameters.push(Identifier(token.value.to_owned()));
             }
+
+            if self.expect_peek(TokenType::Colon) == false {
+                self.emit_error_for_funciton();
+            }
+
+            if let Some(token) = self.cur_token.to_owned() {
+                parameter_types.push(self.convert_token_to_expression_type(token.kind));
+                self.next_token();
+            }
         }
 
         if self.expect_peek(TokenType::Rparen) == false {
-            return (Vec::new(), LLVMExpressionType::Null);
+            self.emit_error_for_funciton();
         }
 
-        self.parser_return_type(parameters)
+        self.parser_return_type(parameters, parameter_types)
     }
 
     pub fn parser_return_type(
         &mut self,
         parameters: Vec<Identifier>,
-    ) -> (Vec<Identifier>, LLVMExpressionType) {
+        parameter_types: Vec<LLVMExpressionType>,
+    ) -> (Vec<Identifier>, Vec<LLVMExpressionType>, LLVMExpressionType) {
         if self.expect_peek(TokenType::Colon) == false {
-            return (Vec::new(), LLVMExpressionType::Null);
+            self.emit_error_for_funciton();
         }
+
         if let Some(token) = self.peek_token.to_owned() {
             self.next_token();
             return (
                 parameters,
+                parameter_types,
                 self.convert_token_to_expression_type(token.kind),
             );
         }
 
-        return (Vec::new(), LLVMExpressionType::Null);
+        self.emit_error_for_funciton();
+        unreachable!();
+    }
+
+    pub fn emit_error_for_funciton(&self) {
+        panic!("parse failed at row:{}", self.lexer.current_row);
     }
 
     pub fn convert_token_to_expression_type(
@@ -725,8 +753,8 @@ fn test_boolean_parsing() {
 fn test_funciton_parsing() {
     let input = r#"
   fn(): null {};
-  fn(x): int {};
-  fn(x, y, z): boolean {};
+  fn(x: int): int {};
+  fn(x: int, y: boolean, z: string): boolean {};
 "#;
     let program = parse_input(input);
     statement_assert(&program[0], "fn() {  }");
