@@ -19,11 +19,11 @@ use lexer::lexer::*;
 mod parser;
 use parser::parser::*;
 
-mod evaluate;
-use evaluate::environment::*;
-use evaluate::eval::*;
-
 mod ir;
+
+mod evaluate_ir;
+use evaluate_ir::environment::*;
+use evaluate_ir::eval::*;
 
 fn read_file(file_name: &str) -> Result<String, String> {
     if let Ok(mut file) = File::open(file_name) {
@@ -56,12 +56,14 @@ fn main() {
             }
 
             let mut eval = Eval::new();
-            let result_value = eval.eval_program(program, &mut Environment::new());
+
+            let result_value = eval.entry_eval_program(program, &mut Environment::new());
             if eval.has_error() {
                 panic!("{}", eval.emit_error());
             }
 
             println!("{:?}", result_value);
+            eval.dump_llvm();
         }
         Err(error) => {
             panic!("{}", error);

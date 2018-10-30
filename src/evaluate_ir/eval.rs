@@ -145,29 +145,27 @@ impl Eval {
         build_store(self.lc.builder, llvm_value, llvm_value_ref);
 
         let obj = match value {
-          Object::Integer(_) => {
-            Object::Integer(llvm_value_ref)
-          },
-          _ => value
+            Object::Integer(_) => Object::Integer(llvm_value_ref),
+            _ => value,
         };
 
         env.set(ident.0, obj)
     }
 
     pub fn get_llvm_type(&self, obj: &Object) -> *mut LLVMType {
-      match *obj {
-          Object::Integer(_) => int32_type(),
-          Object::Boolean(_, _) => int1_type(),
-          _ => int32_type()
-      }
+        match *obj {
+            Object::Integer(_) => int32_type(),
+            Object::Boolean(_, _) => int1_type(),
+            _ => int32_type(),
+        }
     }
 
     pub fn get_llvm_value(&self, obj: &Object) -> *mut LLVMValue {
-      match *obj {
-          Object::Integer(value) => value,
-          Object::Boolean(_, value) => value,
-          _ => const_int(int32_type(), 1)
-      }
+        match *obj {
+            Object::Integer(value) => value,
+            Object::Boolean(_, value) => value,
+            _ => const_int(int32_type(), 1),
+        }
     }
 
     pub fn eval_return_statement(&mut self, expr: Expression, env: &mut Environment) -> Object {
@@ -215,12 +213,10 @@ impl Eval {
         let obj = env.get(&ident.0, location);
 
         match obj {
-          Object::Integer(llvm_val_ref) => {
-            Object::Integer(
-              build_load(self.lc.builder, llvm_val_ref, "")
-            )
-          },
-          _ => obj
+            Object::Integer(llvm_val_ref) => {
+                Object::Integer(build_load(self.lc.builder, llvm_val_ref, ""))
+            }
+            _ => obj,
         }
     }
 
@@ -370,41 +366,33 @@ impl Eval {
         location: Location,
     ) -> Object {
         match infix {
-            Infix::Plus => Object::Integer(
-                add_variable(self.lc.builder, left, right, "")
-            ),
-            Infix::Minus => Object::Integer(
-                sub_variable(self.lc.builder, left, right, "")
-            ),
-            Infix::Multiply => Object::Integer(
-                multiple_variable(self.lc.builder, left, right, "")
-            ),
-            Infix::Divide => Object::Integer(
-                divide_variable(self.lc.builder, left, right, "")
-            ),
+            Infix::Plus => Object::Integer(add_variable(self.lc.builder, left, right, "")),
+            Infix::Minus => Object::Integer(sub_variable(self.lc.builder, left, right, "")),
+            Infix::Multiply => Object::Integer(multiple_variable(self.lc.builder, left, right, "")),
+            Infix::Divide => Object::Integer(divide_variable(self.lc.builder, left, right, "")),
             Infix::Lt => Object::Boolean(
                 left < right,
-                build_int_ult(self.lc.builder, left, right, "")
+                build_int_ult(self.lc.builder, left, right, ""),
             ),
             Infix::Lte => Object::Boolean(
                 left <= right,
-                build_int_ule(self.lc.builder, left, right, "")
+                build_int_ule(self.lc.builder, left, right, ""),
             ),
             Infix::Gt => Object::Boolean(
                 left > right,
-                build_int_ugt(self.lc.builder, left, right, "")
+                build_int_ugt(self.lc.builder, left, right, ""),
             ),
             Infix::Gte => Object::Boolean(
                 left >= right,
-                build_int_uge(self.lc.builder, left, right, "")
+                build_int_uge(self.lc.builder, left, right, ""),
             ),
             Infix::Eq => Object::Boolean(
                 left == right,
-                build_int_eq(self.lc.builder, left, right, "")
+                build_int_eq(self.lc.builder, left, right, ""),
             ),
             Infix::NotEq => Object::Boolean(
                 left != right,
-                build_int_ne(self.lc.builder, left, right, "")
+                build_int_ne(self.lc.builder, left, right, ""),
             ),
             _ => Object::Error(format!(
                 "{} cannot be calculate for integer. row: {}",
