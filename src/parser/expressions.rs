@@ -20,6 +20,7 @@ pub enum Expression {
     Function {
         parameters: Vec<Identifier>,
         body: BlockStatement,
+        return_type: LLVMExpressionType,
         location: Location,
     },
     While {
@@ -50,10 +51,10 @@ impl Location {
 
 #[derive(PartialEq, Clone, Debug)]
 pub enum LLVMExpressionType {
-  Int,
-  String,
-  Boolean,
-  Null
+    Int,
+    String,
+    Boolean,
+    Null,
 }
 
 impl Expression {
@@ -100,6 +101,7 @@ impl Expression {
             Expression::Function {
                 parameters,
                 body,
+                return_type: _,
                 location: _,
             } => {
                 let mut param_string = String::new();

@@ -367,7 +367,7 @@ impl<'a> Parser<'a> {
             return None;
         }
 
-        let (parameters, _) = self.parse_function_parameters();
+        let (parameters, return_type) = self.parse_function_parameters();
 
         if self.expect_peek(TokenType::Lbrace) == false {
             return None;
@@ -377,6 +377,7 @@ impl<'a> Parser<'a> {
             return Some(Expression::Function {
                 parameters: parameters,
                 body: body,
+                return_type: return_type,
                 location: Location::new(self.lexer.current_row),
             });
         }
@@ -395,6 +396,7 @@ impl<'a> Parser<'a> {
                 Expression::Function {
                     parameters: _,
                     body: _,
+                    return_type: _,
                     location: _,
                 } => {
                     if let Some(token) = self.peek_token.to_owned() {
@@ -441,20 +443,13 @@ impl<'a> Parser<'a> {
         args
     }
 
-    pub fn parse_function_parameters(&mut self) -> (Vec<Identifier>, LLVMExpressionType)  {
+    pub fn parse_function_parameters(&mut self) -> (Vec<Identifier>, LLVMExpressionType) {
         let mut parameters = Vec::new();
 
         if self.peek_token_is(TokenType::Rparen) {
             self.next_token();
-            if self.expect_peek(TokenType::Colon) == false {
-                return (Vec::new(), LLVMExpressionType::Null);
-            }
-            if let Some(token) = self.peek_token.to_owned() {
-                self.next_token();
-                return (parameters, self.convert_token_to_expression_type(token.kind))
-            }
 
-            return (Vec::new(), LLVMExpressionType::Null);
+            return self.parser_return_type(parameters);
         }
         self.next_token();
 
@@ -475,28 +470,40 @@ impl<'a> Parser<'a> {
             return (Vec::new(), LLVMExpressionType::Null);
         }
 
+        self.parser_return_type(parameters)
+    }
+
+    pub fn parser_return_type(
+        &mut self,
+        parameters: Vec<Identifier>,
+    ) -> (Vec<Identifier>, LLVMExpressionType) {
         if self.expect_peek(TokenType::Colon) == false {
             return (Vec::new(), LLVMExpressionType::Null);
         }
-
         if let Some(token) = self.peek_token.to_owned() {
             self.next_token();
-            return (parameters, self.convert_token_to_expression_type(token.kind))
+            return (
+                parameters,
+                self.convert_token_to_expression_type(token.kind),
+            );
         }
 
-        (Vec::new(), LLVMExpressionType::Null)
+        return (Vec::new(), LLVMExpressionType::Null);
     }
 
-    pub fn convert_token_to_expression_type(&mut self, token_type: TokenType) -> LLVMExpressionType {
-      match token_type {
-        TokenType::LLVMTokenType(llvm_type) => match llvm_type {
-          LLVMTokenType::Boolean => LLVMExpressionType::Boolean,
-          LLVMTokenType::Int => LLVMExpressionType::Int,
-          LLVMTokenType::String => LLVMExpressionType::String,
-          LLVMTokenType::Null => LLVMExpressionType::Null,
-        },
-        _ => LLVMExpressionType::Null
-      }
+    pub fn convert_token_to_expression_type(
+        &mut self,
+        token_type: TokenType,
+    ) -> LLVMExpressionType {
+        match token_type {
+            TokenType::LLVMTokenType(llvm_type) => match llvm_type {
+                LLVMTokenType::Boolean => LLVMExpressionType::Boolean,
+                LLVMTokenType::Int => LLVMExpressionType::Int,
+                LLVMTokenType::String => LLVMExpressionType::String,
+                LLVMTokenType::Null => LLVMExpressionType::Null,
+            },
+            _ => LLVMExpressionType::Null,
+        }
     }
 
     pub fn parse_block_statement(&mut self) -> Option<BlockStatement> {

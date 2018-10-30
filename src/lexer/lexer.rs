@@ -405,8 +405,24 @@ fn llvm_token_test() {
     int string boolean null
     "#,
     );
-    lexer_assert(lexer.next_token().unwrap(), TokenType::LLVMTokenType(LLVMTokenType::Int), "int");
-    lexer_assert(lexer.next_token().unwrap(), TokenType::LLVMTokenType(LLVMTokenType::String), "string");
-    lexer_assert(lexer.next_token().unwrap(), TokenType::LLVMTokenType(LLVMTokenType::Boolean), "boolean");
-    lexer_assert(lexer.next_token().unwrap(), TokenType::LLVMTokenType(LLVMTokenType::Null), "null");
+    lexer_assert(
+        lexer.next_token().unwrap(),
+        TokenType::LLVMTokenType(LLVMTokenType::Int),
+        "int",
+    );
+    lexer_assert(
+        lexer.next_token().unwrap(),
+        TokenType::LLVMTokenType(LLVMTokenType::String),
+        "string",
+    );
+    lexer_assert(
+        lexer.next_token().unwrap(),
+        TokenType::LLVMTokenType(LLVMTokenType::Boolean),
+        "boolean",
+    );
+    lexer_assert(
+        lexer.next_token().unwrap(),
+        TokenType::LLVMTokenType(LLVMTokenType::Null),
+        "null",
+    );
 }
