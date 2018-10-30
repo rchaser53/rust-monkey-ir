@@ -462,7 +462,7 @@ impl<'a> Parser<'a> {
                 self.emit_error_for_funciton();
             }
 
-            if let Some(token) = self.cur_token.to_owned() {
+            if let Some(token) = self.peek_token.to_owned() {
                 parameter_types.push(self.convert_token_to_expression_type(token.kind));
                 self.next_token();
             }
@@ -480,7 +480,7 @@ impl<'a> Parser<'a> {
                 self.emit_error_for_funciton();
             }
 
-            if let Some(token) = self.cur_token.to_owned() {
+            if let Some(token) = self.peek_token.to_owned() {
                 parameter_types.push(self.convert_token_to_expression_type(token.kind));
                 self.next_token();
             }
