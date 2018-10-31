@@ -54,18 +54,8 @@ impl Eval {
 
     pub fn entry_eval_program(&mut self, program: Program, env: &mut Environment) -> Object {
         for statement in program.into_iter() {
-            if let Some(obj) = self.eval_statement(statement, env) {
-                match obj {
-                    Object::Integer(llvm_value) => {
-                        build_ret(self.lc.builder, llvm_value);
-                    }
-                    Object::Boolean(_, llvm_value) => {
-                        build_ret(self.lc.builder, llvm_value);
-                    }
-                    _ => {
-                        build_ret(self.lc.builder, llvm_integer!(0));
-                    }
-                };
+            if let Some(mut obj) = self.eval_statement(statement, env) {
+                self.build_llvm_return(&mut obj);
                 return obj;
             }
         }
@@ -73,9 +63,27 @@ impl Eval {
         Object::Null
     }
 
+    pub fn build_llvm_return(&mut self, object: &mut Object) {
+        match *object {
+            Object::Integer(llvm_value) => {
+                build_ret(self.lc.builder, llvm_value);
+            }
+            Object::Boolean(_, llvm_value) => {
+                build_ret(self.lc.builder, llvm_value);
+            }
+            Object::Function(llvm_value) => {
+                build_ret(self.lc.builder, llvm_value);
+            }
+            _ => {
+                build_ret(self.lc.builder, llvm_integer!(0));
+            }
+        };
+    }
+
     pub fn eval_program(&mut self, program: Program, env: &mut Environment) -> Object {
         for statement in program.into_iter() {
-            if let Some(obj) = self.eval_statement(statement, env) {
+            if let Some(mut obj) = self.eval_statement(statement, env) {
+                self.build_llvm_return(&mut obj);
                 return obj;
             }
         }

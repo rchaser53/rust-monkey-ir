@@ -12,7 +12,7 @@ pub enum Object {
     Integer(*mut LLVMValue),
     String(String),
     Boolean(bool, *mut LLVMValue),
-    Function(Function),
+    Function(*mut LLVMValue),
     Null,
     Error(String),
     BuildIn(BuildIn),
@@ -36,25 +36,26 @@ impl fmt::Display for Object {
             Object::Integer(val) => write!(f, "{}", "TODO"),
             Object::String(string) => write!(f, "{}", string),
             Object::Boolean(boolean, _) => write!(f, "{}", boolean.to_string()),
-            Object::Function(ref func) => {
-                let mut param_string = String::new();
-                for (index, Identifier(ref string)) in func.parameters.iter().enumerate() {
-                    if index == 0 {
-                        param_string.push_str(&format!("{}", string));
-                    } else {
-                        param_string.push_str(&format!(", {}", string));
-                    }
-                }
-                let mut body_string = String::new();
-                for (index, statement) in func.body.iter().enumerate() {
-                    if index == 0 {
-                        body_string.push_str(&format!("{}", statement.string()));
-                    } else {
-                        body_string.push_str(&format!(" {}", statement.string()));
-                    }
-                }
-                write!(f, "fn({}) {{ {} }}", param_string, body_string)
-            }
+            Object::Function(ref func) => write!(f, "{}", "TODO"),
+            // Object::Function(ref func) => {
+            //     let mut param_string = String::new();
+            //     for (index, Identifier(ref string)) in func.parameters.iter().enumerate() {
+            //         if index == 0 {
+            //             param_string.push_str(&format!("{}", string));
+            //         } else {
+            //             param_string.push_str(&format!(", {}", string));
+            //         }
+            //     }
+            //     let mut body_string = String::new();
+            //     for (index, statement) in func.body.iter().enumerate() {
+            //         if index == 0 {
+            //             body_string.push_str(&format!("{}", statement.string()));
+            //         } else {
+            //             body_string.push_str(&format!(" {}", statement.string()));
+            //         }
+            //     }
+            //     write!(f, "fn({}) {{ {} }}", param_string, body_string)
+            // },
             Object::Null => write!(f, "Null"),
             Object::Error(string) => write!(f, "{}", string),
             Object::BuildIn(build_in) => match build_in {
