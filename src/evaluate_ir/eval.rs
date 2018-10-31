@@ -21,29 +21,30 @@ pub struct Eval {
     pub stack_arg: Vec<Vec<Expression>>,
     pub error_stack: Vec<Object>,
     pub lc: LLVMCreator,
+    pub main_block: *mut LLVMBasicBlock,
 }
 
 #[allow(dead_code)]
 impl Eval {
     pub fn new() -> Self {
+        let mut lc = LLVMCreator::new("main_module");
+        let main_block = Eval::setup_main(&mut lc);
+
         Eval {
             stack_arg: Vec::new(),
             error_stack: Vec::new(),
-            lc: LLVMCreator::new("main_module"),
+            lc: lc,
+            main_block: main_block,
         }
     }
 
-    pub fn setup_llvm(&mut self) -> *mut LLVMValue {
-        self.lc.setup_builtin();
-        self.setup_main()
-    }
-
-    pub fn setup_main(&mut self) -> *mut LLVMValue {
+    pub fn setup_main(lc: &mut LLVMCreator) -> *mut LLVMBasicBlock {
         let fn_type = function_type(int32_type(), &mut []);
-        let main_function = add_function(self.lc.module, fn_type, "main");
-        let block = append_basic_block_in_context(self.lc.context, main_function, "entry");
-        build_position_at_end(self.lc.builder, block);
-        main_function
+        let main_function = add_function(lc.module, fn_type, "main");
+        let block = append_basic_block_in_context(lc.context, main_function, "entry");
+        build_position_at_end(lc.builder, block);
+
+        block
     }
 
     pub fn dump_llvm(&mut self) {
@@ -52,7 +53,6 @@ impl Eval {
     }
 
     pub fn entry_eval_program(&mut self, program: Program, env: &mut Environment) -> Object {
-        let main = self.setup_main();
         for statement in program.into_iter() {
             if let Some(obj) = self.eval_statement(statement, env) {
                 match obj {
