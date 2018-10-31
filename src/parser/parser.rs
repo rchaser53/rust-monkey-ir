@@ -445,7 +445,9 @@ impl<'a> Parser<'a> {
         args
     }
 
-    pub fn parse_function_parameters(&mut self) -> (Vec<Identifier>, Vec<LLVMExpressionType>, LLVMExpressionType) {
+    pub fn parse_function_parameters(
+        &mut self,
+    ) -> (Vec<Identifier>, Vec<LLVMExpressionType>, LLVMExpressionType) {
         let mut parameters = Vec::new();
         let mut parameter_types = Vec::new();
 
@@ -759,7 +761,10 @@ fn test_funciton_parsing() {
     let program = parse_input(input);
     statement_assert(&program[0], "fn(): null {  }");
     statement_assert(&program[1], "fn(x: int): int {  }");
-    statement_assert(&program[2], "fn(x: int, y: boolean, z: string): boolean {  }");
+    statement_assert(
+        &program[2],
+        "fn(x: int, y: boolean, z: string): boolean {  }",
+    );
 }
 
 #[test]

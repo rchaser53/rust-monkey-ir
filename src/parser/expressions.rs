@@ -1,5 +1,5 @@
-use std::fmt;
 use parser::statements::*;
+use std::fmt;
 
 #[derive(PartialEq, Clone, Debug)]
 pub struct Identifier(pub String);

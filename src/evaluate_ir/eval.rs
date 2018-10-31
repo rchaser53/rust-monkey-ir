@@ -11,6 +11,7 @@ use ir::arithmetic::*;
 use ir::block::*;
 use ir::condition::*;
 use ir::const_value::*;
+use ir::converter::*;
 use ir::creator::*;
 use ir::function::*;
 use ir::llvm_type::*;
@@ -194,15 +195,13 @@ impl Eval {
                 self.eval_infix(infix, left, right, env, location)
             }
             Expression::Identifier(ident, location) => self.eval_identifier(ident, env, location),
-            // Expression::Function {
-            //     parameters,
-            //     body,
-            //     location: _,
-            // } => Object::Function(Function {
-            //     parameters: parameters,
-            //     body: body,
-            //     env: env.clone(),
-            // }),
+            Expression::Function {
+                parameters,
+                parameter_types,
+                body,
+                return_type,
+                location: _,
+            } => self.eval_function(parameters, parameter_types, body, return_type, env),
             // Expression::Call(Call {
             //     function,
             //     arguments,
@@ -210,6 +209,27 @@ impl Eval {
             // }) => self.eval_call(function, arguments, env, location),
             _ => Object::Null,
         }
+    }
+
+    pub fn eval_function(
+        &mut self,
+        parameters: Vec<Identifier>,
+        parameter_types: Vec<LLVMExpressionType>,
+        block: BlockStatement,
+        return_type: LLVMExpressionType,
+        env: &mut Environment,
+    ) -> Object {
+        let mut converted: Vec<*mut LLVMType> = parameter_types
+            .into_iter()
+            .map(|elem| convert_llvm_type(elem))
+            .collect();
+
+        let fn_type = function_type(convert_llvm_type(return_type), &mut converted);
+        let test_func = create_function(&mut self.lc, fn_type);
+        self.eval_program(block, &mut env.clone());
+        build_position_at_end(self.lc.builder, self.main_block);
+
+        Object::Function(test_func)
     }
 
     pub fn eval_identifier(
@@ -357,11 +377,11 @@ impl Eval {
             Prefix::Minus => Object::Integer(value),
             Prefix::Plus => Object::Integer(value),
             Prefix::Bang => Object::Boolean(true, llvm_bool!(true)),
-                // if value < 0 {
-                    // Object::Boolean(true, llvm_bool!(true))
-                // } else {
-                    // Object::Boolean(false, llvm_bool!(false))
-                // }
+            // if value < 0 {
+            // Object::Boolean(true, llvm_bool!(true))
+            // } else {
+            // Object::Boolean(false, llvm_bool!(false))
+            // }
             // }
         }
     }

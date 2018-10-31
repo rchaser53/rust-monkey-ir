@@ -57,11 +57,7 @@ pub fn get_param(target_func: *mut LLVMValue, arg_index: u32) -> *mut LLVMValue 
 }
 
 #[allow(dead_code)]
-pub fn create_function(
-    lc: &mut LLVMCreator,
-    fn_type: *mut LLVMType,
-) -> *mut LLVMValue
-{
+pub fn create_function(lc: &mut LLVMCreator, fn_type: *mut LLVMType) -> *mut LLVMValue {
     let function = add_function(lc.module, fn_type, "");
     let block = append_basic_block(function, "entry");
     build_position_at_end(lc.builder, block);

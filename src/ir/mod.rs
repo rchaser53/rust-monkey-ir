@@ -3,6 +3,7 @@ pub mod block;
 pub mod built_in;
 pub mod condition;
 pub mod const_value;
+pub mod converter;
 pub mod creator;
 pub mod function;
 pub mod llvm_struct;
