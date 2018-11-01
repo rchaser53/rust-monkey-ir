@@ -72,7 +72,7 @@ impl Eval {
             Object::Boolean(llvm_value) => {
                 build_ret(self.lc.builder, llvm_value);
             }
-            Object::Function(llvm_value) => {
+            Object::Function(llvm_value, _) => {
                 build_ret(self.lc.builder, llvm_value);
             }
             _ => {
@@ -202,11 +202,11 @@ impl Eval {
                 return_type,
                 location: _,
             } => self.eval_function(parameters, parameter_types, body, return_type, env),
-            // Expression::Call(Call {
-            //     function,
-            //     arguments,
-            //     location,
-            // }) => self.eval_call(function, arguments, env, location),
+            Expression::Call(Call {
+                function,
+                arguments,
+                location,
+            }) => self.eval_call(function, arguments, env, location),
             _ => Object::Null,
         }
     }
@@ -224,12 +224,12 @@ impl Eval {
             .map(|elem| convert_llvm_type(elem))
             .collect();
 
-        let fn_type = function_type(convert_llvm_type(return_type), &mut converted);
+        let fn_type = function_type(convert_llvm_type(return_type.clone()), &mut converted);
         let test_func = create_function(&mut self.lc, fn_type);
         self.eval_program(block, &mut env.clone());
         build_position_at_end(self.lc.builder, self.main_block);
 
-        Object::Function(test_func)
+        Object::Function(test_func, return_type)
     }
 
     pub fn eval_identifier(
@@ -405,6 +405,113 @@ impl Eval {
         }
     }
 
+    pub fn eval_call(
+        &mut self,
+        outer_function: Box<Expression>,
+        outer_arguments: Vec<Expression>,
+        outer_env: &mut Environment,
+        location: Location,
+    ) -> Object {
+        match *outer_function {
+            Expression::Identifier(Identifier(ref string), ref _location) => {
+                let mut call_function = outer_env.get(string, location);
+                self.exec_func(call_function, outer_arguments, outer_env)
+            }
+            Expression::Call(call) => {
+                self.stack_arg.push(outer_arguments);
+                self.call_func(call.clone(), call.arguments, outer_env, location)
+            }
+            _ => Object::Error(format!(
+                "cannot call {}. row: {}",
+                outer_function.string(),
+                location.row
+            )),
+        }
+    }
+
+    pub fn call_func(
+        &mut self,
+        call: Call,
+        outer_arguments: Vec<Expression>,
+        outer_env: &mut Environment,
+        location: Location,
+    ) -> Object {
+        match *call.function {
+            Expression::Identifier(Identifier(ref string), ref _location) => {
+                let mut call_function = outer_env.get(string, location);
+                self.stack_arg.push(call.arguments);
+
+                while let Some(arg) = self.stack_arg.pop() {
+                    call_function = self.exec_func(call_function, arg, outer_env);
+
+                    match call_function {
+                        Object::Function(_, _) => {
+                            continue;
+                        }
+                        _ => {
+                            return call_function;
+                        }
+                    }
+                }
+                call_function
+            }
+            Expression::Call(inner_call) => {
+                self.stack_arg.push(outer_arguments);
+                self.call_func(
+                    inner_call.clone(),
+                    inner_call.arguments,
+                    outer_env,
+                    location,
+                )
+            }
+            _ => Object::Error(format!(
+                "cannot call {}. row: {}",
+                call.function.string(),
+                location.row
+            )),
+        }
+    }
+
+    pub fn exec_func(
+        &mut self,
+        maybe_func_obj: Object,
+        outer_arguments: Vec<Expression>,
+        outer_env: &mut Environment,
+    ) -> Object {
+        match maybe_func_obj {
+            Object::Function(func, return_type) => {
+                // let mut func_env = func.env.clone();
+                // for (index, Identifier(string)) in func.parameters.into_iter().enumerate() {
+                //     let actual_param =
+                //         self.eval_expression(outer_arguments[index].clone(), outer_env);
+                //     func_env.set(string, actual_param);
+                // }
+                // self.eval_program(func.body, &mut func_env)
+
+                // let mut converted: Vec<*mut LLVMType> = parameter_types
+                //   .into_iter()
+                //   .map(|elem| convert_llvm_type(elem))
+                //   .collect();
+                let llvm_value = call_function(self.lc.builder, func, vec![], "");
+                match return_type {
+                  LLVMExpressionType::Int => Object::Integer(llvm_value),
+                  LLVMExpressionType::String => Object::Integer(llvm_value),
+                  LLVMExpressionType::Boolean => Object::Boolean(llvm_value),
+                  LLVMExpressionType::Null => Object::Null,
+                }
+            }
+            // Object::BuildIn(build_in) => match build_in {
+            //     BuildIn::Print => {
+            //         let print_struct = BuildInPrint::new();
+            //         print_struct.print(&outer_arguments[0].clone().string());
+            //         Object::Null
+            //     }
+            // },
+            _ => maybe_func_obj,
+        }
+    }
+
+
     pub fn has_error(&self) -> bool {
         self.error_stack.len() > 0
     }
@@ -421,97 +528,3 @@ impl Eval {
         error_message.to_string()
     }
 }
-
-// pub fn eval_call(
-//     &mut self,
-//     outer_function: Box<Expression>,
-//     outer_arguments: Vec<Expression>,
-//     outer_env: &mut Environment,
-//     location: Location,
-// ) -> Object {
-//     match *outer_function {
-//         Expression::Identifier(Identifier(ref string), ref _location) => {
-//             let mut call_function = outer_env.get(string, location);
-//             self.exec_func(call_function, outer_arguments, outer_env)
-//         }
-//         Expression::Call(call) => {
-//             self.stack_arg.push(outer_arguments);
-//             self.call_func(call.clone(), call.arguments, outer_env, location)
-//         }
-//         _ => Object::Error(format!(
-//             "cannot call {}. row: {}",
-//             outer_function.string(),
-//             location.row
-//         )),
-//     }
-// }
-
-// pub fn call_func(
-//     &mut self,
-//     call: Call,
-//     outer_arguments: Vec<Expression>,
-//     outer_env: &mut Environment,
-//     location: Location,
-// ) -> Object {
-//     match *call.function {
-//         Expression::Identifier(Identifier(ref string), ref _location) => {
-//             let mut call_function = outer_env.get(string, location);
-//             self.stack_arg.push(call.arguments);
-
-//             while let Some(arg) = self.stack_arg.pop() {
-//                 call_function = self.exec_func(call_function, arg, outer_env);
-
-//                 match call_function {
-//                     Object::Function(_) => {
-//                         continue;
-//                     }
-//                     _ => {
-//                         return call_function;
-//                     }
-//                 }
-//             }
-//             call_function
-//         }
-//         Expression::Call(inner_call) => {
-//             self.stack_arg.push(outer_arguments);
-//             self.call_func(
-//                 inner_call.clone(),
-//                 inner_call.arguments,
-//                 outer_env,
-//                 location,
-//             )
-//         }
-//         _ => Object::Error(format!(
-//             "cannot call {}. row: {}",
-//             call.function.string(),
-//             location.row
-//         )),
-//     }
-// }
-
-// pub fn exec_func(
-//     &mut self,
-//     maybe_func_obj: Object,
-//     outer_arguments: Vec<Expression>,
-//     outer_env: &mut Environment,
-// ) -> Object {
-//     match maybe_func_obj {
-//         Object::Function(func) => {
-//             let mut func_env = func.env.clone();
-//             for (index, Identifier(string)) in func.parameters.into_iter().enumerate() {
-//                 let actual_param =
-//                     self.eval_expression(outer_arguments[index].clone(), outer_env);
-//                 func_env.set(string, actual_param);
-//             }
-//             self.eval_program(func.body, &mut func_env)
-//         }
-//         Object::BuildIn(build_in) => match build_in {
-//             BuildIn::Print => {
-//                 let print_struct = BuildInPrint::new();
-//                 print_struct.print(&outer_arguments[0].clone().string());
-//                 Object::Null
-//             }
-//         },
-//         _ => maybe_func_obj,
-//     }
-// }
