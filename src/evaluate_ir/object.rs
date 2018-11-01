@@ -12,7 +12,7 @@ pub enum Object {
     Integer(*mut LLVMValue),
     String(String),
     Boolean(*mut LLVMValue),
-    Function(*mut LLVMValue, LLVMExpressionType),
+    Function(*mut LLVMValue, Vec<LLVMExpressionType>, LLVMExpressionType),
     Null,
     Error(String),
     BuildIn(BuildIn),
@@ -33,10 +33,10 @@ pub struct Function {
 impl fmt::Display for Object {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            Object::Integer(val) => write!(f, "{}", "TODO"),
+            Object::Integer(_) => write!(f, "{}", "TODO"),
             Object::String(string) => write!(f, "{}", string),
             Object::Boolean(_) => write!(f, "{}", "TODO"),
-            Object::Function(ref func, _) => write!(f, "{}", "TODO"),
+            Object::Function(_, _, _) => write!(f, "{}", "TODO"),
             // Object::Function(ref func) => {
             //     let mut param_string = String::new();
             //     for (index, Identifier(ref string)) in func.parameters.iter().enumerate() {
