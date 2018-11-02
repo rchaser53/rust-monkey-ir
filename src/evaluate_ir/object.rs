@@ -12,10 +12,11 @@ pub enum Object {
     Integer(*mut LLVMValue),
     String(String),
     Boolean(*mut LLVMValue),
-    Function(*mut LLVMValue, Vec<LLVMExpressionType>, LLVMExpressionType),
+    Function(Function),
     Null,
     Error(String),
     BuildIn(BuildIn),
+    Argument(*mut LLVMValue, u32),
 }
 
 #[derive(Debug, Clone)]
@@ -25,9 +26,8 @@ pub enum BuildIn {
 
 #[derive(Debug, Clone)]
 pub struct Function {
-    pub parameters: Vec<Identifier>,
-    pub body: BlockStatement,
-    pub env: Environment,
+    pub llvm_value: *mut LLVMValue,
+    pub return_type: LLVMExpressionType,
 }
 
 impl fmt::Display for Object {
@@ -36,7 +36,7 @@ impl fmt::Display for Object {
             Object::Integer(_) => write!(f, "{}", "TODO"),
             Object::String(string) => write!(f, "{}", string),
             Object::Boolean(_) => write!(f, "{}", "TODO"),
-            Object::Function(_, _, _) => write!(f, "{}", "TODO"),
+            Object::Function(_) => write!(f, "{}", "TODO"),
             // Object::Function(ref func) => {
             //     let mut param_string = String::new();
             //     for (index, Identifier(ref string)) in func.parameters.iter().enumerate() {
@@ -61,6 +61,7 @@ impl fmt::Display for Object {
             Object::BuildIn(build_in) => match build_in {
                 BuildIn::Print => write!(f, "print"),
             },
+            Object::Argument(_, index) => write!(f, "TODO"),
         }
     }
 }

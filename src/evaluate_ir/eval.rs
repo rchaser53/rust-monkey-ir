@@ -73,7 +73,7 @@ impl Eval {
         match *object {
             Object::Integer(llvm_value) => llvm_value,
             Object::Boolean(llvm_value) => llvm_value,
-            Object::Function(llvm_value, _, _) => llvm_value,
+            Object::Function(ref func) => func.llvm_value,
             _ => llvm_integer!(0),
         }
     }
@@ -182,9 +182,7 @@ impl Eval {
         match expr {
             Expression::IntegerLiteral(int, _location) => Object::Integer(llvm_integer!(int)),
             Expression::StringLiteral(string, _location) => Object::String(string),
-            Expression::Boolean(boolean, _location) => {
-                Object::Boolean(llvm_bool!(boolean))
-            }
+            Expression::Boolean(boolean, _location) => Object::Boolean(llvm_bool!(boolean)),
             Expression::Prefix(prefix, expr, location) => {
                 self.eval_prefix(prefix, expr, env, location)
             }
@@ -224,10 +222,18 @@ impl Eval {
 
         let fn_type = function_type(convert_llvm_type(return_type.clone()), &mut converted);
         let test_func = create_function(&mut self.lc, fn_type);
-        self.eval_program(block, &mut env.clone());
+
+        let mut func_env = env.clone();
+        for (index, Identifier(string)) in parameters.clone().into_iter().enumerate() {
+            func_env.set(string, Object::Argument(test_func, index as u32));
+        }
+        self.eval_program(block, &mut func_env);
         build_position_at_end(self.lc.builder, self.main_block);
 
-        Object::Function(test_func, parameter_types, return_type)
+        Object::Function(Function {
+            return_type: return_type,
+            llvm_value: test_func,
+        })
     }
 
     pub fn eval_identifier(
@@ -280,6 +286,10 @@ impl Eval {
                 Object::Integer(right) => {
                     self.calculate_infix_integer(infix, left, right, location)
                 }
+                Object::Argument(func, index) => {
+                    let right = get_param(func, index);
+                    self.calculate_infix_integer(infix, left, right, location)
+                }
                 _ => Object::Error(format!(
                     "right value should be integer, but actually {}. row: {}",
                     right_value, location.row,
@@ -294,6 +304,10 @@ impl Eval {
             },
             Object::Boolean(left) => match right_value {
                 Object::Boolean(right) => {
+                    Object::Boolean(build_int_eq(self.lc.builder, left, right, ""))
+                }
+                Object::Argument(func, index) => {
+                    let right = get_param(func, index);
                     Object::Boolean(build_int_eq(self.lc.builder, left, right, ""))
                 }
                 _ => Object::Error(format!(
@@ -334,10 +348,10 @@ impl Eval {
         match condition_obj {
             Object::Boolean(_) => {
                 // if boolean {
-                    return_obj = self.eval_program(consequence, env);
+                return_obj = self.eval_program(consequence, env);
                 // }
                 // if let Some(alt) = alternative {
-                    // return_obj = self.eval_program(alt, env);
+                // return_obj = self.eval_program(alt, env);
                 // }
             }
             _ => {
@@ -374,7 +388,12 @@ impl Eval {
             // Prefix::Minus => Object::Integer(-1 * value, const_int(int32_type(), -1 * value)),
             Prefix::Minus => Object::Integer(value),
             Prefix::Plus => Object::Integer(value),
-            Prefix::Bang => Object::Boolean(build_int_ult(self.lc.builder, const_int(int32_type(), 0), value, "")),
+            Prefix::Bang => Object::Boolean(build_int_ult(
+                self.lc.builder,
+                const_int(int32_type(), 0),
+                value,
+                "",
+            )),
         }
     }
 
@@ -443,7 +462,7 @@ impl Eval {
                     call_function = self.exec_func(call_function, arg, outer_env);
 
                     match call_function {
-                        Object::Function(_, _, _) => {
+                        Object::Function(_) => {
                             continue;
                         }
                         _ => {
@@ -477,29 +496,16 @@ impl Eval {
         outer_env: &mut Environment,
     ) -> Object {
         match maybe_func_obj {
-            Object::Function(func, parameter_types, return_type) => {
-                // let mut func_env = func.env.clone();
-                // for (index, Identifier(string)) in func.parameters.into_iter().enumerate() {
-                //     let actual_param =
-                //         self.eval_expression(outer_arguments[index].clone(), outer_env);
-                //     func_env.set(string, actual_param);
-                // }
-                // self.eval_program(func.body, &mut func_env)
-                // let outer_arguments = Vec::new();
-                // for (argument, index) in outer_arguments.into_iter().enumerate() {
-
-                //   outer_arguments.push(self.wrap_llvm_value(parameter_types[index], argument));
-                // }
-
+            Object::Function(func) => {
                 let function_argments: Vec<*mut LLVMValue> = outer_arguments
-                  .into_iter()
-                  .map(|elem| {
-                    let mut object = self.eval_expression(elem, &mut outer_env.clone());
-                    self.unwrap_object(&mut object)
-                  })
-                  .collect();
-                let llvm_value = call_function(self.lc.builder, func, function_argments, "");
-                self.wrap_llvm_value(return_type, llvm_value)
+                    .into_iter()
+                    .map(|elem| {
+                        let mut object = self.eval_expression(elem, &mut outer_env.clone());
+                        self.unwrap_object(&mut object)
+                    }).collect();
+                let llvm_value =
+                    call_function(self.lc.builder, func.llvm_value, function_argments, "");
+                self.wrap_llvm_value(func.return_type, llvm_value)
             }
             // Object::BuildIn(build_in) => match build_in {
             //     BuildIn::Print => {
@@ -512,15 +518,18 @@ impl Eval {
         }
     }
 
-    pub fn wrap_llvm_value(&mut self, expression_type: LLVMExpressionType, llvm_value: *mut LLVMValue) -> Object {
+    pub fn wrap_llvm_value(
+        &mut self,
+        expression_type: LLVMExpressionType,
+        llvm_value: *mut LLVMValue,
+    ) -> Object {
         match expression_type {
-          LLVMExpressionType::Int => Object::Integer(llvm_value),
-          LLVMExpressionType::String => Object::Integer(llvm_value),
-          LLVMExpressionType::Boolean => Object::Boolean(llvm_value),
-          LLVMExpressionType::Null => Object::Null,
+            LLVMExpressionType::Int => Object::Integer(llvm_value),
+            LLVMExpressionType::String => Object::Integer(llvm_value),
+            LLVMExpressionType::Boolean => Object::Boolean(llvm_value),
+            LLVMExpressionType::Null => Object::Null,
         }
     }
-
 
     pub fn has_error(&self) -> bool {
         self.error_stack.len() > 0
@@ -538,3 +547,16 @@ impl Eval {
         error_message.to_string()
     }
 }
+
+// let mut func_env = func.env.clone();
+// for (index, Identifier(string)) in func.parameters.into_iter().enumerate() {
+//     let actual_param =
+//         self.eval_expression(outer_arguments[index].clone(), outer_env);
+// func_env.set(string, actual_param);
+// }
+// self.eval_program(func.body, &mut func_env)
+// let outer_arguments = Vec::new();
+// for (argument, index) in outer_arguments.into_iter().enumerate() {
+
+//   outer_arguments.push(self.wrap_llvm_value(parameter_types[index], argument));
+// }
