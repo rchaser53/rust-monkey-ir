@@ -16,7 +16,7 @@ pub enum Object {
     Null,
     Error(String),
     BuildIn(BuildIn),
-    Argument(*mut LLVMValue, u32),
+    Argument(*mut LLVMValue, LLVMExpressionType, u32),
 }
 
 #[derive(Debug, Clone)]
@@ -61,7 +61,7 @@ impl fmt::Display for Object {
             Object::BuildIn(build_in) => match build_in {
                 BuildIn::Print => write!(f, "print"),
             },
-            Object::Argument(_, index) => write!(f, "TODO"),
+            Object::Argument(_, _, index) => write!(f, "TODO"),
         }
     }
 }

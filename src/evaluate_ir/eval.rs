@@ -195,8 +195,15 @@ impl Eval {
                 parameter_types,
                 body,
                 return_type,
-                location: _,
-            } => self.eval_function(parameters, parameter_types, body, return_type, env),
+                location,
+            } => self.eval_function(
+                parameters,
+                parameter_types,
+                body,
+                return_type,
+                env,
+                location,
+            ),
             Expression::Call(Call {
                 function,
                 arguments,
@@ -213,6 +220,7 @@ impl Eval {
         block: BlockStatement,
         return_type: LLVMExpressionType,
         env: &mut Environment,
+        location: Location,
     ) -> Object {
         let mut converted: Vec<*mut LLVMType> = parameter_types
             .clone()
@@ -225,7 +233,15 @@ impl Eval {
 
         let mut func_env = env.clone();
         for (index, Identifier(string)) in parameters.clone().into_iter().enumerate() {
-            func_env.set(string, Object::Argument(test_func, index as u32));
+            let object = self.eval_identifier(
+                Identifier(string.clone()),
+                &mut func_env.clone(),
+                location.clone(),
+            );
+            func_env.set(
+                string,
+                Object::Argument(test_func, parameter_types[index].clone(), index as u32),
+            );
         }
         self.eval_program(block, &mut func_env);
         build_position_at_end(self.lc.builder, self.main_block);
@@ -286,7 +302,7 @@ impl Eval {
                 Object::Integer(right) => {
                     self.calculate_infix_integer(infix, left, right, location)
                 }
-                Object::Argument(func, index) => {
+                Object::Argument(func, _, index) => {
                     let right = get_param(func, index);
                     self.calculate_infix_integer(infix, left, right, location)
                 }
@@ -306,7 +322,7 @@ impl Eval {
                 Object::Boolean(right) => {
                     Object::Boolean(build_int_eq(self.lc.builder, left, right, ""))
                 }
-                Object::Argument(func, index) => {
+                Object::Argument(func, _, index) => {
                     let right = get_param(func, index);
                     Object::Boolean(build_int_eq(self.lc.builder, left, right, ""))
                 }
@@ -315,6 +331,34 @@ impl Eval {
                     right_value, location.row,
                 )),
             },
+            Object::Argument(func, _, index) => {
+                let left = get_param(func, index);
+                match right_value {
+                    Object::Integer(right) => {
+                        self.calculate_infix_integer(infix, left, right, location)
+                    }
+                    Object::Boolean(right) => {
+                        Object::Boolean(build_int_eq(self.lc.builder, left, right, ""))
+                    }
+                    Object::Argument(func, expression_type, index) => {
+                        let right = get_param(func, index);
+                        match self.wrap_llvm_value(expression_type.clone(), right) {
+                            Object::Integer(_) => {
+                                (self.calculate_infix_integer(infix, left, right, location))
+                            }
+                            Object::Boolean(_) => Object::Boolean(build_int_eq(self.lc.builder, left, right, "")),
+                            _ => Object::Error(format!(
+                                "right cannot be analyzed, but actually {:?}. row: {}", // TODO
+                                expression_type, location.row,
+                            )),
+                        }
+                    }
+                    _ => Object::Error(format!(
+                        "right value should be boolean, but actually {}. row: {}",
+                        right_value, location.row,
+                    )),
+                }
+            }
             _ => {
                 let right_type_str = match right_value {
                     Object::Integer(_) => "integer",
