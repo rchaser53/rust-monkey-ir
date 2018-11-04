@@ -301,91 +301,139 @@ impl Eval {
         env: &mut Environment,
         location: Location,
     ) -> Object {
-        let left_value = self.eval_expression(*left, env);
-        let right_value = self.eval_expression(*right, env);
+        let left_object = self.eval_expression(*left, env);
+        let right_object = self.eval_expression(*right, env);
 
-        match left_value {
-            Object::Integer(left) => match right_value {
-                Object::Integer(right) => {
-                    self.calculate_infix_integer(infix, left, right, location)
-                }
-                Object::Argument(func, _, index) => {
-                    let right = get_param(func, index);
-                    self.calculate_infix_integer(infix, left, right, location)
-                }
-                _ => Object::Error(format!(
-                    "right value should be integer, but actually {}. row: {}",
-                    right_value, location.row,
-                )),
-            },
-            Object::Boolean(left) => match right_value {
-                Object::Boolean(right) => {
-                    self.calculate_infix_boolean(infix, left, right, location)
-                }
-                Object::Argument(func, _, index) => {
-                    let right = get_param(func, index);
-                    self.calculate_infix_boolean(infix, left, right, location)
-                }
-                _ => Object::Error(format!(
-                    "right value should be boolean, but actually {}. row: {}",
-                    right_value, location.row,
-                )),
-            },
+        match left_object {
+            Object::Integer(left) => self.resolve_left_integer(infix, left, right_object, location),
+            Object::Boolean(left) => self.resolve_left_boolean(infix, left, right_object, location),
             Object::Argument(func, expression_type_left, index) => {
                 let left = get_param(func, index);
-                match right_value {
-                    Object::Integer(right) => {
+                self.resolve_left_argument(
+                    infix,
+                    expression_type_left,
+                    left,
+                    right_object,
+                    location,
+                )
+            }
+            Object::String(left) => self.resolve_left_string(infix, left, right_object, location),
+            _ => self.resolve_left_failed(infix, left_object, right_object, location),
+        }
+    }
+
+    pub fn resolve_left_integer(
+        &mut self,
+        infix: Infix,
+        left: *mut LLVMValue,
+        right_object: Object,
+        location: Location,
+    ) -> Object {
+        match right_object {
+            Object::Integer(right) => self.calculate_infix_integer(infix, left, right, location),
+            Object::Argument(func, _, index) => {
+                let right = get_param(func, index);
+                self.calculate_infix_integer(infix, left, right, location)
+            }
+            _ => Object::Error(format!(
+                "right value should be integer, but actually {}. row: {}",
+                right_object, location.row,
+            )),
+        }
+    }
+
+    pub fn resolve_left_boolean(
+        &mut self,
+        infix: Infix,
+        left: *mut LLVMValue,
+        right_object: Object,
+        location: Location,
+    ) -> Object {
+        match right_object {
+            Object::Boolean(right) => self.calculate_infix_boolean(infix, left, right, location),
+            Object::Argument(func, _, index) => {
+                let right = get_param(func, index);
+                self.calculate_infix_boolean(infix, left, right, location)
+            }
+            _ => Object::Error(format!(
+                "right value should be boolean, but actually {}. row: {}",
+                right_object, location.row,
+            )),
+        }
+    }
+
+    pub fn resolve_left_argument(
+        &mut self,
+        infix: Infix,
+        expression_type_left: LLVMExpressionType,
+        left: *mut LLVMValue,
+        right_object: Object,
+        location: Location,
+    ) -> Object {
+        match right_object {
+            Object::Integer(right) => self.calculate_infix_integer(infix, left, right, location),
+            Object::Boolean(right) => self.calculate_infix_boolean(infix, left, right, location),
+            Object::Argument(func, _, index) => {
+                let right = get_param(func, index);
+                match self.wrap_llvm_value(expression_type_left.clone(), right) {
+                    Object::Integer(_) => {
                         self.calculate_infix_integer(infix, left, right, location)
                     }
-                    Object::Boolean(right) => {
+                    Object::Boolean(_) => {
                         self.calculate_infix_boolean(infix, left, right, location)
                     }
-                    Object::Argument(func, _, index) => {
-                        let right = get_param(func, index);
-                        match self.wrap_llvm_value(expression_type_left.clone(), right) {
-                            Object::Integer(_) => {
-                                self.calculate_infix_integer(infix, left, right, location)
-                            }
-                            Object::Boolean(_) => {
-                                self.calculate_infix_boolean(infix, left, right, location)
-                            }
-                            _ => Object::Error(format!(
-                                "right cannot be analyzed, but actually {:?}. row: {}", // TODO
-                                expression_type_left, location.row,
-                            )),
-                        }
-                    }
                     _ => Object::Error(format!(
-                        "right value should be boolean, but actually {}. row: {}",
-                        right_value, location.row,
+                        "right cannot be analyzed, but actually {:?}. row: {}", // TODO
+                        expression_type_left, location.row,
                     )),
                 }
             }
-            Object::String(left) => match right_value {
-                Object::String(right) => Object::String(left + &right),
-                _ => Object::Error(format!(
-                    "right value should be string, but actually {}. row: {}",
-                    right_value, location.row,
-                )),
-            },
-            _ => {
-                let right_type_str = match right_value {
-                    Object::Integer(_) => "integer",
-                    Object::String(_right) => "string",
-                    Object::Boolean(_) => "boolean",
-                    _ => {
-                        return Object::Error(format!(
-                            "{} {} {} cannot be culculated. row: {}",
-                            left_value, infix, right_value, location.row,
-                        ));
-                    }
-                };
-                Object::Error(format!(
-                    "left value should be {}, but actually {}. row: {}",
-                    right_type_str, left_value, location.row
-                ))
-            }
+            _ => Object::Error(format!(
+                "right value should be boolean, but actually {}. row: {}",
+                right_object, location.row,
+            )),
         }
+    }
+
+    // TODO
+    pub fn resolve_left_string(
+        &mut self,
+        infix: Infix,
+        left: String,
+        right_object: Object,
+        location: Location,
+    ) -> Object {
+        match right_object {
+            Object::String(right) => Object::String(left + &right),
+            _ => Object::Error(format!(
+                "right value should be string, but actually {}. row: {}",
+                right_object, location.row,
+            )),
+        }
+    }
+
+    pub fn resolve_left_failed(
+        &mut self,
+        infix: Infix,
+        left_object: Object,
+        right_object: Object,
+        location: Location,
+    ) -> Object {
+        let right_type_str = match right_object {
+            Object::Integer(_) => "integer",
+            Object::String(_right) => "string",
+            Object::Boolean(_) => "boolean",
+            _ => {
+                return Object::Error(format!(
+                    "{} {} {} cannot be culculated. row: {}",
+                    left_object, infix, right_object, location.row,
+                ));
+            }
+        };
+        Object::Error(format!(
+            "left value should be {}, but actually {}. row: {}",
+            right_type_str, left_object, location.row
+        ))
     }
 
     pub fn eval_if(
@@ -620,16 +668,3 @@ impl Eval {
         error_message.to_string()
     }
 }
-
-// let mut func_env = func.env.clone();
-// for (index, Identifier(string)) in func.parameters.into_iter().enumerate() {
-//     let actual_param =
-//         self.eval_expression(outer_arguments[index].clone(), outer_env);
-// func_env.set(string, actual_param);
-// }
-// self.eval_program(func.body, &mut func_env)
-// let outer_arguments = Vec::new();
-// for (argument, index) in outer_arguments.into_iter().enumerate() {
-
-//   outer_arguments.push(self.wrap_llvm_value(parameter_types[index], argument));
-// }

@@ -61,7 +61,7 @@ impl fmt::Display for Object {
             Object::BuildIn(build_in) => match build_in {
                 BuildIn::Print => write!(f, "print"),
             },
-            Object::Argument(_, _, index) => write!(f, "TODO"),
+            Object::Argument(_, _, _) => write!(f, "TODO"),
         }
     }
 }
