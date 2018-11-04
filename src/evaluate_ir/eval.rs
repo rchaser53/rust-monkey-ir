@@ -51,8 +51,8 @@ impl Eval {
     }
 
     pub fn dump_llvm(&mut self) {
-        validate_module(self.lc.module);
         self.lc.dump();
+        validate_module(self.lc.module);
     }
 
     pub fn entry_eval_program(&mut self, program: Program, env: &mut Environment) -> Object {
@@ -149,10 +149,50 @@ impl Eval {
 
         let obj = match value {
             Object::Integer(_) => Object::Integer(llvm_value_ref),
+            Object::Boolean(_) => Object::Boolean(llvm_value_ref),
             _ => value,
         };
 
         env.set(ident.0, obj)
+    }
+
+    pub fn eval_return_statement(&mut self, expr: Expression, env: &mut Environment) -> Object {
+        self.eval_expression(expr, env)
+    }
+
+    pub fn eval_expression(&mut self, expr: Expression, env: &mut Environment) -> Object {
+        match expr {
+            Expression::IntegerLiteral(int, _location) => Object::Integer(llvm_integer!(int)),
+            Expression::StringLiteral(string, _location) => Object::String(string),
+            Expression::Boolean(boolean, _location) => Object::Boolean(llvm_bool!(boolean)),
+            Expression::Prefix(prefix, expr, location) => {
+                self.eval_prefix(prefix, expr, env, location)
+            }
+            Expression::Infix(infix, left, right, location) => {
+                self.eval_infix(infix, left, right, env, location)
+            }
+            Expression::Identifier(ident, location) => self.eval_identifier(ident, env, location),
+            Expression::Function {
+                parameters,
+                parameter_types,
+                body,
+                return_type,
+                location,
+            } => self.eval_function(
+                parameters,
+                parameter_types,
+                body,
+                return_type,
+                env,
+                location,
+            ),
+            Expression::Call(Call {
+                function,
+                arguments,
+                location,
+            }) => self.eval_call(function, arguments, env, location),
+            _ => Object::Null,
+        }
     }
 
     pub fn eval_assign_staement(
@@ -197,45 +237,6 @@ impl Eval {
             Object::Integer(value) => value,
             Object::Boolean(value) => value,
             _ => const_int(int32_type(), 1),
-        }
-    }
-
-    pub fn eval_return_statement(&mut self, expr: Expression, env: &mut Environment) -> Object {
-        self.eval_expression(expr, env)
-    }
-
-    pub fn eval_expression(&mut self, expr: Expression, env: &mut Environment) -> Object {
-        match expr {
-            Expression::IntegerLiteral(int, _location) => Object::Integer(llvm_integer!(int)),
-            Expression::StringLiteral(string, _location) => Object::String(string),
-            Expression::Boolean(boolean, _location) => Object::Boolean(llvm_bool!(boolean)),
-            Expression::Prefix(prefix, expr, location) => {
-                self.eval_prefix(prefix, expr, env, location)
-            }
-            Expression::Infix(infix, left, right, location) => {
-                self.eval_infix(infix, left, right, env, location)
-            }
-            Expression::Identifier(ident, location) => self.eval_identifier(ident, env, location),
-            Expression::Function {
-                parameters,
-                parameter_types,
-                body,
-                return_type,
-                location,
-            } => self.eval_function(
-                parameters,
-                parameter_types,
-                body,
-                return_type,
-                env,
-                location,
-            ),
-            Expression::Call(Call {
-                function,
-                arguments,
-                location,
-            }) => self.eval_call(function, arguments, env, location),
-            _ => Object::Null,
         }
     }
 
@@ -289,6 +290,9 @@ impl Eval {
         match obj {
             Object::Integer(llvm_val_ref) => {
                 Object::Integer(build_load(self.lc.builder, llvm_val_ref, ""))
+            }
+            Object::Boolean(llvm_val_ref) => {
+                Object::Boolean(build_load(self.lc.builder, llvm_val_ref, ""))
             }
             _ => obj,
         }
