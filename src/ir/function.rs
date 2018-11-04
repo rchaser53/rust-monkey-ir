@@ -64,6 +64,10 @@ pub fn create_function(lc: &mut LLVMCreator, fn_type: *mut LLVMType) -> *mut LLV
     function
 }
 
+pub fn get_named_function(module: *mut LLVMModule, name: &str) -> *mut LLVMValue {
+    unsafe { LLVMGetNamedFunction(module, c_string!(name).as_ptr()) }
+}
+
 #[test]
 fn call_printf() {
     let mut lc = LLVMCreator::new("test_module");

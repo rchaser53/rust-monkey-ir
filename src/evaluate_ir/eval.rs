@@ -1,6 +1,4 @@
-use llvm_sys::core::*;
 use llvm_sys::*;
-use std::ffi::CString;
 
 use parser::expressions::*;
 use parser::parser::*;
@@ -246,8 +244,7 @@ impl Eval {
         self.eval_program(block, &mut func_env);
         build_position_at_end(self.lc.builder, self.main_block);
 
-        self.current_function =
-            unsafe { LLVMGetNamedFunction(self.lc.module, c_string!("main").as_ptr()) };
+        self.current_function = get_named_function(self.lc.module, "main");
 
         Object::Function(Function {
             return_type: return_type,
