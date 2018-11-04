@@ -48,33 +48,18 @@ impl<'a> Parser<'a> {
                 TokenType::Let => self.parse_let_statement(),
                 TokenType::Return => self.parse_return_statement(),
                 TokenType::While => self.parse_while_statement(),
+                TokenType::Identifier => {
+                    if self.peek_token_is(TokenType::Assign) {
+                        self.parse_assign_statement()
+                    } else {
+                        self.parse_expression_statement()
+                    }
+                }
                 _ => self.parse_expression_statement(),
             };
         } else {
             return None;
         }
-    }
-
-    pub fn parse_while_statement(&mut self) -> Option<Statement> {
-        if self.expect_peek(TokenType::Lparen) == false {
-            return None;
-        }
-        self.next_token();
-
-        if let Some(condition) = self.parse_expression(Precedences::Lowest) {
-            if self.expect_peek(TokenType::Rparen) == false {
-                return None;
-            }
-
-            if self.expect_peek(TokenType::Lbrace) == false {
-                return None;
-            }
-
-            if let Some(block) = self.parse_block_statement() {
-                return Some(Statement::While(condition, block));
-            }
-        }
-        None
     }
 
     pub fn parse_let_statement(&mut self) -> Option<Statement> {
@@ -132,6 +117,52 @@ impl<'a> Parser<'a> {
         }
 
         return Some(Statement::Expression(expression));
+    }
+
+    pub fn parse_while_statement(&mut self) -> Option<Statement> {
+        if self.expect_peek(TokenType::Lparen) == false {
+            return None;
+        }
+        self.next_token();
+
+        if let Some(condition) = self.parse_expression(Precedences::Lowest) {
+            if self.expect_peek(TokenType::Rparen) == false {
+                return None;
+            }
+
+            if self.expect_peek(TokenType::Lbrace) == false {
+                return None;
+            }
+
+            if let Some(block) = self.parse_block_statement() {
+                return Some(Statement::While(condition, block));
+            }
+        }
+        None
+    }
+
+    pub fn parse_assign_statement(&mut self) -> Option<Statement> {
+        if let Some(token) = self.cur_token.to_owned() {
+            let name = Identifier(token.value.to_owned());
+
+            if self.expect_peek(TokenType::Assign) == false {
+                return None;
+            }
+
+            self.next_token();
+            let value = if let Some(value) = self.parse_expression(Precedences::Lowest) {
+                value
+            } else {
+                return None;
+            };
+
+            while self.peek_token_is(TokenType::Semicolon) {
+                self.next_token();
+            }
+
+            return Some(Statement::Assignment(name, value));
+        }
+        None
     }
 
     pub fn parse_identifier(&self) -> Option<Expression> {
@@ -690,6 +721,19 @@ fn test_while_statements() {
 "#;
     let program = parse_input(input);
     statement_assert(&program[0], "while (true) { let i = (i + 1) }");
+}
+
+#[test]
+fn test_assign_statements() {
+    let input = r#"
+    let x = 5;
+    x = 10;
+    x = 10 * 3;
+  "#;
+    let program = parse_input(input);
+    statement_assert(&program[0], "let x = 5");
+    statement_assert(&program[1], "x = 10");
+    statement_assert(&program[2], "x = (10 * 3)");
 }
 
 #[test]

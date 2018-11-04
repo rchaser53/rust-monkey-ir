@@ -126,7 +126,8 @@ impl Eval {
                     None
                 }
             },
-            Statement::While(expr, block) => None,
+            Statement::While(_expr, _block) => None,
+            Statement::Assignment(_ident, _expr) => None,
         }
     }
 
@@ -237,11 +238,6 @@ impl Eval {
 
         let mut func_env = env.clone();
         for (index, Identifier(string)) in parameters.clone().into_iter().enumerate() {
-            let object = self.eval_identifier(
-                Identifier(string.clone()),
-                &mut func_env.clone(),
-                location.clone(),
-            );
             func_env.set(
                 string,
                 Object::Argument(target_func, parameter_types[index].clone(), index as u32),
@@ -398,7 +394,7 @@ impl Eval {
     // TODO
     pub fn resolve_left_string(
         &mut self,
-        infix: Infix,
+        _infix: Infix,
         left: String,
         right_object: Object,
         location: Location,
@@ -442,11 +438,10 @@ impl Eval {
         consequence: BlockStatement,
         alternative: Option<BlockStatement>,
         env: &mut Environment,
-        location: Location,
+        _location: Location,
     ) -> Option<Object> {
         let mut object = self.eval_expression(*condition, &mut env.clone());
         let llvm_value = self.unwrap_object(&mut object);
-        let mut return_obj = Object::Null;
 
         let current_function = self.current_function;
         let if_block = append_basic_block_in_context(self.lc.context, current_function, "");
@@ -455,7 +450,7 @@ impl Eval {
 
         build_cond_br(self.lc.builder, llvm_value, if_block, else_block);
         build_position_at_end(self.lc.builder, if_block);
-        return_obj = self.eval_program(consequence, env);
+        let mut return_obj = self.eval_program(consequence, env);
 
         build_br(self.lc.builder, end_block);
         build_position_at_end(self.lc.builder, else_block);

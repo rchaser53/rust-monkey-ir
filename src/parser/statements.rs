@@ -55,6 +55,7 @@ pub enum Statement {
     Return(Expression),
     Expression(Expression),
     While(Expression, BlockStatement),
+    Assignment(Identifier, Expression),
 }
 
 pub type BlockStatement = Vec<Statement>;
@@ -88,6 +89,11 @@ impl Statement {
                     ret_string
                 ))
             }
+            Statement::Assignment(Identifier(ref string), expr) => write_string!(format!(
+                "[ identifiy: {}, expression: {} ]",
+                string,
+                expr.string()
+            )),
         }
     }
 
@@ -108,6 +114,9 @@ impl Statement {
                     }
                 }
                 format!("while ({}) {{ {} }}", expr.string(), ret_string)
+            }
+            Statement::Assignment(Identifier(ref string), expr) => {
+                format!("{} = {}", string, &expr.string())
             }
         }
     }
