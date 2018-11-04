@@ -311,45 +311,36 @@ impl Eval {
                     right_value, location.row,
                 )),
             },
-            Object::String(left) => match right_value {
-                Object::String(right) => Object::String(left + &right),
-                _ => Object::Error(format!(
-                    "right value should be string, but actually {}. row: {}",
-                    right_value, location.row,
-                )),
-            },
             Object::Boolean(left) => match right_value {
                 Object::Boolean(right) => {
-                    Object::Boolean(build_int_eq(self.lc.builder, left, right, ""))
+                    self.calculate_infix_boolean(infix, left, right, location)
                 }
                 Object::Argument(func, _, index) => {
                     let right = get_param(func, index);
-                    Object::Boolean(build_int_eq(self.lc.builder, left, right, ""))
+                    self.calculate_infix_boolean(infix, left, right, location)
                 }
                 _ => Object::Error(format!(
                     "right value should be boolean, but actually {}. row: {}",
                     right_value, location.row,
                 )),
             },
-            Object::Argument(func, _, index) => {
+            Object::Argument(func, expression_type_left, index) => {
                 let left = get_param(func, index);
                 match right_value {
                     Object::Integer(right) => {
                         self.calculate_infix_integer(infix, left, right, location)
                     }
                     Object::Boolean(right) => {
-                        Object::Boolean(build_int_eq(self.lc.builder, left, right, ""))
+                        self.calculate_infix_boolean(infix, left, right, location)
                     }
-                    Object::Argument(func, expression_type, index) => {
+                    Object::Argument(func, _, index) => {
                         let right = get_param(func, index);
-                        match self.wrap_llvm_value(expression_type.clone(), right) {
-                            Object::Integer(_) => {
-                                (self.calculate_infix_integer(infix, left, right, location))
-                            }
-                            Object::Boolean(_) => Object::Boolean(build_int_eq(self.lc.builder, left, right, "")),
+                        match self.wrap_llvm_value(expression_type_left.clone(), right) {
+                            Object::Integer(_) => self.calculate_infix_integer(infix, left, right, location),
+                            Object::Boolean(_) => self.calculate_infix_boolean(infix, left, right, location),
                             _ => Object::Error(format!(
                                 "right cannot be analyzed, but actually {:?}. row: {}", // TODO
-                                expression_type, location.row,
+                                expression_type_left, location.row,
                             )),
                         }
                     }
@@ -358,7 +349,14 @@ impl Eval {
                         right_value, location.row,
                     )),
                 }
-            }
+            },
+            Object::String(left) => match right_value {
+                Object::String(right) => Object::String(left + &right),
+                _ => Object::Error(format!(
+                    "right value should be string, but actually {}. row: {}",
+                    right_value, location.row,
+                )),
+            },
             _ => {
                 let right_type_str = match right_value {
                     Object::Integer(_) => "integer",
@@ -461,6 +459,23 @@ impl Eval {
             Infix::NotEq => Object::Boolean(build_int_ne(self.lc.builder, left, right, "")),
             _ => Object::Error(format!(
                 "{} cannot be calculate for integer. row: {}",
+                infix, location.row
+            )),
+        }
+    }
+
+    pub fn calculate_infix_boolean(
+        &self,
+        infix: Infix,
+        left: *mut LLVMValue,
+        right: *mut LLVMValue,
+        location: Location,
+    ) -> Object {
+        match infix {
+            Infix::Eq => Object::Boolean(build_int_eq(self.lc.builder, left, right, "")),
+            Infix::NotEq => Object::Boolean(build_int_ne(self.lc.builder, left, right, "")),
+            _ => Object::Error(format!(
+                "{} cannot be calculate for boolean. row: {}",
                 infix, location.row
             )),
         }
