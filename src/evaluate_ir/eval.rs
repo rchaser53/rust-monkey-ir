@@ -125,17 +125,11 @@ impl Eval {
                 }
             },
             Statement::While(_expr, _block) => None,
-            Statement::Assignment(_ident, _expr) => None,
-        }
-    }
-
-    pub fn accumultae_error(&mut self, obj: Object) -> Option<Object> {
-        match obj {
-            Object::Error(_) => {
-                self.error_stack.push(obj);
-                None
-            }
-            _ => Some(obj),
+            Statement::Assignment(ident, expr) => {
+              let obj = self.eval_assign_staement(ident, expr, env);
+              let _ = self.accumultae_error(obj);
+              None
+            },
         }
     }
 
@@ -158,6 +152,35 @@ impl Eval {
         };
 
         env.set(ident.0, obj)
+    }
+
+    pub fn eval_assign_staement(
+        &mut self,
+        ident: Identifier,
+        expr: Expression,
+        env: &mut Environment,
+    ) -> Object {
+        let identify_object = env.get(&ident.0, Location::new(0));       // TODO
+        let llvm_value_ref = match identify_object {
+            Object::Integer(reference) => reference,
+            Object::Boolean(reference) => reference,
+            _ => 0 as *mut LLVMValue,
+        };
+
+        let mut object = self.eval_expression(expr, &mut env.clone());
+        let llvm_value = self.unwrap_object(&mut object);
+        build_store(self.lc.builder, llvm_value, llvm_value_ref);
+        Object::Null
+    }
+
+    pub fn accumultae_error(&mut self, obj: Object) -> Option<Object> {
+        match obj {
+            Object::Error(_) => {
+                self.error_stack.push(obj);
+                None
+            }
+            _ => Some(obj),
+        }
     }
 
     pub fn get_llvm_type(&self, obj: &Object) -> *mut LLVMType {
