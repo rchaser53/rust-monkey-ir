@@ -6,6 +6,7 @@ use parser::statements::*;
 
 use evaluate_ir::environment::*;
 use evaluate_ir::object::*;
+use evaluate_ir::stack::*;
 
 use ir::arithmetic::*;
 use ir::block::*;
@@ -23,7 +24,7 @@ pub struct Eval {
     pub error_stack: Vec<Object>,
     pub lc: LLVMCreator,
     pub main_block: *mut LLVMBasicBlock,
-    pub current_function: *mut LLVMValue,
+    pub function_stack: FunctionStack,
 }
 
 #[allow(dead_code)]
@@ -37,7 +38,7 @@ impl Eval {
             error_stack: Vec::new(),
             lc: lc,
             main_block: main_block,
-            current_function: main_function,
+            function_stack: FunctionStack::new(main_function),
         }
     }
 
@@ -126,10 +127,10 @@ impl Eval {
             },
             Statement::While(_expr, _block) => None,
             Statement::Assignment(ident, expr) => {
-              let obj = self.eval_assign_staement(ident, expr, env);
-              let _ = self.accumultae_error(obj);
-              None
-            },
+                let obj = self.eval_assign_staement(ident, expr, env);
+                let _ = self.accumultae_error(obj);
+                None
+            }
         }
     }
 
@@ -160,7 +161,7 @@ impl Eval {
         expr: Expression,
         env: &mut Environment,
     ) -> Object {
-        let identify_object = env.get(&ident.0, Location::new(0));       // TODO
+        let identify_object = env.get(&ident.0, Location::new(0)); // TODO
         let llvm_value_ref = match identify_object {
             Object::Integer(reference) => reference,
             Object::Boolean(reference) => reference,
@@ -254,8 +255,8 @@ impl Eval {
             .collect();
 
         let fn_type = function_type(convert_llvm_type(return_type.clone()), &mut converted);
-        let target_func = create_function(&mut self.lc, fn_type);
-        self.current_function = target_func;
+        let (target_func, func_block) = create_function(&mut self.lc, fn_type);
+        self.function_stack.push(target_func);
 
         let mut func_env = env.clone();
         for (index, Identifier(string)) in parameters.clone().into_iter().enumerate() {
@@ -264,14 +265,16 @@ impl Eval {
                 Object::Argument(target_func, parameter_types[index].clone(), index as u32),
             );
         }
-        self.eval_program(block, &mut func_env);
-        build_position_at_end(self.lc.builder, self.main_block);
 
-        self.current_function = get_named_function(self.lc.module, "main");
+        self.eval_program(block, &mut func_env);
+
+        build_position_at_end(self.lc.builder, self.main_block);
+        let _ = self.function_stack.pop();
 
         Object::Function(Function {
             return_type: return_type,
             llvm_value: target_func,
+            llvm_block: func_block,
         })
     }
 
@@ -463,7 +466,7 @@ impl Eval {
         let mut object = self.eval_expression(*condition, &mut env.clone());
         let llvm_value = self.unwrap_object(&mut object);
 
-        let current_function = self.current_function;
+        let current_function = self.function_stack.last();
         let if_block = append_basic_block_in_context(self.lc.context, current_function, "");
         let else_block = append_basic_block_in_context(self.lc.context, current_function, "");
         let end_block = append_basic_block_in_context(self.lc.context, current_function, "");

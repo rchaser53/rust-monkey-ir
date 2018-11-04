@@ -57,11 +57,14 @@ pub fn get_param(target_func: *mut LLVMValue, arg_index: u32) -> *mut LLVMValue 
 }
 
 #[allow(dead_code)]
-pub fn create_function(lc: &mut LLVMCreator, fn_type: *mut LLVMType) -> *mut LLVMValue {
+pub fn create_function(
+    lc: &mut LLVMCreator,
+    fn_type: *mut LLVMType,
+) -> (*mut LLVMValue, *mut LLVMBasicBlock) {
     let function = add_function(lc.module, fn_type, "");
     let block = append_basic_block(function, "entry");
     build_position_at_end(lc.builder, block);
-    function
+    (function, block)
 }
 
 pub fn get_named_function(module: *mut LLVMModule, name: &str) -> *mut LLVMValue {
@@ -115,7 +118,7 @@ fn call_strcmp() {
 fn call_int_func() {
     let mut lc = LLVMCreator::new("test_module");
     let test_fn_type = function_type(int32_type(), &mut [int32_type()]);
-    let test_func = create_function(&mut lc, test_fn_type);
+    let (test_func, _) = create_function(&mut lc, test_fn_type);
     build_ret(lc.builder, get_param(test_func, 0));
 
     let main = setup_main(&mut lc);
