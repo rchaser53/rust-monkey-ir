@@ -75,6 +75,7 @@ impl Eval {
     pub fn unwrap_object(&mut self, object: &mut Object) -> *mut LLVMValue {
         match *object {
             Object::Integer(llvm_value) => llvm_value,
+            Object::String(llvm_value) => llvm_value,
             Object::Boolean(llvm_value) => llvm_value,
             Object::Function(ref func) => func.llvm_value,
             _ => llvm_integer!(0),
@@ -164,7 +165,7 @@ impl Eval {
     pub fn eval_expression(&mut self, expr: Expression, env: &mut Environment) -> Object {
         match expr {
             Expression::IntegerLiteral(int, _location) => Object::Integer(llvm_integer!(int)),
-            Expression::StringLiteral(string, _location) => Object::String(string),
+            Expression::StringLiteral(string, _location) => Object::String(codegen_string(&mut self.lc, &string, "")),
             Expression::Boolean(boolean, _location) => Object::Boolean(llvm_bool!(boolean)),
             Expression::Prefix(prefix, expr, location) => {
                 self.eval_prefix(prefix, expr, env, location)
@@ -423,12 +424,12 @@ impl Eval {
     pub fn resolve_left_string(
         &mut self,
         _infix: Infix,
-        left: String,
+        left: *mut LLVMValue,
         right_object: Object,
         location: Location,
     ) -> Object {
         match right_object {
-            Object::String(right) => Object::String(left + &right),
+            Object::String(right) => Object::String(left),        // TODO
             _ => Object::Error(format!(
                 "right value should be string, but actually {}. row: {}",
                 right_object, location.row,
@@ -445,7 +446,7 @@ impl Eval {
     ) -> Object {
         let right_type_str = match right_object {
             Object::Integer(_) => "integer",
-            Object::String(_right) => "string",
+            Object::String(_) => "string",
             Object::Boolean(_) => "boolean",
             _ => {
                 return Object::Error(format!(
@@ -659,9 +660,8 @@ impl Eval {
                     .map(|elem| {
                         let mut object = self.eval_expression(elem, &mut outer_env.clone());
                         self.unwrap_object(&mut object)
-                    }).collect();
-                    // let printf_args = vec![codegen_string(&mut self.lc, "hello world\n\r", "")];
-                    // call_function(self.lc.builder, printf, printf_args, "");
+                      }).collect();
+
                     call_function(self.lc.builder, printf, function_argments, "");
                     Object::Null
                 }
