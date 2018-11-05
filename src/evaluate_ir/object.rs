@@ -21,7 +21,7 @@ pub enum Object {
 
 #[derive(Debug, Clone)]
 pub enum BuildIn {
-    Print,
+    Printf,
 }
 
 #[derive(Debug, Clone)]
@@ -41,7 +41,7 @@ impl fmt::Display for Object {
             Object::Null => write!(f, "Null"),
             Object::Error(string) => write!(f, "{}", string),
             Object::BuildIn(build_in) => match build_in {
-                BuildIn::Print => write!(f, "print"),
+                BuildIn::Printf => write!(f, "printf"),
             },
             Object::Argument(_, _, _) => write!(f, "TODO"),
         }

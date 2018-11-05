@@ -19,12 +19,14 @@ impl LLVMCreator {
             let context = LLVMContextCreate();
             let mod_name = c_string!(module_name);
 
-            LLVMCreator {
+            let mut lc = LLVMCreator {
                 builder: LLVMCreateBuilderInContext(context),
                 module: LLVMModuleCreateWithName(mod_name.as_ptr()),
                 context: context,
                 built_ins: HashMap::new(),
-            }
+            };
+            lc.setup_builtin();
+            lc
         }
     }
 

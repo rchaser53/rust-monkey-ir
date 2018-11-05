@@ -18,6 +18,7 @@ use ir::function::*;
 use ir::llvm_type::*;
 use ir::operate::*;
 use ir::validate::*;
+use ir::string::*;
 
 pub struct Eval {
     pub stack_arg: Vec<Vec<Expression>>,
@@ -650,13 +651,21 @@ impl Eval {
                     call_function(self.lc.builder, func.llvm_value, function_argments, "");
                 self.wrap_llvm_value(func.return_type, llvm_value)
             }
-            // Object::BuildIn(build_in) => match build_in {
-            //     BuildIn::Print => {
-            //         let print_struct = BuildInPrint::new();
-            //         print_struct.print(&outer_arguments[0].clone().string());
-            //         Object::Null
-            //     }
-            // },
+            Object::BuildIn(build_in) => match build_in {
+                BuildIn::Printf => {
+                    let printf = self.lc.built_ins["printf"];
+                    let function_argments: Vec<*mut LLVMValue> = outer_arguments
+                    .into_iter()
+                    .map(|elem| {
+                        let mut object = self.eval_expression(elem, &mut outer_env.clone());
+                        self.unwrap_object(&mut object)
+                    }).collect();
+                    // let printf_args = vec![codegen_string(&mut self.lc, "hello world\n\r", "")];
+                    // call_function(self.lc.builder, printf, printf_args, "");
+                    call_function(self.lc.builder, printf, function_argments, "");
+                    Object::Null
+                }
+            },
             _ => maybe_func_obj,
         }
     }
