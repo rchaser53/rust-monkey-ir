@@ -17,8 +17,8 @@ use ir::creator::*;
 use ir::function::*;
 use ir::llvm_type::*;
 use ir::operate::*;
-use ir::validate::*;
 use ir::string::*;
+use ir::validate::*;
 
 pub struct Eval {
     pub stack_arg: Vec<Vec<Expression>>,
@@ -128,9 +128,9 @@ impl Eval {
                 }
             },
             Statement::While(expr, block) => {
-              self.eval_while_statement(expr, block, env);
-              None
-            },
+                self.eval_while_statement(expr, block, env);
+                None
+            }
             Statement::Assignment(ident, expr) => {
                 let obj = self.eval_assign_statement(ident, expr, env);
                 let _ = self.accumultae_error(obj);
@@ -193,7 +193,9 @@ impl Eval {
     pub fn eval_expression(&mut self, expr: Expression, env: &mut Environment) -> Object {
         match expr {
             Expression::IntegerLiteral(int, _location) => Object::Integer(llvm_integer!(int)),
-            Expression::StringLiteral(string, _location) => Object::String(codegen_string(&mut self.lc, &string, "")),
+            Expression::StringLiteral(string, _location) => {
+                Object::String(codegen_string(&mut self.lc, &string, ""))
+            }
             Expression::Boolean(boolean, _location) => Object::Boolean(llvm_bool!(boolean)),
             Expression::Prefix(prefix, expr, location) => {
                 self.eval_prefix(prefix, expr, env, location)
@@ -457,7 +459,7 @@ impl Eval {
         location: Location,
     ) -> Object {
         match right_object {
-            Object::String(right) => Object::String(left),        // TODO
+            Object::String(right) => Object::String(left), // TODO
             _ => Object::Error(format!(
                 "right value should be string, but actually {}. row: {}",
                 right_object, location.row,
@@ -684,11 +686,11 @@ impl Eval {
                 BuildIn::Printf => {
                     let printf = self.lc.built_ins["printf"];
                     let function_argments: Vec<*mut LLVMValue> = outer_arguments
-                    .into_iter()
-                    .map(|elem| {
-                        let mut object = self.eval_expression(elem, &mut outer_env.clone());
-                        self.unwrap_object(&mut object)
-                      }).collect();
+                        .into_iter()
+                        .map(|elem| {
+                            let mut object = self.eval_expression(elem, &mut outer_env.clone());
+                            self.unwrap_object(&mut object)
+                        }).collect();
 
                     call_function(self.lc.builder, printf, function_argments, "");
                     Object::Null

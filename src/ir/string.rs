@@ -12,7 +12,10 @@ use ir::scope::*;
 
 #[allow(dead_code)]
 pub fn const_string_in_context(context: *mut LLVMContext, input_str: String) -> *mut LLVMValue {
-    let temp_str = input_str + "\0";
+    let temp_str = input_str
+        .replace("\\n", "\u{0000A}")
+        .replace("\\r", "\u{000D}")
+        + "\0";
     let byte = temp_str.as_bytes();
     let length = byte.len() as u32;
     unsafe { LLVMConstStringInContext(context, byte.as_ptr() as *const _, length, 1) }
