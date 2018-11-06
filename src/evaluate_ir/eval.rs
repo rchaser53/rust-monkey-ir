@@ -145,8 +145,8 @@ impl Eval {
         block: BlockStatement,
         env: &mut Environment,
     ) -> Object {
-        let mut object = self.eval_expression(condition, &mut env.clone());
-        let llvm_value = self.unwrap_object(&mut object);
+        let mut object = self.eval_expression(condition.clone(), &mut env.clone());
+        let mut llvm_value = self.unwrap_object(&mut object);
 
         let current_function = self.function_stack.last();
         let loop_block = append_basic_block_in_context(self.lc.context, current_function, "");
@@ -156,6 +156,8 @@ impl Eval {
         build_position_at_end(self.lc.builder, loop_block);
         let return_obj = self.eval_program(block, env);
 
+        object = self.eval_expression(condition, &mut env.clone());
+        llvm_value = self.unwrap_object(&mut object);
         build_cond_br(self.lc.builder, llvm_value, end_block, loop_block);
         build_position_at_end(self.lc.builder, end_block);
 
