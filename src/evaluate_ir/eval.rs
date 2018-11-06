@@ -127,13 +127,39 @@ impl Eval {
                     None
                 }
             },
-            Statement::While(_expr, _block) => None,
+            Statement::While(expr, block) => {
+              self.eval_while_statement(expr, block, env);
+              None
+            },
             Statement::Assignment(ident, expr) => {
-                let obj = self.eval_assign_staement(ident, expr, env);
+                let obj = self.eval_assign_statement(ident, expr, env);
                 let _ = self.accumultae_error(obj);
                 None
             }
         }
+    }
+
+    pub fn eval_while_statement(
+        &mut self,
+        condition: Expression,
+        block: BlockStatement,
+        env: &mut Environment,
+    ) -> Object {
+        let mut object = self.eval_expression(condition, &mut env.clone());
+        let llvm_value = self.unwrap_object(&mut object);
+
+        let current_function = self.function_stack.last();
+        let loop_block = append_basic_block_in_context(self.lc.context, current_function, "");
+        let end_block = append_basic_block_in_context(self.lc.context, current_function, "");
+
+        build_cond_br(self.lc.builder, llvm_value, end_block, loop_block);
+        build_position_at_end(self.lc.builder, loop_block);
+        let return_obj = self.eval_program(block, env);
+
+        build_cond_br(self.lc.builder, llvm_value, end_block, loop_block);
+        build_position_at_end(self.lc.builder, end_block);
+
+        return_obj
     }
 
     pub fn eval_let_staement(
@@ -197,7 +223,7 @@ impl Eval {
         }
     }
 
-    pub fn eval_assign_staement(
+    pub fn eval_assign_statement(
         &mut self,
         ident: Identifier,
         expr: Expression,
