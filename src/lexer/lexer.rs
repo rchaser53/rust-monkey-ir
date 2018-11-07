@@ -234,6 +234,14 @@ impl<'a> Lexer<'a> {
                         ret_val = self.create_token_by_value(TokenType::Rparen, vec![byte]);
                         true
                     }
+                    b'[' => {
+                        ret_val = self.create_token_by_value(TokenType::Lbracket, vec![byte]);
+                        true
+                    }
+                    b']' => {
+                        ret_val = self.create_token_by_value(TokenType::Rbracket, vec![byte]);
+                        true
+                    }
                     b'!' => {
                         ret_val = self.consume_ban();
                         true
@@ -332,6 +340,22 @@ fn string() {
     );
     lexer_assert(lexer.next_token().unwrap(), TokenType::String, "abc");
     lexer_assert(lexer.next_token().unwrap(), TokenType::String, "def");
+}
+
+#[test]
+fn array() {
+    let mut lexer = Lexer::new(
+        r#"
+    [ 1, 2, 3 ]
+    "#,
+    );
+    lexer_assert(lexer.next_token().unwrap(), TokenType::Lbracket, "[");
+    lexer_assert(lexer.next_token().unwrap(), TokenType::Digit, "1");
+    lexer_assert(lexer.next_token().unwrap(), TokenType::Comma, ",");
+    lexer_assert(lexer.next_token().unwrap(), TokenType::Digit, "2");
+    lexer_assert(lexer.next_token().unwrap(), TokenType::Comma, ",");
+    lexer_assert(lexer.next_token().unwrap(), TokenType::Digit, "3");
+    lexer_assert(lexer.next_token().unwrap(), TokenType::Rbracket, "]");
 }
 
 #[test]

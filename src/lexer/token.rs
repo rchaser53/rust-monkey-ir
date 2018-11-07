@@ -13,10 +13,12 @@ pub enum TokenType {
 
     String,
 
-    Lparen, // (
-    Rparen, // )
-    Lbrace, // {
-    Rbrace, // }
+    Lparen,   // (
+    Rparen,   // )
+    Lbrace,   // {
+    Rbrace,   // }
+    Lbracket, // [
+    Rbracket, // ]
 
     // preserve word
     Fn,     // fn
