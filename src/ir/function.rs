@@ -74,8 +74,6 @@ pub fn get_named_function(module: *mut LLVMModule, name: &str) -> *mut LLVMValue
 #[test]
 fn call_printf() {
     let mut lc = LLVMCreator::new("test_module");
-    lc.setup_builtin();
-
     let main = setup_main(&mut lc);
     let printf = lc.built_ins["printf"];
     let printf_args = vec![codegen_string(&mut lc, "hello world\n\r", "")];
@@ -90,8 +88,6 @@ fn call_printf() {
 #[test]
 fn call_strcmp() {
     let mut lc = LLVMCreator::new("test_module");
-    lc.setup_builtin();
-
     let _main = setup_main(&mut lc);
     let strcmp = lc.built_ins["strcmp"];
     let printf = lc.built_ins["printf"];
