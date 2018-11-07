@@ -1,4 +1,5 @@
 use llvm_sys::*;
+use llvm_sys::core::*;
 
 use parser::expressions::*;
 use parser::parser::*;
@@ -197,6 +198,7 @@ impl Eval {
                 Object::String(codegen_string(&mut self.lc, &string, ""))
             }
             Expression::Boolean(boolean, _location) => Object::Boolean(llvm_bool!(boolean)),
+            Expression::Array(expression_type, elements) => self.eval_array(expression_type, elements, env),
             Expression::Prefix(prefix, expr, location) => {
                 self.eval_prefix(prefix, expr, env, location)
             }
@@ -225,6 +227,32 @@ impl Eval {
             }) => self.eval_call(function, arguments, env, location),
             _ => Object::Null,
         }
+    }
+
+    pub fn eval_array(
+      &mut self,
+      _expression_type: LLVMExpressionType,
+      elements: Vec<Expression>,
+      env: &mut Environment,
+    ) -> Object {
+      let mut object_vec = elements.into_iter().map(|element| {
+        match self.eval_expression(element, &mut env.clone()) {
+            Object::Integer(reference) => reference,
+            Object::Boolean(reference) => reference,
+            _ => 0 as *mut LLVMValue,
+        }
+      }).collect();
+
+      unsafe {
+        let llvm_array_type = LLVMArrayType(int32_type(), 2);
+        let llvm_array_value = LLVMConstArray(int32_type(), vec![
+          const_int(int32_type(), 12), const_int(int32_type(), 32)
+        ].as_mut_ptr(), 2);
+        let llvm_value = build_alloca(self.lc.builder, llvm_array_type, "");
+        build_store(self.lc.builder, llvm_array_value, llvm_value);
+      }
+
+      Object::Array(object_vec)
     }
 
     pub fn eval_assign_statement(

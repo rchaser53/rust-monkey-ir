@@ -12,6 +12,7 @@ pub enum Object {
     Integer(*mut LLVMValue),
     String(*mut LLVMValue),
     Boolean(*mut LLVMValue),
+    Array(Vec<*mut LLVMValue>),
     Function(Function),
     Null,
     Error(String),
@@ -38,6 +39,7 @@ impl fmt::Display for Object {
             Object::String(_) => write!(f, "{}", "TODO"),
             Object::Boolean(_) => write!(f, "{}", "TODO"),
             Object::Function(_) => write!(f, "{}", "TODO"),
+            Object::Array(_) => write!(f, "{}", "TODO"),
             Object::Null => write!(f, "Null"),
             Object::Error(string) => write!(f, "{}", string),
             Object::BuildIn(build_in) => match build_in {
