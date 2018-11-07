@@ -221,6 +221,7 @@ impl<'a> Parser<'a> {
                 TokenType::True | TokenType::False => self.parse_boolean(),
                 TokenType::If => self.parse_if_expression(),
                 TokenType::Fn => self.parse_function_literal(),
+                TokenType::Lbracket => self.parse_array(),
                 _ => {
                     self.no_prefix_parse_fn_error(token);
                     return None;
@@ -259,6 +260,42 @@ impl<'a> Parser<'a> {
         }
 
         left_exp
+    }
+
+    pub fn parse_array(&mut self) -> Option<Expression> {
+        let mut elements: Vec<Expression> = Vec::new();
+        let mut llvm_expression_type = LLVMExpressionType::Int;
+
+        if self.peek_token_is(TokenType::Rbracket) == true {
+            return Some(Expression::Array(llvm_expression_type, elements)); // TODO
+        }
+        self.next_token();
+
+        if let Some(expression) = self.parse_expression(Precedences::Lowest) {
+            llvm_expression_type = match expression.clone() {
+                Expression::IntegerLiteral(_, _) => LLVMExpressionType::Int,
+                Expression::StringLiteral(_, _) => LLVMExpressionType::String,
+                Expression::Boolean(_, _) => LLVMExpressionType::Boolean,
+                _ => LLVMExpressionType::Null,
+            };
+
+            elements.push(expression);
+        }
+
+        while self.peek_token_is(TokenType::Comma) {
+            self.next_token();
+            self.next_token();
+
+            if let Some(expression) = self.parse_expression(Precedences::Lowest) {
+                elements.push(expression);
+            }
+        }
+
+        if self.expect_peek(TokenType::Rbracket) == false {
+            panic!("parse error.");     // TODO
+        }
+
+        Some(Expression::Array(llvm_expression_type, elements))
     }
 
     pub fn parse_prefix_expression(&mut self) -> Option<Expression> {
@@ -685,7 +722,7 @@ fn parse_and_emit_error(input: &str, error_stack: Vec<&str>) {
 }
 
 #[test]
-fn test_let_statements() {
+fn let_statements() {
     let input = r#"
     let x = 5;
     let y = 10;
@@ -700,7 +737,7 @@ fn test_let_statements() {
 }
 
 #[test]
-fn test_return_statements() {
+fn return_statements() {
     let input = r#"
     return 5;
     return 10;
@@ -713,7 +750,7 @@ fn test_return_statements() {
 }
 
 #[test]
-fn test_while_statements() {
+fn while_statements() {
     let input = r#"
   while (true) {
     let i = i + 1;
@@ -724,7 +761,7 @@ fn test_while_statements() {
 }
 
 #[test]
-fn test_assign_statements() {
+fn assign_statements() {
     let input = r#"
     let x = 5;
     x = 10;
@@ -737,7 +774,7 @@ fn test_assign_statements() {
 }
 
 #[test]
-fn test_operator_precedence_parsing() {
+fn operator_precedence_parsing() {
     let input = r#"
   -a * b;
   !-a;
@@ -768,7 +805,7 @@ fn test_operator_precedence_parsing() {
 }
 
 #[test]
-fn test_if_else_parsing() {
+fn if_else_parsing() {
     let input = r#"
   if(a > b) {};
   if(a > b) { return 1; };
@@ -781,7 +818,7 @@ fn test_if_else_parsing() {
 }
 
 #[test]
-fn test_boolean_parsing() {
+fn boolean_parsing() {
     let input = r#"
   true;
   false;
@@ -796,7 +833,16 @@ fn test_boolean_parsing() {
 }
 
 #[test]
-fn test_funciton_parsing() {
+fn array_parsing() {
+    let input = r#"
+  [ 1, 2, 3];
+"#;
+    let program = parse_input(input);
+    statement_assert(&program[0], "[int: 3]");
+}
+
+#[test]
+fn funciton_parsing() {
     let input = r#"
   fn(): null {};
   fn(x: int): int {};
@@ -812,7 +858,7 @@ fn test_funciton_parsing() {
 }
 
 #[test]
-fn test_call_parsing() {
+fn call_parsing() {
     let input = r#"
   a + add(b * c) + d;
   add(a, b, 1, 2 * 3, 4 + 5, add(6, 7 * 8));
@@ -828,7 +874,7 @@ fn test_call_parsing() {
 }
 
 #[test]
-fn test_wrong_prefix() {
+fn wrong_prefix() {
     let input = r#"
 
     return > 3;

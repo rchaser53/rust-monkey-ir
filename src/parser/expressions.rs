@@ -10,6 +10,7 @@ pub enum Expression {
     IntegerLiteral(u64, Location),
     StringLiteral(String, Location),
     Boolean(bool, Location),
+    Array(LLVMExpressionType, Vec<Expression>),
     Prefix(Prefix, Box<Expression>, Location),
     Infix(Infix, Box<Expression>, Box<Expression>, Location),
     If {
@@ -79,6 +80,9 @@ impl Expression {
                 format!(r#""{}""#, literal.to_string())
             }
             Expression::Boolean(boolean, _location) => boolean.to_string(),
+            Expression::Array(llvm_type, elements) => {
+                format!("[{}: {}]", llvm_type, elements.len())
+            }
             Expression::Prefix(prefix, expr, _location) => format!("({}{})", prefix, expr.string()),
             Expression::Infix(infix, left, right, _location) => {
                 format!("({} {} {})", left.string(), infix, right.string())
