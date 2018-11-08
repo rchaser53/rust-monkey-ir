@@ -591,7 +591,7 @@ impl Eval {
 
     pub fn calculate_prefix_integer(&self, prefix: Prefix, value: *mut LLVMValue) -> Object {
         match prefix {
-            // Prefix::Minus => Object::Integer(-1 * value, const_int(int32_type(), -1 * value)),
+            Prefix::Minus => Object::Integer(const_neg(value)),
             Prefix::Minus => Object::Integer(value),
             Prefix::Plus => Object::Integer(value),
             Prefix::Bang => Object::Boolean(build_int_ult(

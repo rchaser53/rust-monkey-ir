@@ -15,3 +15,8 @@ pub fn const_int_signed(llvm_type: *mut LLVMType, value: u64) -> *mut LLVMValue 
 pub fn const_array(llvm_type: *mut LLVMType, mut value: Vec<*mut LLVMValue>) -> *mut LLVMValue {
     unsafe { LLVMConstArray(llvm_type, value.as_mut_ptr(), value.len() as u32) }
 }
+
+#[allow(dead_code)]
+pub fn const_neg(mut value: *mut LLVMValue) -> *mut LLVMValue {
+    unsafe { LLVMConstNeg(value) }
+}
