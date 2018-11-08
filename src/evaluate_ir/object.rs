@@ -12,7 +12,7 @@ pub enum Object {
     Integer(*mut LLVMValue),
     String(*mut LLVMValue),
     Boolean(*mut LLVMValue),
-    Array(Vec<*mut LLVMValue>),
+    Array(*mut LLVMValue),
     Function(Function),
     Null,
     Error(String),

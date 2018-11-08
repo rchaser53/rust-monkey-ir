@@ -1,5 +1,5 @@
-use llvm_sys::*;
 use llvm_sys::core::*;
+use llvm_sys::*;
 
 use parser::expressions::*;
 use parser::parser::*;
@@ -27,6 +27,34 @@ pub struct Eval {
     pub lc: LLVMCreator,
     pub main_block: *mut LLVMBasicBlock,
     pub function_stack: FunctionStack,
+}
+
+pub fn unwrap_object(object: &mut Object) -> *mut LLVMValue {
+    match *object {
+        Object::Integer(llvm_value) => llvm_value,
+        Object::String(llvm_value) => llvm_value,
+        Object::Boolean(llvm_value) => llvm_value,
+        Object::Function(ref func) => func.llvm_value,
+        _ => llvm_integer!(0),
+    }
+}
+
+pub fn wrap_llvm_value(expression_type: LLVMExpressionType, llvm_value: *mut LLVMValue) -> Object {
+    match expression_type {
+        LLVMExpressionType::Int => Object::Integer(llvm_value),
+        LLVMExpressionType::String => Object::Integer(llvm_value),
+        LLVMExpressionType::Boolean => Object::Boolean(llvm_value),
+        LLVMExpressionType::Null => Object::Null,
+    }
+}
+
+pub fn convert_llvm_type(expression_type: LLVMExpressionType) -> *mut LLVMType {
+    match expression_type {
+        LLVMExpressionType::Int => int32_type(),
+        LLVMExpressionType::String => int32_type(), // TODO
+        LLVMExpressionType::Boolean => int1_type(),
+        LLVMExpressionType::Null => int32_type(), // TODO
+    }
 }
 
 #[allow(dead_code)]
@@ -69,18 +97,8 @@ impl Eval {
     }
 
     pub fn build_llvm_return(&mut self, object: &mut Object) {
-        let llvm_value = self.unwrap_object(object);
+        let llvm_value = unwrap_object(object);
         build_ret(self.lc.builder, llvm_value);
-    }
-
-    pub fn unwrap_object(&mut self, object: &mut Object) -> *mut LLVMValue {
-        match *object {
-            Object::Integer(llvm_value) => llvm_value,
-            Object::String(llvm_value) => llvm_value,
-            Object::Boolean(llvm_value) => llvm_value,
-            Object::Function(ref func) => func.llvm_value,
-            _ => llvm_integer!(0),
-        }
     }
 
     pub fn eval_program(&mut self, program: Program, env: &mut Environment) -> Object {
@@ -147,7 +165,7 @@ impl Eval {
         env: &mut Environment,
     ) -> Object {
         let mut object = self.eval_expression(condition.clone(), &mut env.clone());
-        let mut llvm_value = self.unwrap_object(&mut object);
+        let mut llvm_value = unwrap_object(&mut object);
 
         let current_function = self.function_stack.last();
         let loop_block = append_basic_block_in_context(self.lc.context, current_function, "");
@@ -158,7 +176,7 @@ impl Eval {
         let return_obj = self.eval_program(block, env);
 
         object = self.eval_expression(condition, &mut env.clone());
-        llvm_value = self.unwrap_object(&mut object);
+        llvm_value = unwrap_object(&mut object);
         build_cond_br(self.lc.builder, llvm_value, end_block, loop_block);
         build_position_at_end(self.lc.builder, end_block);
 
@@ -198,7 +216,9 @@ impl Eval {
                 Object::String(codegen_string(&mut self.lc, &string, ""))
             }
             Expression::Boolean(boolean, _location) => Object::Boolean(llvm_bool!(boolean)),
-            Expression::Array(expression_type, elements) => self.eval_array(expression_type, elements, env),
+            Expression::Array(expression_type, elements) => {
+                self.eval_array(expression_type, elements, env)
+            }
             Expression::Prefix(prefix, expr, location) => {
                 self.eval_prefix(prefix, expr, env, location)
             }
@@ -230,29 +250,29 @@ impl Eval {
     }
 
     pub fn eval_array(
-      &mut self,
-      _expression_type: LLVMExpressionType,
-      elements: Vec<Expression>,
-      env: &mut Environment,
+        &mut self,
+        expression_type: LLVMExpressionType,
+        elements: Vec<Expression>,
+        env: &mut Environment,
     ) -> Object {
-      let mut object_vec = elements.into_iter().map(|element| {
-        match self.eval_expression(element, &mut env.clone()) {
-            Object::Integer(reference) => reference,
-            Object::Boolean(reference) => reference,
-            _ => 0 as *mut LLVMValue,
-        }
-      }).collect();
+        let elements_len = elements.len() as u32;
+        let object_vec = elements
+            .into_iter()
+            .map(
+                |element| match self.eval_expression(element, &mut env.clone()) {
+                    Object::Integer(reference) => reference,
+                    Object::Boolean(reference) => reference,
+                    _ => 0 as *mut LLVMValue,
+                },
+            ).collect();
+        let llvm_type = convert_llvm_type(expression_type);
+        let llvm_array_type = array_type(llvm_type, elements_len);
+        let llvm_array_value = const_array(llvm_type, object_vec);
 
-      unsafe {
-        let llvm_array_type = LLVMArrayType(int32_type(), 2);
-        let llvm_array_value = LLVMConstArray(int32_type(), vec![
-          const_int(int32_type(), 12), const_int(int32_type(), 32)
-        ].as_mut_ptr(), 2);
         let llvm_value = build_alloca(self.lc.builder, llvm_array_type, "");
         build_store(self.lc.builder, llvm_array_value, llvm_value);
-      }
 
-      Object::Array(object_vec)
+        Object::Array(llvm_value)
     }
 
     pub fn eval_assign_statement(
@@ -269,7 +289,7 @@ impl Eval {
         };
 
         let mut object = self.eval_expression(expr, &mut env.clone());
-        let llvm_value = self.unwrap_object(&mut object);
+        let llvm_value = unwrap_object(&mut object);
         build_store(self.lc.builder, llvm_value, llvm_value_ref);
         Object::Null
     }
@@ -458,7 +478,7 @@ impl Eval {
             Object::Boolean(right) => self.calculate_infix_boolean(infix, left, right, location),
             Object::Argument(func, _, index) => {
                 let right = get_param(func, index);
-                match self.wrap_llvm_value(expression_type_left.clone(), right) {
+                match wrap_llvm_value(expression_type_left.clone(), right) {
                     Object::Integer(_) => {
                         self.calculate_infix_integer(infix, left, right, location)
                     }
@@ -528,7 +548,7 @@ impl Eval {
         _location: Location,
     ) -> Option<Object> {
         let mut object = self.eval_expression(*condition, &mut env.clone());
-        let llvm_value = self.unwrap_object(&mut object);
+        let llvm_value = unwrap_object(&mut object);
 
         let current_function = self.function_stack.last();
         let if_block = append_basic_block_in_context(self.lc.context, current_function, "");
@@ -704,11 +724,11 @@ impl Eval {
                     .into_iter()
                     .map(|elem| {
                         let mut object = self.eval_expression(elem, &mut outer_env.clone());
-                        self.unwrap_object(&mut object)
+                        unwrap_object(&mut object)
                     }).collect();
                 let llvm_value =
                     call_function(self.lc.builder, func.llvm_value, function_argments, "");
-                self.wrap_llvm_value(func.return_type, llvm_value)
+                wrap_llvm_value(func.return_type, llvm_value)
             }
             Object::BuildIn(build_in) => match build_in {
                 BuildIn::Printf => {
@@ -717,7 +737,7 @@ impl Eval {
                         .into_iter()
                         .map(|elem| {
                             let mut object = self.eval_expression(elem, &mut outer_env.clone());
-                            self.unwrap_object(&mut object)
+                            unwrap_object(&mut object)
                         }).collect();
 
                     call_function(self.lc.builder, printf, function_argments, "");
@@ -725,19 +745,6 @@ impl Eval {
                 }
             },
             _ => maybe_func_obj,
-        }
-    }
-
-    pub fn wrap_llvm_value(
-        &mut self,
-        expression_type: LLVMExpressionType,
-        llvm_value: *mut LLVMValue,
-    ) -> Object {
-        match expression_type {
-            LLVMExpressionType::Int => Object::Integer(llvm_value),
-            LLVMExpressionType::String => Object::Integer(llvm_value),
-            LLVMExpressionType::Boolean => Object::Boolean(llvm_value),
-            LLVMExpressionType::Null => Object::Null,
         }
     }
 

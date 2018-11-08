@@ -292,7 +292,7 @@ impl<'a> Parser<'a> {
         }
 
         if self.expect_peek(TokenType::Rbracket) == false {
-            panic!("parse error.");     // TODO
+            panic!("parse error."); // TODO
         }
 
         Some(Expression::Array(llvm_expression_type, elements))
