@@ -14,9 +14,8 @@ pub enum Expression {
     Prefix(Prefix, Box<Expression>, Location),
     Infix(Infix, Box<Expression>, Box<Expression>, Location),
     If {
-        condition: Box<Expression>,
-        consequence: BlockStatement,
-        alternative: Option<BlockStatement>,
+        conditions: Vec<Expression>,
+        bodies: Vec<BlockStatement>,
         location: Location,
     },
     Function {
@@ -88,32 +87,36 @@ impl Expression {
                 format!("({} {} {})", left.string(), infix, right.string())
             }
             Expression::If {
-                condition,
-                consequence,
-                alternative,
+                conditions,
+                bodies,
                 location: _,
             } => {
-                let consequence_string = consequence
-                    .iter()
-                    .map(|s| s.string())
-                    .collect::<Vec<_>>()
-                    .join("\n");
+                for (index, condition) in conditions.into_iter().enumerate() {
 
-                if let Some(alt) = alternative {
-                    let alternative_string = alt
-                        .iter()
-                        .map(|s| s.string())
-                        .collect::<Vec<_>>()
-                        .join("\n");
-
-                    return format!(
-                        "if{} {{ {} }} else {{ {} }}",
-                        &condition.string(),
-                        consequence_string,
-                        alternative_string
-                    );
                 }
-                format!("if{} {{ {} }}", &condition.string(), consequence_string)
+
+                // let consequence_string = consequence
+                //     .iter()
+                //     .map(|s| s.string())
+                //     .collect::<Vec<_>>()
+                //     .join("\n");
+
+                // // if let Some(alt) = alternative {
+                // //     let alternative_string = alt
+                // //         .iter()
+                // //         .map(|s| s.string())
+                // //         .collect::<Vec<_>>()
+                // //         .join("\n");
+
+                // //     return format!(
+                // //         "if{} {{ {} }} else {{ {} }}",
+                // //         &condition.string(),
+                // //         consequence_string,
+                // //         alternative_string
+                // //     );
+                // // }
+                // format!("if{} {{ {} }}", &condition.string(), consequence_string)
+                format!("nyan")
             }
             Expression::Function {
                 parameters,

@@ -26,6 +26,7 @@ pub enum TokenType {
     False,  // false
     If,     // if
     Else,   // else
+    ElseIf, // elseif
     Let,    // let
     Return, // return
     While,  // while

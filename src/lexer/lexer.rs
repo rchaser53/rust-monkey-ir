@@ -29,6 +29,7 @@ impl<'a> Lexer<'a> {
             "true" => TokenType::True,
             "false" => TokenType::False,
             "if" => TokenType::If,
+            "elseif" => TokenType::ElseIf,
             "else" => TokenType::Else,
             "return" => TokenType::Return,
             "break" => TokenType::Break,

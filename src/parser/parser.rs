@@ -381,51 +381,65 @@ impl<'a> Parser<'a> {
     }
 
     pub fn parse_if_expression(&mut self) -> Option<Expression> {
+        let if_row = self.lexer.current_row;
         let mut condtions = Vec::new();
         let mut bodies = Vec::new();
-        if self.expect_peek(TokenType::Lparen) == false {
-            return None;
-        }
-        self.next_token();
+        let mut loop_flag = true;
+        while loop_flag {
+            if self.expect_peek(TokenType::Lparen) == false {
+                return None;
+            }
+            self.next_token();
 
-        if let Some(condition) = self.parse_expression(Precedences::Lowest) {
-            condtions.push(condition);
-            let if_row = self.lexer.current_row;
-            if self.expect_peek(TokenType::Rparen) == false {
+            if let Some(condition) = self.parse_expression(Precedences::Lowest) {
+                condtions.push(condition);
+            } else {
                 return None;
             }
 
+            if self.expect_peek(TokenType::Rparen) == false {
+                return None;
+            }
             if self.expect_peek(TokenType::Lbrace) == false {
                 return None;
             }
 
             if let Some(body) = self.parse_block_statement() {
                 bodies.push(body);
+            } else {
+                return None;
+            }
 
-                if self.peek_token_is(TokenType::Else) {
-                    condtions.push(Expression::Boolean(false, Location::new(if_row)));
-                    self.next_token();
-                    if self.expect_peek(TokenType::Lbrace) == false {
-                        return None;
-                    }
-
-                    if let Some(alt) = self.parse_block_statement() {
-                        bodies.push(alt);
-                    } else {
-                        bodies.push(Vec::new());
-                    }
-                } else {
-                    condtions.push(Expression::Boolean(false, Location::new(if_row)));
-                    bodies.push(Vec::new());
-                };
-
-                return Some(Expression::If {
-                    conditions: condtions,
-                    bodies: bodies,
-                    location: Location::new(if_row),
-                });
+            if self.peek_token_is(TokenType::ElseIf) {
+              self.next_token();
+            } else {
+              loop_flag = false;
             }
         }
+
+        if self.peek_token_is(TokenType::Else) {
+            self.next_token();
+            condtions.push(Expression::Boolean(false, Location::new(if_row)));
+            if self.expect_peek(TokenType::Lbrace) == false {
+                return None;
+            }
+
+            if let Some(alt) = self.parse_block_statement() {
+                bodies.push(alt);
+            } else {
+                bodies.push(Vec::new());
+            }
+        } else {
+            condtions.push(Expression::Boolean(false, Location::new(if_row)));
+            bodies.push(Vec::new());
+        };
+
+        return Some(Expression::If {
+            conditions: condtions,
+            bodies: bodies,
+            location: Location::new(if_row),
+        });
+
         None
     }
 
