@@ -128,12 +128,11 @@ impl Eval {
             }
             Statement::Expression(expr) => match expr {
                 Expression::If {
-                    condition,
-                    consequence,
-                    alternative,
+                    conditions,
+                    bodies,
                     location,
                 } => {
-                    let obj = self.eval_if(condition, consequence, alternative, env, location);
+                    let obj = self.eval_if(conditions, bodies, env, location);
                     if let Some(obj) = obj {
                         self.accumultae_error(obj)
                     } else {
@@ -541,32 +540,35 @@ impl Eval {
 
     pub fn eval_if(
         &mut self,
-        condition: Box<Expression>,
-        consequence: BlockStatement,
-        alternative: Option<BlockStatement>,
+        conditions: Vec<Expression>,
+        bodies: Vec<BlockStatement>,
         env: &mut Environment,
         _location: Location,
     ) -> Option<Object> {
-        let mut object = self.eval_expression(*condition, &mut env.clone());
-        let llvm_value = unwrap_object(&mut object);
-
         let current_function = self.function_stack.last();
-        let if_block = append_basic_block_in_context(self.lc.context, current_function, "");
-        let else_block = append_basic_block_in_context(self.lc.context, current_function, "");
-        let end_block = append_basic_block_in_context(self.lc.context, current_function, "");
 
-        build_cond_br(self.lc.builder, llvm_value, if_block, else_block);
-        build_position_at_end(self.lc.builder, if_block);
-        let mut return_obj = self.eval_program(consequence, env);
+        let mut return_obj = Object::Null;
+        let mut if_block = append_basic_block_in_context(self.lc.context, current_function, "");
+        let mut else_block = append_basic_block_in_context(self.lc.context, current_function, "");
 
-        build_br(self.lc.builder, end_block);
-        build_position_at_end(self.lc.builder, else_block);
-        if let Some(alt) = alternative {
-            return_obj = self.eval_program(alt, env);
+        let last_index = conditions.len() - 1;
+        for (index, condition) in conditions.into_iter().enumerate() {
+            let mut object = self.eval_expression(condition, &mut env.clone());
+            let llvm_bool = unwrap_object(&mut object);
+
+            build_cond_br(self.lc.builder, llvm_bool, if_block, else_block);
+            build_position_at_end(self.lc.builder, if_block);
+
+            return_obj = self.eval_program(bodies[index].clone(), env);
+            if_block = else_block;
+
+            if last_index != index {
+                else_block = append_basic_block_in_context(self.lc.context, current_function, "");
+            }
         }
 
-        build_br(self.lc.builder, end_block);
-        build_position_at_end(self.lc.builder, end_block);
+        build_br(self.lc.builder, else_block);
+        build_position_at_end(self.lc.builder, else_block);
 
         match return_obj {
             Object::Null => None,
