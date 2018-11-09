@@ -17,6 +17,6 @@ pub fn const_array(llvm_type: *mut LLVMType, mut value: Vec<*mut LLVMValue>) -> 
 }
 
 #[allow(dead_code)]
-pub fn const_neg(mut value: *mut LLVMValue) -> *mut LLVMValue {
+pub fn const_neg(value: *mut LLVMValue) -> *mut LLVMValue {
     unsafe { LLVMConstNeg(value) }
 }

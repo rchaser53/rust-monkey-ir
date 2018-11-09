@@ -614,6 +614,7 @@ impl Eval {
             Infix::Plus => Object::Integer(add_variable(self.lc.builder, left, right, "")),
             Infix::Minus => Object::Integer(sub_variable(self.lc.builder, left, right, "")),
             Infix::Multiply => Object::Integer(multiple_variable(self.lc.builder, left, right, "")),
+            Infix::Rem => Object::Integer(rem_variable(self.lc.builder, left, right, "")),
             Infix::Divide => Object::Integer(divide_variable(self.lc.builder, left, right, "")),
             Infix::Lt => Object::Boolean(build_int_ult(self.lc.builder, left, right, "")),
             Infix::Lte => Object::Boolean(build_int_ule(self.lc.builder, left, right, "")),
@@ -621,10 +622,6 @@ impl Eval {
             Infix::Gte => Object::Boolean(build_int_uge(self.lc.builder, left, right, "")),
             Infix::Eq => Object::Boolean(build_int_eq(self.lc.builder, left, right, "")),
             Infix::NotEq => Object::Boolean(build_int_ne(self.lc.builder, left, right, "")),
-            _ => Object::Error(format!(
-                "{} cannot be calculate for integer. row: {}",
-                infix, location.row
-            )),
         }
     }
 

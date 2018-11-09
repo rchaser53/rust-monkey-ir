@@ -67,6 +67,7 @@ pub fn create_function(
     (function, block)
 }
 
+#[allow(dead_code)]
 pub fn get_named_function(module: *mut LLVMModule, name: &str) -> *mut LLVMValue {
     unsafe { LLVMGetNamedFunction(module, c_string!(name).as_ptr()) }
 }

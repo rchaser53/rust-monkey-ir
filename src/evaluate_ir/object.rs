@@ -1,9 +1,6 @@
 use std::fmt;
 
-use evaluate_ir::environment::*;
-
 use parser::expressions::*;
-use parser::statements::*;
 
 use llvm_sys::*;
 

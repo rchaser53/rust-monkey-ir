@@ -42,6 +42,16 @@ pub fn multiple_variable(
 }
 
 #[allow(dead_code)]
+pub fn rem_variable(
+    builder: *mut LLVMBuilder,
+    var_a: *mut LLVMValue,
+    var_b: *mut LLVMValue,
+    name: &str,
+) -> *mut LLVMValue {
+    unsafe { LLVMBuildURem(builder, var_a, var_b, c_string!(name).as_ptr()) }
+}
+
+#[allow(dead_code)]
 pub fn divide_variable(
     builder: *mut LLVMBuilder,
     var_a: *mut LLVMValue,

@@ -238,6 +238,7 @@ impl<'a> Parser<'a> {
                     | TokenType::Minus
                     | TokenType::Divide
                     | TokenType::Multiply
+                    | TokenType::Rem
                     | TokenType::Eq
                     | TokenType::NotEq
                     | TokenType::Lt
@@ -335,6 +336,7 @@ impl<'a> Parser<'a> {
             TokenType::Minus => Some(Infix::Minus),
             TokenType::Divide => Some(Infix::Divide),
             TokenType::Multiply => Some(Infix::Multiply),
+            TokenType::Rem => Some(Infix::Rem),
             TokenType::Eq => Some(Infix::Eq),
             TokenType::NotEq => Some(Infix::NotEq),
             TokenType::Gte => Some(Infix::Gte),

@@ -19,6 +19,7 @@ lazy_static! {
     m.insert(TokenType::Minus, Precedences::Sum);
 
     // *, /
+    m.insert(TokenType::Rem, Precedences::Product);
     m.insert(TokenType::Multiply, Precedences::Product);
     m.insert(TokenType::Divide, Precedences::Product);
 

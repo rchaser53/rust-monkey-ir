@@ -250,6 +250,10 @@ impl<'a> Lexer<'a> {
                         ret_val = self.create_token_by_value(TokenType::Multiply, vec![byte]);
                         true
                     }
+                    b'%' => {
+                        ret_val = self.create_token_by_value(TokenType::Rem, vec![byte]);
+                        true
+                    }
                     b'+' => {
                         ret_val = self.create_token_by_value(TokenType::Plus, vec![byte]);
                         true
