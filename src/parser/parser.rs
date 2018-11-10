@@ -419,7 +419,7 @@ impl<'a> Parser<'a> {
 
         if self.peek_token_is(TokenType::Else) {
             self.next_token();
-            condtions.push(Expression::Boolean(false, Location::new(if_row)));
+            condtions.push(Expression::Boolean(true, Location::new(if_row)));
             if self.expect_peek(TokenType::Lbrace) == false {
                 return None;
             }
