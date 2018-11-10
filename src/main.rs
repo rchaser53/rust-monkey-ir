@@ -64,6 +64,7 @@ fn main() {
 
             println!("{:?}", result_value);
             eval.dump_llvm();
+            eval.emit_llvm("test.ll");
         }
         Err(error) => {
             panic!("{}", error);

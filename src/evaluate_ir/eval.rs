@@ -85,6 +85,10 @@ impl Eval {
         validate_module(self.lc.module);
     }
 
+    pub fn emit_llvm(&mut self, file_name: &str) {
+        self.lc.emit_file(file_name);
+    }
+
     pub fn entry_eval_program(&mut self, program: Program, env: &mut Environment) -> Object {
         for statement in program.into_iter() {
             if let Some(mut obj) = self.eval_statement(statement, env) {
