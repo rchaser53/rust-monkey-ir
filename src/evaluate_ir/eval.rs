@@ -174,13 +174,13 @@ impl Eval {
         let loop_block = append_basic_block_in_context(self.lc.context, current_function, "");
         let end_block = append_basic_block_in_context(self.lc.context, current_function, "");
 
-        build_cond_br(self.lc.builder, llvm_value, end_block, loop_block);
+        build_cond_br(self.lc.builder, llvm_value, loop_block, end_block);
         build_position_at_end(self.lc.builder, loop_block);
         let return_obj = self.eval_program(block, env);
 
         object = self.eval_expression(condition, &mut env.clone());
         llvm_value = unwrap_object(&mut object);
-        build_cond_br(self.lc.builder, llvm_value, end_block, loop_block);
+        build_cond_br(self.lc.builder, llvm_value, loop_block, end_block);
         build_position_at_end(self.lc.builder, end_block);
 
         return_obj
