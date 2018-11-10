@@ -1,8 +1,6 @@
-use llvm_sys::core::*;
 use llvm_sys::*;
 
 use parser::expressions::*;
-use parser::parser::*;
 use parser::statements::*;
 
 use evaluate_ir::environment::*;
@@ -45,15 +43,6 @@ pub fn wrap_llvm_value(expression_type: LLVMExpressionType, llvm_value: *mut LLV
         LLVMExpressionType::String => Object::Integer(llvm_value),
         LLVMExpressionType::Boolean => Object::Boolean(llvm_value),
         LLVMExpressionType::Null => Object::Null,
-    }
-}
-
-pub fn convert_llvm_type(expression_type: LLVMExpressionType) -> *mut LLVMType {
-    match expression_type {
-        LLVMExpressionType::Int => int32_type(),
-        LLVMExpressionType::String => int32_type(), // TODO
-        LLVMExpressionType::Boolean => int1_type(),
-        LLVMExpressionType::Null => int32_type(), // TODO
     }
 }
 
@@ -330,7 +319,7 @@ impl Eval {
         block: BlockStatement,
         return_type: LLVMExpressionType,
         env: &mut Environment,
-        location: Location,
+        _location: Location,
     ) -> Object {
         let mut converted: Vec<*mut LLVMType> = parameter_types
             .clone()
@@ -514,7 +503,7 @@ impl Eval {
         location: Location,
     ) -> Object {
         match right_object {
-            Object::String(right) => Object::String(left), // TODO
+            Object::String(_) => Object::String(left), // TODO
             _ => Object::Error(format!(
                 "right value should be string, but actually {}. row: {}",
                 right_object, location.row,
@@ -559,17 +548,26 @@ impl Eval {
         let mut condition_blocks = Vec::new();
         let mut return_obj = Object::Null;
 
-        let booleans: Vec<*mut LLVMValue> = conditions.into_iter().map(|condition| {
-            let mut object = self.eval_expression(condition, &mut env.clone());
-            unwrap_object(&mut object)
-        }).collect();
+        let booleans: Vec<*mut LLVMValue> = conditions
+            .into_iter()
+            .map(|condition| {
+                let mut object = self.eval_expression(condition, &mut env.clone());
+                unwrap_object(&mut object)
+            }).collect();
 
         for _ in 0..last_index {
-          condition_blocks.push(append_basic_block_in_context(self.lc.context, current_function, ""));
-          blocks.push(append_basic_block_in_context(self.lc.context, current_function, ""));
+            condition_blocks.push(append_basic_block_in_context(
+                self.lc.context,
+                current_function,
+                "",
+            ));
+            blocks.push(append_basic_block_in_context(
+                self.lc.context,
+                current_function,
+                "",
+            ));
         }
         let end_block = append_basic_block_in_context(self.lc.context, current_function, "");
-
 
         for (index, condition_block) in condition_blocks.into_iter().enumerate() {
             let block = blocks[index];
@@ -609,7 +607,6 @@ impl Eval {
     pub fn calculate_prefix_integer(&self, prefix: Prefix, value: *mut LLVMValue) -> Object {
         match prefix {
             Prefix::Minus => Object::Integer(const_neg(value)),
-            Prefix::Minus => Object::Integer(value),
             Prefix::Plus => Object::Integer(value),
             Prefix::Bang => Object::Boolean(build_int_ult(
                 self.lc.builder,
@@ -625,7 +622,7 @@ impl Eval {
         infix: Infix,
         left: *mut LLVMValue,
         right: *mut LLVMValue,
-        location: Location,
+        _location: Location,
     ) -> Object {
         match infix {
             Infix::Plus => Object::Integer(add_variable(self.lc.builder, left, right, "")),

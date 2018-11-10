@@ -25,11 +25,6 @@ pub enum Expression {
         return_type: LLVMExpressionType,
         location: Location,
     },
-    While {
-        condition: Box<Expression>,
-        body: BlockStatement,
-        location: Location,
-    },
     Call(Call),
 }
 
@@ -91,28 +86,32 @@ impl Expression {
                 bodies,
                 location: _,
             } => {
-                let mut condition_strings = conditions
-                    .iter()
-                    .map(|s| s.string())
-                    .collect::<Vec<_>>();
+                let mut condition_strings =
+                    conditions.iter().map(|s| s.string()).collect::<Vec<_>>();
 
                 let body_strings = bodies.iter().fold(Vec::new(), |mut stack, body| {
-                  let body_string = body
+                    let body_string = body
                         .iter()
                         .map(|s| s.string())
                         .collect::<Vec<_>>()
                         .join("\n");
-                  stack.push(body_string);
-                  stack
+                    stack.push(body_string);
+                    stack
                 });
 
                 let mut ret_string = String::new();
                 for (index, condition_string) in condition_strings.iter().enumerate() {
-                  if index == 0 {
-                    ret_string.push_str(&format!("if({}) {{ {} }} ", condition_string, body_strings[index]));
-                  } else {
-                    ret_string.push_str(&format!("elseif({}) {{ {} }}", condition_string, body_strings[index]));
-                  }
+                    if index == 0 {
+                        ret_string.push_str(&format!(
+                            "if({}) {{ {} }} ",
+                            condition_string, body_strings[index]
+                        ));
+                    } else {
+                        ret_string.push_str(&format!(
+                            "elseif({}) {{ {} }}",
+                            condition_string, body_strings[index]
+                        ));
+                    }
                 }
 
                 format!("{}", ret_string)
@@ -154,21 +153,6 @@ impl Expression {
                 }
 
                 format!("{}({})", call.function.string(), ret_string)
-            }
-            Expression::While {
-                condition,
-                body,
-                location: _,
-            } => {
-                let mut ret_string = String::new();
-                for (index, statement) in body.iter().enumerate() {
-                    if index == 0 {
-                        ret_string.push_str(&format!("{}", statement.string()));
-                    } else {
-                        ret_string.push_str(&format!(" {}", statement.string()));
-                    }
-                }
-                format!("while({}) {{ {} }}", &condition.string(), ret_string)
             }
         }
     }

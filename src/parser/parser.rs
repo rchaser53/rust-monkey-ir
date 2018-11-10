@@ -411,9 +411,9 @@ impl<'a> Parser<'a> {
             }
 
             if self.peek_token_is(TokenType::ElseIf) {
-              self.next_token();
+                self.next_token();
             } else {
-              loop_flag = false;
+                loop_flag = false;
             }
         }
 
@@ -439,8 +439,6 @@ impl<'a> Parser<'a> {
             bodies: bodies,
             location: Location::new(if_row),
         });
-
-        None
     }
 
     pub fn parse_grouped_expression(&mut self) -> Option<Expression> {
@@ -841,7 +839,10 @@ fn if_else_parsing() {
     let program = parse_input(input);
     statement_assert(&program[0], "if((a > b)) {  } elseif(false) {  }");
     statement_assert(&program[1], "if((a > b)) { return 1 } elseif(false) {  }");
-    statement_assert(&program[2], "if((a > b)) { return 1 } elseif(true) { return 0 }");
+    statement_assert(
+        &program[2],
+        "if((a > b)) { return 1 } elseif(true) { return 0 }",
+    );
 }
 
 #[test]
