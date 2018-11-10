@@ -91,32 +91,31 @@ impl Expression {
                 bodies,
                 location: _,
             } => {
-                for (index, condition) in conditions.into_iter().enumerate() {
+                let mut condition_strings = conditions
+                    .iter()
+                    .map(|s| s.string())
+                    .collect::<Vec<_>>();
 
+                let body_strings = bodies.iter().fold(Vec::new(), |mut stack, body| {
+                  let body_string = body
+                        .iter()
+                        .map(|s| s.string())
+                        .collect::<Vec<_>>()
+                        .join("\n");
+                  stack.push(body_string);
+                  stack
+                });
+
+                let mut ret_string = String::new();
+                for (index, condition_string) in condition_strings.iter().enumerate() {
+                  if index == 0 {
+                    ret_string.push_str(&format!("if({}) {{ {} }} ", condition_string, body_strings[index]));
+                  } else {
+                    ret_string.push_str(&format!("elseif({}) {{ {} }}", condition_string, body_strings[index]));
+                  }
                 }
 
-                // let consequence_string = consequence
-                //     .iter()
-                //     .map(|s| s.string())
-                //     .collect::<Vec<_>>()
-                //     .join("\n");
-
-                // // if let Some(alt) = alternative {
-                // //     let alternative_string = alt
-                // //         .iter()
-                // //         .map(|s| s.string())
-                // //         .collect::<Vec<_>>()
-                // //         .join("\n");
-
-                // //     return format!(
-                // //         "if{} {{ {} }} else {{ {} }}",
-                // //         &condition.string(),
-                // //         consequence_string,
-                // //         alternative_string
-                // //     );
-                // // }
-                // format!("if{} {{ {} }}", &condition.string(), consequence_string)
-                format!("nyan")
+                format!("{}", ret_string)
             }
             Expression::Function {
                 parameters,

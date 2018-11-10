@@ -839,9 +839,9 @@ fn if_else_parsing() {
   if(a > b) { return 1; } else { return 0; };
 "#;
     let program = parse_input(input);
-    statement_assert(&program[0], "if(a > b) {  }");
-    statement_assert(&program[1], "if(a > b) { return 1 }");
-    statement_assert(&program[2], "if(a > b) { return 1 } else { return 0 }");
+    statement_assert(&program[0], "if((a > b)) {  } elseif(false) {  }");
+    statement_assert(&program[1], "if((a > b)) { return 1 } elseif(false) {  }");
+    statement_assert(&program[2], "if((a > b)) { return 1 } elseif(true) { return 0 }");
 }
 
 #[test]
