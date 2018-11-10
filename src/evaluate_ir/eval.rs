@@ -377,6 +377,10 @@ impl Eval {
             Object::Boolean(llvm_val_ref) => {
                 Object::Boolean(build_load(self.lc.builder, llvm_val_ref, ""))
             }
+            Object::Argument(func, expression_type, index) => {
+                let llvm_value = get_param(func, index);
+                wrap_llvm_value(expression_type, llvm_value)
+            }
             _ => obj,
         }
     }
