@@ -27,25 +27,6 @@ pub struct Eval {
     pub function_stack: FunctionStack,
 }
 
-pub fn unwrap_object(object: &mut Object) -> *mut LLVMValue {
-    match *object {
-        Object::Integer(llvm_value) => llvm_value,
-        Object::String(llvm_value) => llvm_value,
-        Object::Boolean(llvm_value) => llvm_value,
-        Object::Function(ref func) => func.llvm_value,
-        _ => llvm_integer!(0),
-    }
-}
-
-pub fn wrap_llvm_value(expression_type: LLVMExpressionType, llvm_value: *mut LLVMValue) -> Object {
-    match expression_type {
-        LLVMExpressionType::Int => Object::Integer(llvm_value),
-        LLVMExpressionType::String => Object::Integer(llvm_value),
-        LLVMExpressionType::Boolean => Object::Boolean(llvm_value),
-        LLVMExpressionType::Null => Object::Null,
-    }
-}
-
 #[allow(dead_code)]
 impl Eval {
     pub fn new() -> Self {

@@ -165,14 +165,40 @@ impl<'a> Parser<'a> {
         None
     }
 
-    pub fn parse_identifier(&self) -> Option<Expression> {
-        if let Some(token) = &self.cur_token {
+    pub fn parse_identifier(&mut self) -> Option<Expression> {
+        if let Some(token) = self.cur_token.clone() {
+            if self.peek_token_is(TokenType::Lbracket) {
+                return self.parse_array_child(token);
+            }
+
             return Some(Expression::Identifier(
                 Identifier(token.value.to_owned()),
                 Location::new(self.lexer.current_row),
             ));
         }
         None
+    }
+
+    pub fn parse_array_child(&mut self, token: Token) -> Option<Expression> {
+        self.next_token();
+        if let Some(index_expression) = self.parse_expression(Precedences::Lowest) {
+            self.next_token();
+            if self.peek_token_is(TokenType::Rbracket) == false {
+                return None;
+            }
+
+            while self.peek_token_is(TokenType::Semicolon) {
+                self.next_token();
+            }
+
+            return Some(Expression::ArrayChild(
+                Identifier(token.value.to_owned()),
+                Box::new(index_expression),
+                Location::new(self.lexer.current_row),
+            ));
+        } else {
+            return None;
+        }
     }
 
     pub fn parse_integer_literal(&mut self) -> Option<Expression> {
@@ -649,7 +675,7 @@ impl<'a> Parser<'a> {
         false
     }
 
-    pub fn peek_token_is(&self, token_type: TokenType) -> bool {
+    pub fn peek_token_is(&mut self, token_type: TokenType) -> bool {
         if let Some(token) = &self.peek_token {
             return token.kind == token_type;
         }
