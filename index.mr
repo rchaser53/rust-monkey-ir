@@ -1,3 +1,21 @@
+let i = 1;
 
-print("asfs");
-return 3 - 3;
+let fizzbuzz = fn(input: int): int {
+  if (input % 15 == 0) {
+    printf("Fizz Buzz\n");
+  } elseif (input % 5 == 0) {
+    printf("Buzz\n");
+  } elseif (input % 3 == 0) {
+    printf("Fizz\n");
+  } else {
+    printf("%d\n", input);
+  }
+  return 0;
+};
+
+while (i <= 100) {
+  fizzbuzz(i);
+  i = i + 1;
+}
+
+return 1;
