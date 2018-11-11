@@ -5,6 +5,16 @@ use parser::expressions::*;
 use parser::precedence::*;
 use parser::statements::*;
 
+pub fn get_expression_llvm_type(expression: &Expression) -> LLVMExpressionType {
+    match expression.clone() {
+        Expression::IntegerLiteral(_, _) => LLVMExpressionType::Int,
+        Expression::StringLiteral(_, _) => LLVMExpressionType::String,
+        Expression::Boolean(_, _) => LLVMExpressionType::Boolean,
+        Expression::Array(expression_type, elements) => LLVMExpressionType::Array(Box::new(expression_type), elements.len() as u32),
+        _ => LLVMExpressionType::Null,
+    }
+}
+
 pub struct Parser<'a> {
     pub lexer: &'a mut Lexer<'a>,
     pub cur_token: Option<Token>,
@@ -75,17 +85,19 @@ impl<'a> Parser<'a> {
             }
 
             self.next_token();
-            let value = if let Some(value) = self.parse_expression(Precedences::Lowest) {
+            let expression = if let Some(value) = self.parse_expression(Precedences::Lowest) {
                 value
             } else {
                 return None;
             };
 
+            let llvm_expression_type = get_expression_llvm_type(&expression);
+
             while self.peek_token_is(TokenType::Semicolon) {
                 self.next_token();
             }
 
-            return Some(Statement::Let(name, value));
+            return Some(Statement::Let(name, llvm_expression_type, expression));
         }
         None
     }
@@ -182,8 +194,7 @@ impl<'a> Parser<'a> {
     pub fn parse_array_child(&mut self, token: Token) -> Option<Expression> {
         self.next_token();
         if let Some(index_expression) = self.parse_expression(Precedences::Lowest) {
-            self.next_token();
-            if self.peek_token_is(TokenType::Rbracket) == false {
+            if self.cur_token_is(TokenType::Rbracket) == false {
                 return None;
             }
 
@@ -299,12 +310,7 @@ impl<'a> Parser<'a> {
         self.next_token();
 
         if let Some(expression) = self.parse_expression(Precedences::Lowest) {
-            llvm_expression_type = match expression.clone() {
-                Expression::IntegerLiteral(_, _) => LLVMExpressionType::Int,
-                Expression::StringLiteral(_, _) => LLVMExpressionType::String,
-                Expression::Boolean(_, _) => LLVMExpressionType::Boolean,
-                _ => LLVMExpressionType::Null,
-            };
+            llvm_expression_type = get_expression_llvm_type(&expression);
 
             elements.push(expression);
         }

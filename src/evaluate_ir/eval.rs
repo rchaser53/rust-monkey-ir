@@ -91,8 +91,8 @@ impl Eval {
         env: &mut Environment,
     ) -> Option<Object> {
         match statement {
-            Statement::Let(ident, expr) => {
-                let obj = self.eval_let_staement(ident, expr, env);
+            Statement::Let(ident, expr_type, expr) => {
+                let obj = self.eval_let_staement(ident, expr_type, expr, env);
                 let _ = self.accumultae_error(obj);
                 None
             }
@@ -159,20 +159,21 @@ impl Eval {
     pub fn eval_let_staement(
         &mut self,
         ident: Identifier,
+        expr_type: LLVMExpressionType,
         expr: Expression,
         env: &mut Environment,
     ) -> Object {
-        let value = self.eval_expression(expr, env);
-        let llvm_type = self.get_llvm_type(&value);
-        let llvm_value = self.get_llvm_value(&value);
+        let mut object = self.eval_expression(expr, env);
+        let llvm_type = convert_llvm_type(expr_type);
+        let llvm_value = unwrap_object(&mut object);
 
         let llvm_value_ref = build_alloca(self.lc.builder, llvm_type, &ident.0);
         build_store(self.lc.builder, llvm_value, llvm_value_ref);
 
-        let obj = match value {
+        let obj = match object {
             Object::Integer(_) => Object::Integer(llvm_value_ref),
             Object::Boolean(_) => Object::Boolean(llvm_value_ref),
-            _ => value,
+            _ => object,
         };
 
         env.set(ident.0, obj)
@@ -242,10 +243,9 @@ impl Eval {
         let llvm_array_type = array_type(llvm_type, elements_len);
         let llvm_array_value = const_array(llvm_type, object_vec);
 
-        let llvm_value = build_alloca(self.lc.builder, llvm_array_type, "");
-        build_store(self.lc.builder, llvm_array_value, llvm_value);
+        Object::Array(llvm_array_value)
+    }
 
-        Object::Array(llvm_value)
     }
 
     pub fn eval_assign_statement(
@@ -274,22 +274,6 @@ impl Eval {
                 None
             }
             _ => Some(obj),
-        }
-    }
-
-    pub fn get_llvm_type(&self, obj: &Object) -> *mut LLVMType {
-        match *obj {
-            Object::Integer(_) => int32_type(),
-            Object::Boolean(_) => int1_type(),
-            _ => int32_type(),
-        }
-    }
-
-    pub fn get_llvm_value(&self, obj: &Object) -> *mut LLVMValue {
-        match *obj {
-            Object::Integer(value) => value,
-            Object::Boolean(value) => value,
-            _ => const_int(int32_type(), 1),
         }
     }
 
@@ -346,6 +330,9 @@ impl Eval {
             }
             Object::Boolean(llvm_val_ref) => {
                 Object::Boolean(build_load(self.lc.builder, llvm_val_ref, ""))
+            }
+            Object::Array(llvm_val_ref) => {
+                Object::Array(build_load(self.lc.builder, llvm_val_ref, ""))
             }
             Object::Argument(func, expression_type, index) => {
                 let llvm_value = get_param(func, index);

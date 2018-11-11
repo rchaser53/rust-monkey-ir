@@ -53,7 +53,7 @@ impl fmt::Display for Infix {
 
 #[derive(PartialEq, Clone, Debug)]
 pub enum Statement {
-    Let(Identifier, Expression),
+    Let(Identifier, LLVMExpressionType, Expression),
     Return(Expression),
     Expression(Expression),
     While(Expression, BlockStatement),
@@ -67,7 +67,7 @@ impl Statement {
     #[allow(dead_code)]
     pub fn emit_debug_info(&self) -> String {
         match self {
-            Statement::Let(Identifier(ref string), expr) => write_string!(format!(
+            Statement::Let(Identifier(ref string), _, expr) => write_string!(format!(
                 "[ identifiy: {}, expression: {} ]",
                 string,
                 expr.string()
@@ -101,7 +101,7 @@ impl Statement {
 
     pub fn string(&self) -> String {
         match self {
-            Statement::Let(Identifier(ref string), expr) => {
+            Statement::Let(Identifier(ref string), _, expr) => {
                 format!("let {} = {}", string, &expr.string())
             }
             Statement::Return(expr) => ("return ".to_owned() + &expr.string()).to_string(),
