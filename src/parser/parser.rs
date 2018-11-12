@@ -10,7 +10,9 @@ pub fn get_expression_llvm_type(expression: &Expression) -> LLVMExpressionType {
         Expression::IntegerLiteral(_, _) => LLVMExpressionType::Int,
         Expression::StringLiteral(_, _) => LLVMExpressionType::String,
         Expression::Boolean(_, _) => LLVMExpressionType::Boolean,
-        Expression::Array(expression_type, elements) => LLVMExpressionType::Array(Box::new(expression_type), elements.len() as u32),
+        Expression::Array(expression_type, elements) => {
+            LLVMExpressionType::Array(Box::new(expression_type), elements.len() as u32)
+        }
         _ => LLVMExpressionType::Null,
     }
 }

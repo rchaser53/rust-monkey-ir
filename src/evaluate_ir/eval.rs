@@ -170,13 +170,9 @@ impl Eval {
         let llvm_value_ref = build_alloca(self.lc.builder, llvm_type, &ident.0);
         build_store(self.lc.builder, llvm_value, llvm_value_ref);
 
-        let obj = match object {
-            Object::Integer(_) => Object::Integer(llvm_value_ref),
-            Object::Boolean(_) => Object::Boolean(llvm_value_ref),
-            _ => object,
-        };
+        let rewraped_object = rewrap_llvm_value_ref(object, llvm_value_ref);
 
-        env.set(ident.0, obj)
+        env.set(ident.0, rewraped_object)
     }
 
     pub fn eval_return_statement(&mut self, expr: Expression, env: &mut Environment) -> Object {
@@ -192,6 +188,9 @@ impl Eval {
             Expression::Boolean(boolean, _location) => Object::Boolean(llvm_bool!(boolean)),
             Expression::Array(expression_type, elements) => {
                 self.eval_array(expression_type, elements, env)
+            }
+            Expression::ArrayChild(ident, index_expression, location) => {
+                self.eval_array_child(ident, *index_expression, env, location)
             }
             Expression::Prefix(prefix, expr, location) => {
                 self.eval_prefix(prefix, expr, env, location)
@@ -246,6 +245,28 @@ impl Eval {
         Object::Array(llvm_array_value)
     }
 
+    pub fn eval_array_child(
+        &mut self,
+        ident: Identifier,
+        expr: Expression,
+        env: &mut Environment,
+        location: Location,
+    ) -> Object {
+        let mut base_array_object = self.eval_identifier(ident, env, location);
+        // let array_llvm_value = unwrap_object(&mut base_array_object);
+        // let mut index_object = self.eval_expression(expr, env);
+        // let index_llvm_value = unwrap_object(&mut index_object);
+
+        // let child_llvm = build_gep(self.lc.builder,
+        //           array_llvm_value,
+        //           vec![
+        //             const_int(int32_type(), 0),
+        //             const_int(int32_type(), 0),
+        //           ],
+        //           "");
+
+        // base_array_object
+        Object::Null
     }
 
     pub fn eval_assign_statement(
