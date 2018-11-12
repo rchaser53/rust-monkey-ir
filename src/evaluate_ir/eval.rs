@@ -252,18 +252,20 @@ impl Eval {
         env: &mut Environment,
         location: Location,
     ) -> Object {
-        let mut base_array_object = self.eval_identifier(ident, env, location);
-        // let array_llvm_value = unwrap_object(&mut base_array_object);
-        // let mut index_object = self.eval_expression(expr, env);
-        // let index_llvm_value = unwrap_object(&mut index_object);
+        // need to get llvm_value_reference.
+        // so access directly
+        let mut obj = env.get(&ident.0, location);
+        let array_llvm_value = unwrap_object(&mut obj);
 
-        // let child_llvm = build_gep(self.lc.builder,
-        //           array_llvm_value,
-        //           vec![
-        //             const_int(int32_type(), 0),
-        //             const_int(int32_type(), 0),
-        //           ],
-        //           "");
+        let mut index_object = self.eval_expression(expr, env);
+        let index_llvm_value = unwrap_object(&mut index_object);
+
+        build_gep(
+            self.lc.builder,
+            array_llvm_value,
+            vec![const_int(int32_type(), 0), index_llvm_value],
+            "",
+        );
 
         // base_array_object
         Object::Null
