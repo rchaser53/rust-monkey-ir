@@ -182,9 +182,10 @@ impl Eval {
     pub fn eval_expression(&mut self, expr: Expression, env: &mut Environment) -> Object {
         match expr {
             Expression::IntegerLiteral(int, _location) => Object::Integer(llvm_integer!(int)),
-            Expression::StringLiteral(string, _location) => {
-                Object::String(codegen_string(&mut self.lc, &string, ""))
-            }
+            Expression::StringLiteral(string, _location) => Object::String(
+                LLVMExpressionType::Array(Box::new(LLVMExpressionType::Int), string.len() as u32),
+                codegen_string(&mut self.lc, &string, ""),
+            ),
             Expression::Boolean(boolean, _location) => Object::Boolean(llvm_bool!(boolean)),
             Expression::Array(expression_type, elements) => {
                 self.eval_array(expression_type, elements, env)
@@ -238,11 +239,10 @@ impl Eval {
                     _ => 0 as *mut LLVMValue,
                 },
             ).collect();
-        let llvm_type = convert_llvm_type(expression_type);
-        let llvm_array_type = array_type(llvm_type, elements_len);
+        let llvm_type = convert_llvm_type(expression_type.clone());
         let llvm_array_value = const_array(llvm_type, object_vec);
 
-        Object::Array(llvm_array_value)
+        Object::Array(expression_type, llvm_array_value)
     }
 
     pub fn eval_array_child(
@@ -255,20 +255,26 @@ impl Eval {
         // need to get llvm_value_reference.
         // so access directly
         let mut obj = env.get(&ident.0, location);
+        let child_expression_type = match obj.clone() {
+            Object::Array(child_expression_type, _) => child_expression_type,
+            _ => LLVMExpressionType::Null,
+        };
         let array_llvm_value = unwrap_object(&mut obj);
 
         let mut index_object = self.eval_expression(expr, env);
         let index_llvm_value = unwrap_object(&mut index_object);
 
-        build_gep(
+        let llvm_child_value = build_gep(
             self.lc.builder,
             array_llvm_value,
             vec![const_int(int32_type(), 0), index_llvm_value],
             "",
         );
 
-        // base_array_object
-        Object::Null
+        wrap_llvm_value(
+            child_expression_type,
+            build_load(self.lc.builder, llvm_child_value, ""),
+        )
     }
 
     pub fn eval_assign_statement(
@@ -323,7 +329,7 @@ impl Eval {
         for (index, Identifier(string)) in parameters.clone().into_iter().enumerate() {
             func_env.set(
                 string,
-                Object::Argument(target_func, parameter_types[index].clone(), index as u32),
+                Object::Argument(parameter_types[index].clone(), target_func, index as u32),
             );
         }
 
@@ -354,10 +360,11 @@ impl Eval {
             Object::Boolean(llvm_val_ref) => {
                 Object::Boolean(build_load(self.lc.builder, llvm_val_ref, ""))
             }
-            Object::Array(llvm_val_ref) => {
-                Object::Array(build_load(self.lc.builder, llvm_val_ref, ""))
-            }
-            Object::Argument(func, expression_type, index) => {
+            Object::Array(llvm_child_type, llvm_val_ref) => Object::Array(
+                llvm_child_type,
+                build_load(self.lc.builder, llvm_val_ref, ""),
+            ),
+            Object::Argument(expression_type, func, index) => {
                 let llvm_value = get_param(func, index);
                 wrap_llvm_value(expression_type, llvm_value)
             }
@@ -397,7 +404,7 @@ impl Eval {
         match left_object {
             Object::Integer(left) => self.resolve_left_integer(infix, left, right_object, location),
             Object::Boolean(left) => self.resolve_left_boolean(infix, left, right_object, location),
-            Object::Argument(func, expression_type_left, index) => {
+            Object::Argument(expression_type_left, func, index) => {
                 let left = get_param(func, index);
                 self.resolve_left_argument(
                     infix,
@@ -407,7 +414,9 @@ impl Eval {
                     location,
                 )
             }
-            Object::String(left) => self.resolve_left_string(infix, left, right_object, location),
+            Object::String(_, left) => {
+                self.resolve_left_string(infix, left, right_object, location)
+            }
             _ => self.resolve_left_failed(infix, left_object, right_object, location),
         }
     }
@@ -421,7 +430,7 @@ impl Eval {
     ) -> Object {
         match right_object {
             Object::Integer(right) => self.calculate_infix_integer(infix, left, right, location),
-            Object::Argument(func, _, index) => {
+            Object::Argument(_, func, index) => {
                 let right = get_param(func, index);
                 self.calculate_infix_integer(infix, left, right, location)
             }
@@ -441,7 +450,7 @@ impl Eval {
     ) -> Object {
         match right_object {
             Object::Boolean(right) => self.calculate_infix_boolean(infix, left, right, location),
-            Object::Argument(func, _, index) => {
+            Object::Argument(_, func, index) => {
                 let right = get_param(func, index);
                 self.calculate_infix_boolean(infix, left, right, location)
             }
@@ -463,7 +472,7 @@ impl Eval {
         match right_object {
             Object::Integer(right) => self.calculate_infix_integer(infix, left, right, location),
             Object::Boolean(right) => self.calculate_infix_boolean(infix, left, right, location),
-            Object::Argument(func, _, index) => {
+            Object::Argument(_, func, index) => {
                 let right = get_param(func, index);
                 match wrap_llvm_value(expression_type_left.clone(), right) {
                     Object::Integer(_) => {
@@ -494,7 +503,7 @@ impl Eval {
         location: Location,
     ) -> Object {
         match right_object {
-            Object::String(_) => Object::String(left), // TODO
+            Object::String(llvm_expression_type, _) => Object::String(llvm_expression_type, left), // TODO
             _ => Object::Error(format!(
                 "right value should be string, but actually {}. row: {}",
                 right_object, location.row,
@@ -511,7 +520,7 @@ impl Eval {
     ) -> Object {
         let right_type_str = match right_object {
             Object::Integer(_) => "integer",
-            Object::String(_) => "string",
+            Object::String(_, _) => "string",
             Object::Boolean(_) => "boolean",
             _ => {
                 return Object::Error(format!(

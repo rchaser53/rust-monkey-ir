@@ -7,14 +7,14 @@ use llvm_sys::*;
 #[derive(Debug, Clone)]
 pub enum Object {
     Integer(*mut LLVMValue),
-    String(*mut LLVMValue),
     Boolean(*mut LLVMValue),
-    Array(*mut LLVMValue),
+    String(LLVMExpressionType, *mut LLVMValue),
+    Array(LLVMExpressionType, *mut LLVMValue),
     Function(Function),
     Null,
     Error(String),
     BuildIn(BuildIn),
-    Argument(*mut LLVMValue, LLVMExpressionType, u32),
+    Argument(LLVMExpressionType, *mut LLVMValue, u32),
 }
 
 #[derive(Debug, Clone)]
@@ -32,11 +32,11 @@ pub struct Function {
 impl fmt::Display for Object {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            Object::Integer(_) => write!(f, "{}", "TODO"),
-            Object::String(_) => write!(f, "{}", "TODO"),
-            Object::Boolean(_) => write!(f, "{}", "TODO"),
+            Object::Integer(_) => write!(f, "Int"),     // TODO
+            Object::Boolean(_) => write!(f, "Boolean"), // TODO
+            Object::String(llvm_type, _) => write!(f, "{}", llvm_type), // TODO
+            Object::Array(child_type, _) => write!(f, "{}", child_type), // TODO
             Object::Function(_) => write!(f, "{}", "TODO"),
-            Object::Array(_) => write!(f, "{}", "TODO"),
             Object::Null => write!(f, "Null"),
             Object::Error(string) => write!(f, "{}", string),
             Object::BuildIn(build_in) => match build_in {
@@ -46,23 +46,3 @@ impl fmt::Display for Object {
         }
     }
 }
-
-// Object::Function(ref func) => {
-//     let mut param_string = String::new();
-//     for (index, Identifier(ref string)) in func.parameters.iter().enumerate() {
-//         if index == 0 {
-//             param_string.push_str(&format!("{}", string));
-//         } else {
-//             param_string.push_str(&format!(", {}", string));
-//         }
-//     }
-//     let mut body_string = String::new();
-//     for (index, statement) in func.body.iter().enumerate() {
-//         if index == 0 {
-//             body_string.push_str(&format!("{}", statement.string()));
-//         } else {
-//             body_string.push_str(&format!(" {}", statement.string()));
-//         }
-//     }
-//     write!(f, "fn({}) {{ {} }}", param_string, body_string)
-// },
