@@ -195,12 +195,13 @@ impl<'a> Parser<'a> {
 
     pub fn parse_array_child(&mut self, token: Token) -> Option<Expression> {
         self.next_token();
+        self.next_token();
         if let Some(index_expression) = self.parse_expression(Precedences::Lowest) {
-            if self.cur_token_is(TokenType::Rbracket) == false {
+            if self.peek_token_is(TokenType::Rbracket) == false {
                 return None;
             }
 
-            while self.peek_token_is(TokenType::Semicolon) {
+            while self.peek_token_is(TokenType::Semicolon) == false {
                 self.next_token();
             }
 
