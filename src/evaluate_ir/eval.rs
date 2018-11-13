@@ -1,6 +1,8 @@
 use llvm_sys::*;
 
 use parser::expressions::*;
+use parser::infix::*;
+use parser::prefix::*;
 use parser::statements::*;
 
 use evaluate_ir::environment::*;
@@ -190,8 +192,8 @@ impl Eval {
             Expression::Array(expression_type, elements) => {
                 self.eval_array(expression_type, elements, env)
             }
-            Expression::ArrayChild(ident, index_expression, location) => {
-                self.eval_array_child(ident, *index_expression, env, location)
+            Expression::ArrayElement(ident, index_expression, location) => {
+                self.eval_array_element(ident, *index_expression, env, location)
             }
             Expression::Prefix(prefix, expr, location) => {
                 self.eval_prefix(prefix, expr, env, location)
@@ -229,7 +231,6 @@ impl Eval {
         elements: Vec<Expression>,
         env: &mut Environment,
     ) -> Object {
-        let elements_len = elements.len() as u32;
         let object_vec = elements
             .into_iter()
             .map(
@@ -245,7 +246,7 @@ impl Eval {
         Object::Array(expression_type, llvm_array_value)
     }
 
-    pub fn eval_array_child(
+    pub fn eval_array_element(
         &mut self,
         ident: Identifier,
         expr: Expression,

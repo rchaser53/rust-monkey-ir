@@ -1,5 +1,8 @@
-use parser::statements::*;
 use std::fmt;
+
+use parser::infix::*;
+use parser::prefix::*;
+use parser::statements::*;
 
 #[derive(PartialEq, Clone, Debug)]
 pub struct Identifier(pub String);
@@ -11,7 +14,7 @@ pub enum Expression {
     StringLiteral(String, Location),
     Boolean(bool, Location),
     Array(LLVMExpressionType, Vec<Expression>),
-    ArrayChild(Identifier, Box<Expression>, Location),
+    ArrayElement(Identifier, Box<Expression>, Location),
     Prefix(Prefix, Box<Expression>, Location),
     Infix(Infix, Box<Expression>, Box<Expression>, Location),
     If {
@@ -80,7 +83,7 @@ impl Expression {
             Expression::Array(llvm_type, elements) => {
                 format!("[{}: {}]", llvm_type, elements.len())
             }
-            Expression::ArrayChild(ident, index_expression, _) => {
+            Expression::ArrayElement(ident, index_expression, _) => {
                 format!("{}[{}]", ident.0.to_string(), index_expression.string())
             }
             Expression::Prefix(prefix, expr, _location) => format!("({}{})", prefix, expr.string()),
