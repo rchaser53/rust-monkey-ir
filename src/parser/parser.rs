@@ -896,6 +896,17 @@ fn array_parsing() {
 }
 
 #[test]
+fn array_element_parsing() {
+    let input = r#"
+    let a = [1, 2, 3];
+    a[1];
+"#;
+    let program = parse_input(input);
+    statement_assert(&program[0], "let a = [int: 3]");
+    statement_assert(&program[1], "a[1]");
+}
+
+#[test]
 fn funciton_parsing() {
     let input = r#"
   fn(): null {};
