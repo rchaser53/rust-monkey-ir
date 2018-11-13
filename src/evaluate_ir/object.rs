@@ -32,7 +32,7 @@ pub struct Function {
 impl fmt::Display for Object {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            Object::Integer(_) => write!(f, "Int"),     // TODO
+            Object::Integer(_) => write!(f, "Integer"),     // TODO
             Object::Boolean(_) => write!(f, "Boolean"), // TODO
             Object::String(llvm_type, _) => write!(f, "{}", llvm_type), // TODO
             Object::Array(child_type, _) => write!(f, "{}", child_type), // TODO

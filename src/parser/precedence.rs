@@ -23,7 +23,7 @@ lazy_static! {
     m.insert(TokenType::Multiply, Precedences::Product);
     m.insert(TokenType::Divide, Precedences::Product);
 
-    m.insert(TokenType::Identifier, Precedences::Int);
+    m.insert(TokenType::Identifier, Precedences::Integer);
 
     m.insert(TokenType::Lparen, Precedences::Call);
     m
@@ -32,7 +32,7 @@ lazy_static! {
 
 #[derive(Debug, Clone, PartialOrd, PartialEq)]
 pub enum Precedences {
-    Int = 1,
+    Integer = 1,
     Lowest,
     Equals,     // ==
     LessGrater, // >, >=, <, <=

@@ -3,7 +3,7 @@ use parser::infix::*;
 
 pub fn get_expression_llvm_type(expression: &Expression) -> LLVMExpressionType {
     match expression.clone() {
-        Expression::IntegerLiteral(_, _) => LLVMExpressionType::Int,
+        Expression::IntegerLiteral(_, _) => LLVMExpressionType::Integer,
         Expression::StringLiteral(_, _) => LLVMExpressionType::String,
         Expression::Boolean(_, _) => LLVMExpressionType::Boolean,
         Expression::Array(expression_type, elements) => {
@@ -18,10 +18,10 @@ pub fn get_expression_llvm_type(expression: &Expression) -> LLVMExpressionType {
 pub fn handle_infix_type(infix: Infix, left: Expression) -> LLVMExpressionType {
     match infix {
         Infix::Plus => get_expression_llvm_type(&left),
-        Infix::Minus => LLVMExpressionType::Int,
-        Infix::Divide => LLVMExpressionType::Int,
-        Infix::Multiply => LLVMExpressionType::Int,
-        Infix::Rem => LLVMExpressionType::Int,
+        Infix::Minus => LLVMExpressionType::Integer,
+        Infix::Divide => LLVMExpressionType::Integer,
+        Infix::Multiply => LLVMExpressionType::Integer,
+        Infix::Rem => LLVMExpressionType::Integer,
         Infix::Eq => LLVMExpressionType::Boolean,
         Infix::NotEq => LLVMExpressionType::Boolean,
         Infix::Gte => LLVMExpressionType::Boolean,

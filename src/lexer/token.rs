@@ -49,7 +49,7 @@ pub enum TokenType {
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum LLVMTokenType {
-    Int,
+    Integer,
     String,
     Boolean,
     Null,

@@ -34,7 +34,7 @@ impl<'a> Lexer<'a> {
             "return" => TokenType::Return,
             "break" => TokenType::Break,
             "boolean" => TokenType::LLVMTokenType(LLVMTokenType::Boolean),
-            "int" => TokenType::LLVMTokenType(LLVMTokenType::Int),
+            "int" => TokenType::LLVMTokenType(LLVMTokenType::Integer),
             "string" => TokenType::LLVMTokenType(LLVMTokenType::String),
             "null" => TokenType::LLVMTokenType(LLVMTokenType::Null),
             _ => token,
@@ -436,7 +436,7 @@ fn llvm_token_test() {
     );
     lexer_assert(
         lexer.next_token().unwrap(),
-        TokenType::LLVMTokenType(LLVMTokenType::Int),
+        TokenType::LLVMTokenType(LLVMTokenType::Integer),
         "int",
     );
     lexer_assert(

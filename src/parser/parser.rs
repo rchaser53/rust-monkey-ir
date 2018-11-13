@@ -296,7 +296,7 @@ impl<'a> Parser<'a> {
 
     pub fn parse_array(&mut self) -> Option<Expression> {
         let mut elements: Vec<Expression> = Vec::new();
-        let mut llvm_expression_type = LLVMExpressionType::Int;
+        let mut llvm_expression_type = LLVMExpressionType::Integer;
 
         if self.peek_token_is(TokenType::Rbracket) == true {
             return Some(Expression::Array(llvm_expression_type, elements)); // TODO
@@ -647,7 +647,7 @@ impl<'a> Parser<'a> {
         match token_type {
             TokenType::LLVMTokenType(llvm_type) => match llvm_type {
                 LLVMTokenType::Boolean => LLVMExpressionType::Boolean,
-                LLVMTokenType::Int => LLVMExpressionType::Int,
+                LLVMTokenType::Integer => LLVMExpressionType::Integer,
                 LLVMTokenType::String => LLVMExpressionType::String,
                 LLVMTokenType::Null => LLVMExpressionType::Null,
             },
