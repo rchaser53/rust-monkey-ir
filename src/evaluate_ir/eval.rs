@@ -1,7 +1,10 @@
 use llvm_sys::*;
 
+use lexer::lexer::*;
+
 use parser::expressions::*;
 use parser::infix::*;
+use parser::parser::*;
 use parser::prefix::*;
 use parser::statements::*;
 
@@ -9,6 +12,7 @@ use evaluate_ir::environment::*;
 use evaluate_ir::object::*;
 use evaluate_ir::stack::*;
 
+use ir::test_util::*;
 use ir::arithmetic::*;
 use ir::block::*;
 use ir::condition::*;
@@ -185,7 +189,7 @@ impl Eval {
         match expr {
             Expression::IntegerLiteral(int, _location) => Object::Integer(llvm_integer!(int)),
             Expression::StringLiteral(string, _location) => Object::String(
-                LLVMExpressionType::Array(Box::new(LLVMExpressionType::Int), string.len() as u32),
+                LLVMExpressionType::Array(Box::new(LLVMExpressionType::Integer), string.len() as u32),
                 codegen_string(&mut self.lc, &string, ""),
             ),
             Expression::Boolean(boolean, _location) => Object::Boolean(llvm_bool!(boolean)),
@@ -775,4 +779,38 @@ impl Eval {
         }
         error_message.to_string()
     }
+}
+
+pub fn execute_eval_test(input: &str, expect: u64) {
+  let mut lexer = Lexer::new(&input);
+
+  let mut parser = Parser::new(&mut lexer);
+  let program = parser.parse_program();
+  if parser.has_error() {
+      panic!("{}", parser.emit_error());
+  }
+
+  let mut eval = Eval::new();
+
+  eval.entry_eval_program(program, &mut Environment::new());
+  if eval.has_error() {
+      panic!("{}", eval.emit_error());
+  }
+  let actual = execute_test_ir_function(eval.lc.module, eval.function_stack.pop());
+
+  assert!(
+    actual == expect,
+    "test failed. \nexpected: {} \nactual: {}",
+    expect,
+    actual
+  );
+}
+
+#[test]
+fn return_ident_int() {
+    let input = r#"
+    let a = 1;
+    return a;
+"#;
+  execute_eval_test(input, 1);
 }
