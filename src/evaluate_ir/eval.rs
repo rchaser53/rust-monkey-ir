@@ -92,7 +92,7 @@ impl Eval {
     ) -> Option<Object> {
         match statement {
             Statement::Let(ident, expr_type, expr) => {
-                let obj = self.eval_let_staement(ident, expr_type, expr, env);
+                let obj = self.eval_let_statement(ident, expr_type, expr, env);
                 let _ = self.accumultae_error(obj);
                 None
             }
@@ -156,7 +156,7 @@ impl Eval {
         return_obj
     }
 
-    pub fn eval_let_staement(
+    pub fn eval_let_statement(
         &mut self,
         ident: Identifier,
         expr_type: LLVMExpressionType,
