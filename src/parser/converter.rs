@@ -11,6 +11,13 @@ pub fn get_expression_llvm_type(expression: &Expression) -> LLVMExpressionType {
         }
         Expression::ArrayElement(_, boxed_element, _) => get_expression_llvm_type(&boxed_element),
         Expression::Infix(infix, left, _, _) => handle_infix_type(infix, *left),
+        Expression::Function {
+            parameters: _,
+            parameter_types: _,
+            body: _,
+            return_type: _,
+            location: _,
+        } => LLVMExpressionType::Function,
         _ => LLVMExpressionType::Null,
     }
 }

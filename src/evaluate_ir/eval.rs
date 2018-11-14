@@ -12,7 +12,6 @@ use evaluate_ir::environment::*;
 use evaluate_ir::object::*;
 use evaluate_ir::stack::*;
 
-use ir::test_util::*;
 use ir::arithmetic::*;
 use ir::block::*;
 use ir::condition::*;
@@ -23,6 +22,7 @@ use ir::function::*;
 use ir::llvm_type::*;
 use ir::operate::*;
 use ir::string::*;
+use ir::test_util::*;
 use ir::validate::*;
 
 pub struct Eval {
@@ -170,15 +170,21 @@ impl Eval {
         env: &mut Environment,
     ) -> Object {
         let mut object = self.eval_expression(expr, env);
-        let llvm_type = convert_llvm_type(expr_type);
+        let llvm_type = convert_llvm_type(expr_type.clone());
         let llvm_value = unwrap_object(&mut object);
 
-        let llvm_value_ref = build_alloca(self.lc.builder, llvm_type, &ident.0);
-        build_store(self.lc.builder, llvm_value, llvm_value_ref);
+        match expr_type {
+          LLVMExpressionType::Function => {
+            env.set(ident.0, object)
+          },
+          _ => {
+            let llvm_value_ref = build_alloca(self.lc.builder, llvm_type, &ident.0);
+            build_store(self.lc.builder, llvm_value, llvm_value_ref);
 
-        let rewraped_object = rewrap_llvm_value_ref(object, llvm_value_ref);
-
-        env.set(ident.0, rewraped_object)
+            let rewraped_object = rewrap_llvm_value_ref(object, llvm_value_ref);
+            env.set(ident.0, rewraped_object)
+          }
+        }
     }
 
     pub fn eval_return_statement(&mut self, expr: Expression, env: &mut Environment) -> Object {
@@ -189,7 +195,10 @@ impl Eval {
         match expr {
             Expression::IntegerLiteral(int, _location) => Object::Integer(llvm_integer!(int)),
             Expression::StringLiteral(string, _location) => Object::String(
-                LLVMExpressionType::Array(Box::new(LLVMExpressionType::Integer), string.len() as u32),
+                LLVMExpressionType::Array(
+                    Box::new(LLVMExpressionType::Integer),
+                    string.len() as u32,
+                ),
                 codegen_string(&mut self.lc, &string, ""),
             ),
             Expression::Boolean(boolean, _location) => Object::Boolean(llvm_bool!(boolean)),
@@ -782,28 +791,28 @@ impl Eval {
 }
 
 pub fn execute_eval_test(input: &str, expect: u64) {
-  let mut lexer = Lexer::new(&input);
+    let mut lexer = Lexer::new(&input);
 
-  let mut parser = Parser::new(&mut lexer);
-  let program = parser.parse_program();
-  if parser.has_error() {
-      panic!("{}", parser.emit_error());
-  }
+    let mut parser = Parser::new(&mut lexer);
+    let program = parser.parse_program();
+    if parser.has_error() {
+        panic!("{}", parser.emit_error());
+    }
 
-  let mut eval = Eval::new();
+    let mut eval = Eval::new();
 
-  eval.entry_eval_program(program, &mut Environment::new());
-  if eval.has_error() {
-      panic!("{}", eval.emit_error());
-  }
-  let actual = execute_test_ir_function(eval.lc.module, eval.function_stack.pop());
+    eval.entry_eval_program(program, &mut Environment::new());
+    if eval.has_error() {
+        panic!("{}", eval.emit_error());
+    }
+    let actual = execute_test_ir_function(eval.lc.module, eval.function_stack.pop());
 
-  assert!(
-    actual == expect,
-    "test failed. \nexpected: {} \nactual: {}",
-    expect,
-    actual
-  );
+    assert!(
+        actual == expect,
+        "test failed. \nexpected: {} \nactual: {}",
+        expect,
+        actual
+    );
 }
 
 #[test]
@@ -812,5 +821,5 @@ fn return_ident_int() {
     let a = 1;
     return a;
 "#;
-  execute_eval_test(input, 1);
+    execute_eval_test(input, 1);
 }

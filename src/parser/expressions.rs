@@ -57,6 +57,7 @@ pub enum LLVMExpressionType {
     Boolean,
     Null,
     Array(Box<LLVMExpressionType>, u32),
+    Function,
 }
 
 impl fmt::Display for LLVMExpressionType {
@@ -67,6 +68,7 @@ impl fmt::Display for LLVMExpressionType {
             LLVMExpressionType::Boolean => write!(f, "{}", "boolean"),
             LLVMExpressionType::Null => write!(f, "{}", "null"),
             LLVMExpressionType::Array(_, _) => write!(f, "{}", "array"),
+            LLVMExpressionType::Function => write!(f, "{}", "function"),
         }
     }
 }
