@@ -788,6 +788,7 @@ impl Eval {
     }
 }
 
+#[allow(dead_code)]
 pub fn execute_eval_test(input: &str, expect: u64) {
     let mut lexer = Lexer::new(&input);
 
@@ -831,4 +832,84 @@ fn call_function_return_int() {
     return a();
 "#;
     execute_eval_test(input, 3);
+}
+
+#[test]
+fn if_only() {
+    let input = r#"
+    let a = 1;
+    if (false) {
+      a = 2;
+    }
+    return a;
+"#;
+    execute_eval_test(input, 1);
+}
+
+#[test]
+fn if_true_statement() {
+    let input = r#"
+    let a = 1;
+    if (true) {
+      a = 2;
+    } else {
+      a = 3;
+    }
+    return a;
+"#;
+    execute_eval_test(input, 2);
+}
+
+#[test]
+fn if_false_statement() {
+    let input = r#"
+    let a = 1;
+    if (false) {
+      a = 2;
+    } else {
+      a = 3;
+    }
+    return a;
+"#;
+    execute_eval_test(input, 3);
+}
+
+#[test]
+fn if_elseif_statement() {
+    let input = r#"
+    let a = 1;
+    if (false) {
+      a = 2;
+    } elseif (true) {
+      a = 3;
+    } else {
+      a = 4;
+    }
+    return a;
+"#;
+    execute_eval_test(input, 3);
+}
+
+#[test]
+fn while_statement() {
+    let input = r#"
+    let a = 0;
+    while (a < 3) {
+      a = a + 1;
+    }
+    return a;
+"#;
+    execute_eval_test(input, 3);
+}
+
+#[test]
+fn arithmetic() {
+    let input = r#"
+    let a = 1 + 2 * (3 + 4);
+    if (a == 15) {
+      a = 1
+    }
+    return a;
+"#;
+    execute_eval_test(input, 1);
 }
