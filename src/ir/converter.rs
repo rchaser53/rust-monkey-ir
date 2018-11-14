@@ -10,7 +10,7 @@ pub fn convert_llvm_type(expression_type: LLVMExpressionType) -> *mut LLVMType {
         LLVMExpressionType::Boolean => int1_type(),
         LLVMExpressionType::String => int32_type(), // need to fix
         LLVMExpressionType::Null => int32_type(),   // need to fix
-        LLVMExpressionType::Function => int32_type(),   // need to fix
+        LLVMExpressionType::Function => int32_type(), // need to fix
         LLVMExpressionType::Array(child_type, length) => {
             let mut child_type = convert_llvm_type(*child_type);
             array_type(child_type, length)

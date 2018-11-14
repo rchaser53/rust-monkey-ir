@@ -174,16 +174,14 @@ impl Eval {
         let llvm_value = unwrap_object(&mut object);
 
         match expr_type {
-          LLVMExpressionType::Function => {
-            env.set(ident.0, object)
-          },
-          _ => {
-            let llvm_value_ref = build_alloca(self.lc.builder, llvm_type, &ident.0);
-            build_store(self.lc.builder, llvm_value, llvm_value_ref);
+            LLVMExpressionType::Function => env.set(ident.0, object),
+            _ => {
+                let llvm_value_ref = build_alloca(self.lc.builder, llvm_type, &ident.0);
+                build_store(self.lc.builder, llvm_value, llvm_value_ref);
 
-            let rewraped_object = rewrap_llvm_value_ref(object, llvm_value_ref);
-            env.set(ident.0, rewraped_object)
-          }
+                let rewraped_object = rewrap_llvm_value_ref(object, llvm_value_ref);
+                env.set(ident.0, rewraped_object)
+            }
         }
     }
 
@@ -822,4 +820,15 @@ fn return_ident_int() {
     return a;
 "#;
     execute_eval_test(input, 1);
+}
+
+#[test]
+fn call_function_return_int() {
+    let input = r#"
+    let a = fn(): int {
+      return 3;
+    };
+    return a();
+"#;
+    execute_eval_test(input, 3);
 }
