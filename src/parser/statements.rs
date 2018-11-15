@@ -7,6 +7,7 @@ pub enum Statement {
     Expression(Expression),
     While(Expression, BlockStatement),
     Assignment(Identifier, Expression),
+    AssignmentAggregate(Identifier, Expression, u64),
 }
 
 pub type BlockStatement = Vec<Statement>;
@@ -45,6 +46,12 @@ impl Statement {
                 string,
                 expr.string()
             )),
+            Statement::AssignmentAggregate(Identifier(ref string), expr, idnex) => write_string!(format!(
+                "[ identifiy: {}, expression: {}, idnex: {} ]",
+                string,
+                expr.string(),
+                idnex
+            )),
         }
     }
 
@@ -68,6 +75,9 @@ impl Statement {
             }
             Statement::Assignment(Identifier(ref string), expr) => {
                 format!("{} = {}", string, &expr.string())
+            }
+            Statement::AssignmentAggregate(Identifier(ref string), expr, idnex) => {
+                format!("{}[{}] = {}", string, idnex, &expr.string())
             }
         }
     }

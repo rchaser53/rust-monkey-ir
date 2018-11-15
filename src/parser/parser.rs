@@ -51,13 +51,7 @@ impl<'a> Parser<'a> {
                 TokenType::Let => self.parse_let_statement(),
                 TokenType::Return => self.parse_return_statement(),
                 TokenType::While => self.parse_while_statement(),
-                TokenType::Identifier => {
-                    if self.peek_token_is(TokenType::Assign) {
-                        self.parse_assign_statement()
-                    } else {
-                        self.parse_expression_statement()
-                    }
-                }
+                TokenType::Identifier => self.handle_identifier(),
                 _ => self.parse_expression_statement(),
             };
         } else {
@@ -170,10 +164,50 @@ impl<'a> Parser<'a> {
         None
     }
 
+    pub fn handle_identifier(&mut self) -> Option<Statement> {
+        if self.peek_token_is(TokenType::Assign) {
+            return self.parse_assign_statement();
+        }
+
+        let maybe_array = if let Some(expression) = self.parse_expression(Precedences::Lowest) {
+            expression
+        } else {
+            return None;
+        };
+
+        if self.cur_token_is(TokenType::Assign) == false {
+          if self.peek_token_is(TokenType::Semicolon) {
+              self.next_token();
+          }
+          // in this case maybe_array is not a array
+          return Some(Statement::Expression(maybe_array));
+        }
+        self.next_token();
+
+        let assign_expression = if let Some(expression) = self.parse_expression(Precedences::Lowest) {
+            expression
+        } else {
+            return None;
+        };
+
+        if self.peek_token_is(TokenType::Semicolon) {
+            self.next_token();
+        }
+
+        match maybe_array.clone() {
+          Expression::ArrayElement(ident, _index_expression, _) => {
+            Some(Statement::AssignmentAggregate(ident, assign_expression, 2))
+          },
+          _ => {
+            panic!("{:?} cannot be assigned", maybe_array);
+          }
+        }
+    }
+
     pub fn parse_identifier(&mut self) -> Option<Expression> {
         if let Some(token) = self.cur_token.clone() {
             if self.peek_token_is(TokenType::Lbracket) {
-                return self.parse_array_child(token);
+                return self.parse_array_element(token);
             }
 
             return Some(Expression::Identifier(
@@ -184,17 +218,14 @@ impl<'a> Parser<'a> {
         None
     }
 
-    pub fn parse_array_child(&mut self, token: Token) -> Option<Expression> {
+    pub fn parse_array_element(&mut self, token: Token) -> Option<Expression> {
         self.next_token();
         self.next_token();
         if let Some(index_expression) = self.parse_expression(Precedences::Lowest) {
-            if self.peek_token_is(TokenType::Rbracket) == false {
-                return None;
-            }
-
-            while self.peek_token_is(TokenType::Semicolon) == false {
+            while self.cur_token_is(TokenType::Rbracket) == false {
                 self.next_token();
             }
+            self.next_token();
 
             return Some(Expression::ArrayElement(
                 Identifier(token.value.to_owned()),
@@ -693,6 +724,7 @@ impl<'a> Parser<'a> {
             return false;
         }
     }
+
     pub fn peek_precedence(&mut self) -> Precedences {
         if let Some(token) = &self.peek_token {
             let token_type = token.kind;
