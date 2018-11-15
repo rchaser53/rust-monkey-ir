@@ -176,15 +176,16 @@ impl<'a> Parser<'a> {
         };
 
         if self.cur_token_is(TokenType::Assign) == false {
-          if self.peek_token_is(TokenType::Semicolon) {
-              self.next_token();
-          }
-          // in this case maybe_array is not a array
-          return Some(Statement::Expression(maybe_array));
+            if self.peek_token_is(TokenType::Semicolon) {
+                self.next_token();
+            }
+            // in this case maybe_array is not a array
+            return Some(Statement::Expression(maybe_array));
         }
         self.next_token();
 
-        let assign_expression = if let Some(expression) = self.parse_expression(Precedences::Lowest) {
+        let assign_expression = if let Some(expression) = self.parse_expression(Precedences::Lowest)
+        {
             expression
         } else {
             return None;
@@ -195,12 +196,12 @@ impl<'a> Parser<'a> {
         }
 
         match maybe_array.clone() {
-          Expression::ArrayElement(ident, _index_expression, _) => {
-            Some(Statement::AssignmentAggregate(ident, assign_expression, 2))
-          },
-          _ => {
-            panic!("{:?} cannot be assigned", maybe_array);
-          }
+            Expression::ArrayElement(ident, index_expression, _) => Some(
+                Statement::AssignmentAggregate(ident, assign_expression, *index_expression),
+            ),
+            _ => {
+                panic!("{:?} cannot be assigned", maybe_array);
+            }
         }
     }
 

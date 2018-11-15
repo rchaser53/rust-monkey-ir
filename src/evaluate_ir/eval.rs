@@ -134,8 +134,8 @@ impl Eval {
                 let _ = self.accumultae_error(obj);
                 None
             }
-            Statement::AssignmentAggregate(ident, expr, idnex) => {
-                let obj = self.eval_assign_aggregate_statement(ident, expr, idnex, env);
+            Statement::AssignmentAggregate(ident, assign_exp, index_expr) => {
+                let obj = self.eval_assign_aggregate_statement(ident, index_expr, assign_exp, env);
                 let _ = self.accumultae_error(obj);
                 None
             }
@@ -297,8 +297,8 @@ impl Eval {
     pub fn eval_assign_aggregate_statement(
         &mut self,
         ident: Identifier,
-        expr: Expression,
-        index: u64,
+        index_expr: Expression,
+        assign_expr: Expression,
         env: &mut Environment,
     ) -> Object {
         let identify_object = env.get(&ident.0, Location::new(0)); // TODO
@@ -309,39 +309,19 @@ impl Eval {
             _ => 0 as *mut LLVMValue,
         };
 
-        let llvm_child_value = build_gep(
+        let mut index_object = self.eval_expression(index_expr, &mut env.clone());
+        let llvm_index_value = unwrap_object(&mut index_object);
+
+        let llvm_element_value_ref = build_gep(
             self.lc.builder,
             llvm_value_ref,
-            vec![const_int(int32_type(), 0), const_int(int32_type(), index)],
+            vec![const_int(int32_type(), 0), llvm_index_value],
             "",
         );
 
-        let mut object = self.eval_expression(expr, &mut env.clone());
-        let llvm_value = unwrap_object(&mut object);
-        build_store(self.lc.builder, llvm_value, llvm_child_value);
-
-        // match expr.clone() {
-        //   Expression::ArrayElement(_, index_expression, _) => {
-        //     // index
-        //     let mut index_object = self.eval_expression(*index_expression, &mut env.clone());
-        //     let index_llvm_value = unwrap_object(&mut index_object);
-
-        //     let llvm_child_value = build_gep(
-        //         self.lc.builder,
-        //         llvm_value_ref,
-        //         vec![const_int(int32_type(), 0), index_llvm_value],
-        //         "",
-        //     );
-
-        //     // right
-        //     let mut object = self.eval_expression(expr, &mut env.clone());
-        //     let llvm_value = unwrap_object(&mut object);
-        //     build_store(self.lc.builder, llvm_value, llvm_child_value);
-        //   },
-        //   _ => {
-        //     panic!("{:?} should not come here", identify_object);
-        //   }
-        // }
+        let mut assign_object = self.eval_expression(assign_expr, &mut env.clone());
+        let llvm_assign_value = unwrap_object(&mut assign_object);
+        build_store(self.lc.builder, llvm_assign_value, llvm_element_value_ref);
 
         Object::Null
     }
