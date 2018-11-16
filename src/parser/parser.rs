@@ -858,6 +858,17 @@ fn assign_statements() {
 }
 
 #[test]
+fn assign_aggregate_statements() {
+    let input = r#"
+    let x = [1, 2, 3];
+    x[0] = 10;
+  "#;
+    let program = parse_input(input);
+    statement_assert(&program[0], "let x = [1, 2, 3]");
+    statement_assert(&program[1], "x[0] = 10");
+}
+
+#[test]
 fn operator_precedence_parsing() {
     let input = r#"
   -a * b;
