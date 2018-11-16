@@ -83,7 +83,14 @@ impl Expression {
             }
             Expression::Boolean(boolean, _location) => boolean.to_string(),
             Expression::Array(llvm_type, elements) => {
-                format!("[{}: {}]", llvm_type, elements.len())
+                let elements_string = elements
+                    .iter()
+                    .fold(Vec::new(), |mut stack, element| {
+                        stack.push(element.string());
+                        stack
+                    }).join(", ");
+
+                format!("[{}]", elements_string)
             }
             Expression::ArrayElement(ident, index_expression, _) => {
                 format!("{}[{}]", ident.0.to_string(), index_expression.string())
