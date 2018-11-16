@@ -82,7 +82,7 @@ impl Expression {
                 format!(r#""{}""#, literal.to_string())
             }
             Expression::Boolean(boolean, _location) => boolean.to_string(),
-            Expression::Array(llvm_type, elements) => {
+            Expression::Array(_, elements) => {
                 let elements_string = elements
                     .iter()
                     .fold(Vec::new(), |mut stack, element| {

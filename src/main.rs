@@ -56,13 +56,11 @@ fn main() {
             }
 
             let mut eval = Eval::new();
-
-            let result_value = eval.entry_eval_program(program, &mut Environment::new());
+            eval.entry_eval_program(program, &mut Environment::new());
             if eval.has_error() {
                 panic!("{}", eval.emit_error());
             }
 
-            println!("{:?}", result_value);
             eval.dump_llvm();
             eval.emit_llvm("test.ll");
         }
