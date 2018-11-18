@@ -13,6 +13,7 @@ impl Environment {
         let mut store = HashMap::new();
         store.insert("Null".to_string(), Object::Null);
         store.insert("printf".to_string(), Object::BuildIn(BuildIn::Printf));
+        store.insert("length".to_string(), Object::BuildIn(BuildIn::Length));
 
         Environment { store: store }
     }

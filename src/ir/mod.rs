@@ -13,3 +13,4 @@ pub mod scope;
 pub mod string;
 pub mod test_util;
 pub mod validate;
+pub mod array;

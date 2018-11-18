@@ -20,6 +20,7 @@ pub enum Object {
 #[derive(Debug, Clone)]
 pub enum BuildIn {
     Printf,
+    Length
 }
 
 #[derive(Debug, Clone)]
@@ -41,6 +42,7 @@ impl fmt::Display for Object {
             Object::Error(string) => write!(f, "{}", string),
             Object::BuildIn(build_in) => match build_in {
                 BuildIn::Printf => write!(f, "printf"),
+                BuildIn::Length => write!(f, "length"),
             },
             Object::Argument(_, _, _) => write!(f, "TODO"),
         }
