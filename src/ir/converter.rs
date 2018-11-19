@@ -24,7 +24,7 @@ pub fn unwrap_object(object: &mut Object) -> *mut LLVMValue {
         Object::String(_, llvm_value) => llvm_value,
         Object::Boolean(llvm_value) => llvm_value,
         Object::Function(ref func) => func.llvm_value,
-        Object::Array(_, llvm_value) => llvm_value,
+        Object::Array(_, llvm_value, _) => llvm_value,
         _ => panic!("failed to unwrap object: {:?}", object),
     }
 }
@@ -34,7 +34,9 @@ pub fn wrap_llvm_value(expression_type: LLVMExpressionType, llvm_value: *mut LLV
         LLVMExpressionType::Integer => Object::Integer(llvm_value),
         LLVMExpressionType::String => Object::Integer(llvm_value),
         LLVMExpressionType::Boolean => Object::Boolean(llvm_value),
-        LLVMExpressionType::Array(child_type, _) => Object::Array(*child_type, llvm_value),
+        LLVMExpressionType::Array(child_type, array_length) => {
+            Object::Array(*child_type, llvm_value, array_length)
+        }
         _ => Object::Null,
     }
 }
@@ -46,7 +48,9 @@ pub fn rewrap_llvm_value_ref(object: Object, llvm_value_ref: *mut LLVMValue) -> 
             Object::String(llvm_expression_type, llvm_value_ref)
         }
         Object::Boolean(_) => Object::Boolean(llvm_value_ref),
-        Object::Array(llvm_child_type, _) => Object::Array(llvm_child_type, llvm_value_ref),
+        Object::Array(llvm_child_type, _, array_length) => {
+            Object::Array(llvm_child_type, llvm_value_ref, array_length)
+        }
         _ => object,
     }
 }

@@ -247,7 +247,7 @@ impl Eval {
         elements: Vec<Expression>,
         env: &mut Environment,
     ) -> Object {
-        let object_vec = elements
+        let object_vec: Vec<_> = elements
             .into_iter()
             .map(
                 |element| match self.eval_expression(element, &mut env.clone()) {
@@ -256,10 +256,11 @@ impl Eval {
                     _ => 0 as *mut LLVMValue,
                 },
             ).collect();
+        let array_length = object_vec.len();
         let llvm_type = convert_llvm_type(expression_type.clone());
         let llvm_array_value = const_array(llvm_type, object_vec);
 
-        Object::Array(expression_type, llvm_array_value)
+        Object::Array(expression_type, llvm_array_value, array_length as u32)
     }
 
     pub fn eval_array_element(
@@ -273,7 +274,7 @@ impl Eval {
         // so access directly
         let mut obj = env.get(&ident.0, location);
         let child_expression_type = match obj.clone() {
-            Object::Array(child_expression_type, _) => child_expression_type,
+            Object::Array(child_expression_type, _, _) => child_expression_type,
             _ => LLVMExpressionType::Null,
         };
         let array_llvm_value = unwrap_object(&mut obj);
@@ -305,7 +306,7 @@ impl Eval {
         let llvm_value_ref = match identify_object {
             Object::Integer(reference) => reference,
             Object::Boolean(reference) => reference,
-            Object::Array(_, reference) => reference,
+            Object::Array(_, reference, _) => reference,
             _ => 0 as *mut LLVMValue,
         };
 
@@ -336,7 +337,7 @@ impl Eval {
         let llvm_value_ref = match identify_object {
             Object::Integer(reference) => reference,
             Object::Boolean(reference) => reference,
-            Object::Array(_, reference) => reference,
+            Object::Array(_, reference, _) => reference,
             _ => 0 as *mut LLVMValue,
         };
 
@@ -411,9 +412,10 @@ impl Eval {
             Object::Boolean(llvm_val_ref) => {
                 Object::Boolean(build_load(self.lc.builder, llvm_val_ref, ""))
             }
-            Object::Array(llvm_child_type, llvm_val_ref) => Object::Array(
+            Object::Array(llvm_child_type, llvm_val_ref, array_length) => Object::Array(
                 llvm_child_type,
                 build_load(self.lc.builder, llvm_val_ref, ""),
+                array_length,
             ),
             Object::Argument(expression_type, func, index) => {
                 let llvm_value = get_param(func, index);
@@ -804,6 +806,19 @@ impl Eval {
 
                     call_function(self.lc.builder, printf, function_argments, "");
                     Object::Null
+                }
+                BuildIn::Length => {
+                    let array_length = match self
+                        .eval_expression(outer_arguments[0].clone(), &mut outer_env.clone())
+                    {
+                        Object::Array(_, _, array_length) => array_length,
+                        _ => panic!("length cannot use for {:?}", outer_arguments[0]),
+                    };
+                    let llvm_value_ref = build_alloca(self.lc.builder, int32_type(), "");
+                    build_store(self.lc.builder, const_int(int32_type(), array_length as u64), llvm_value_ref);
+                    let llvm_value = build_load(self.lc.builder, llvm_value_ref, "");
+
+                    Object::Integer(llvm_value)
                 }
             },
             _ => maybe_func_obj,

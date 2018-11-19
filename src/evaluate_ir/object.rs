@@ -9,7 +9,7 @@ pub enum Object {
     Integer(*mut LLVMValue),
     Boolean(*mut LLVMValue),
     String(LLVMExpressionType, *mut LLVMValue),
-    Array(LLVMExpressionType, *mut LLVMValue),
+    Array(LLVMExpressionType, *mut LLVMValue, u32),
     Function(Function),
     Null,
     Error(String),
@@ -20,7 +20,7 @@ pub enum Object {
 #[derive(Debug, Clone)]
 pub enum BuildIn {
     Printf,
-    Length
+    Length,
 }
 
 #[derive(Debug, Clone)]
@@ -36,7 +36,7 @@ impl fmt::Display for Object {
             Object::Integer(_) => write!(f, "Integer"), // TODO
             Object::Boolean(_) => write!(f, "Boolean"), // TODO
             Object::String(llvm_type, _) => write!(f, "{}", llvm_type), // TODO
-            Object::Array(child_type, _) => write!(f, "{}", child_type), // TODO
+            Object::Array(child_type, _, _) => write!(f, "{}", child_type), // TODO
             Object::Function(_) => write!(f, "{}", "TODO"),
             Object::Null => write!(f, "Null"),
             Object::Error(string) => write!(f, "{}", string),
