@@ -180,6 +180,7 @@ impl Eval {
 
         match expr_type {
             LLVMExpressionType::Function => env.set(ident.0, object),
+            LLVMExpressionType::Array(_child_type, _length) => env.set(ident.0, object),
             _ => {
                 let llvm_value_ref = build_alloca(self.lc.builder, llvm_type, &ident.0);
                 build_store(self.lc.builder, llvm_value, llvm_value_ref);
@@ -306,7 +307,7 @@ impl Eval {
         let llvm_value_ref = match identify_object {
             Object::Integer(reference) => reference,
             Object::Boolean(reference) => reference,
-            Object::Array(_, reference, _) => reference,
+            Object::Array(_, value, _) => value,
             _ => 0 as *mut LLVMValue,
         };
 
@@ -337,7 +338,7 @@ impl Eval {
         let llvm_value_ref = match identify_object {
             Object::Integer(reference) => reference,
             Object::Boolean(reference) => reference,
-            Object::Array(_, reference, _) => reference,
+            Object::Array(_, value, _) => value,
             _ => 0 as *mut LLVMValue,
         };
 
@@ -412,11 +413,6 @@ impl Eval {
             Object::Boolean(llvm_val_ref) => {
                 Object::Boolean(build_load(self.lc.builder, llvm_val_ref, ""))
             }
-            Object::Array(llvm_child_type, llvm_val_ref, array_length) => Object::Array(
-                llvm_child_type,
-                build_load(self.lc.builder, llvm_val_ref, ""),
-                array_length,
-            ),
             Object::Argument(expression_type, func, index) => {
                 let llvm_value = get_param(func, index);
                 wrap_llvm_value(expression_type, llvm_value)
@@ -980,4 +976,13 @@ fn assign_array_element() {
     // need to search
     // execute_eval_test(input, 10);
     assert!(true, "temporary")
+}
+
+#[test]
+fn array_length() {
+    let input = r#"
+    let a = [1, 2];
+    return length(a);
+"#;
+    execute_eval_test(input, 2);
 }
