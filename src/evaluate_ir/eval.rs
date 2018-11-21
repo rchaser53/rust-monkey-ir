@@ -259,7 +259,7 @@ impl Eval {
             ).collect();
         let array_length = object_vec.len();
         let llvm_type = convert_llvm_type(expression_type.clone());
-        let llvm_array_value = const_array(llvm_type, object_vec);
+        let llvm_array_value = const_array(&mut self.lc, llvm_type, object_vec);
 
         Object::Array(expression_type, llvm_array_value, array_length as u32)
     }
@@ -811,7 +811,11 @@ impl Eval {
                         _ => panic!("length cannot use for {:?}", outer_arguments[0]),
                     };
                     let llvm_value_ref = build_alloca(self.lc.builder, int32_type(), "");
-                    build_store(self.lc.builder, const_int(int32_type(), array_length as u64), llvm_value_ref);
+                    build_store(
+                        self.lc.builder,
+                        const_int(int32_type(), array_length as u64),
+                        llvm_value_ref,
+                    );
                     let llvm_value = build_load(self.lc.builder, llvm_value_ref, "");
 
                     Object::Integer(llvm_value)
@@ -966,16 +970,12 @@ fn arithmetic() {
 
 #[test]
 fn assign_array_element() {
-    let _input = r#"
+    let input = r#"
     let a = [1,2,3];
     a[1] = 10;
     return a[1];
 "#;
-    // cannot pass LLVMVerifyModule
-    // LLVM ERROR: ERROR: Constant unimplemented for type: [3 x i32]
-    // need to search
-    // execute_eval_test(input, 10);
-    assert!(true, "temporary")
+    execute_eval_test(input, 10);
 }
 
 #[test]
