@@ -986,3 +986,16 @@ fn array_length() {
 "#;
     execute_eval_test(input, 2);
 }
+
+#[test]
+fn parameter_array_element() {
+    let input = r#"
+    let abc = fn(arg: int): int {
+      return arg + 3;
+    };
+    
+    let a = [1, 2];
+    return abc(a[1]);
+"#;
+    execute_eval_test(input, 5);
+}

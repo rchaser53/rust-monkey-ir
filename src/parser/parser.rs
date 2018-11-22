@@ -174,6 +174,7 @@ impl<'a> Parser<'a> {
         } else {
             return None;
         };
+        self.next_token();
 
         if self.cur_token_is(TokenType::Assign) == false {
             if self.peek_token_is(TokenType::Semicolon) {
@@ -226,7 +227,6 @@ impl<'a> Parser<'a> {
             while self.cur_token_is(TokenType::Rbracket) == false {
                 self.next_token();
             }
-            self.next_token();
 
             return Some(Expression::ArrayElement(
                 Identifier(token.value.to_owned()),
