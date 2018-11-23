@@ -26,11 +26,6 @@ use ir::string::*;
 use ir::test_util::*;
 use ir::validate::*;
 
-pub fn build_llvm_return(builder: *mut LLVMBuilder, object: &mut Object) {
-    let llvm_value = unwrap_object(object);
-    build_ret(builder, llvm_value);
-}
-
 pub struct Eval {
     pub stack_arg: Vec<Vec<Expression>>,
     pub error_stack: Vec<Object>,
@@ -57,7 +52,8 @@ impl Eval {
     pub fn entry_eval_program(&mut self, program: Program, env: &mut Environment) -> Object {
         for statement in program.into_iter() {
             if let Some(mut obj) = self.eval_statement(statement, env) {
-                build_llvm_return(self.lc.builder, &mut obj);
+                let llvm_value = unwrap_object(&mut obj);
+                build_ret(self.lc.builder, llvm_value);
                 return obj;
             }
         }
@@ -68,7 +64,8 @@ impl Eval {
     pub fn eval_program(&mut self, program: Program, env: &mut Environment) -> Object {
         for statement in program.into_iter() {
             if let Some(mut obj) = self.eval_statement(statement, env) {
-                build_llvm_return(self.lc.builder, &mut obj);
+                let llvm_value = unwrap_object(&mut obj);
+                build_ret(self.lc.builder, llvm_value);
                 return obj;
             }
         }
@@ -240,30 +237,74 @@ impl Eval {
         return_obj
     }
 
+    pub fn eval_if(
+        &mut self,
+        conditions: Vec<Expression>,
+        bodies: Vec<BlockStatement>,
+        env: &mut Environment,
+        _location: Location,
+    ) -> Option<Object> {
+        let current_function = self.function_stack.last();
+        let last_index = conditions.len();
+        let mut blocks = Vec::new();
+        let mut condition_blocks = Vec::new();
+        let mut return_obj = Object::Null;
+
+        let booleans: Vec<*mut LLVMValue> = conditions
+            .into_iter()
+            .map(|condition| {
+                let mut object = self.eval_expression(condition, &mut env.clone());
+                unwrap_object(&mut object)
+            }).collect();
+
+        for _ in 0..last_index {
+            condition_blocks.push(append_basic_block_in_context(
+                self.lc.context,
+                current_function,
+                "",
+            ));
+            blocks.push(append_basic_block_in_context(
+                self.lc.context,
+                current_function,
+                "",
+            ));
+        }
+        let end_block = append_basic_block_in_context(self.lc.context, current_function, "");
+
+        for (index, condition_block) in condition_blocks.into_iter().enumerate() {
+            let block = blocks[index];
+
+            build_cond_br(self.lc.builder, booleans[index], block, condition_block);
+            build_position_at_end(self.lc.builder, block);
+            return_obj = self.eval_program(bodies[index].clone(), env);
+            build_br(self.lc.builder, end_block);
+
+            build_position_at_end(self.lc.builder, condition_block);
+        }
+
+        build_br(self.lc.builder, end_block);
+        build_position_at_end(self.lc.builder, end_block);
+
+        match return_obj {
+            Object::Null => None,
+            _ => Some(return_obj),
+        }
+    }
+
     pub fn eval_expression(&mut self, expr: Expression, env: &mut Environment) -> Object {
         match expr {
-            Expression::IntegerLiteral(int, _location) => Object::Integer(llvm_integer!(int)),
-            Expression::StringLiteral(string, _location) => Object::String(
-                LLVMExpressionType::Array(
-                    Box::new(LLVMExpressionType::Integer),
-                    string.len() as u32,
-                ),
-                codegen_string(&mut self.lc, &string, ""),
-            ),
-            Expression::Boolean(boolean, _location) => Object::Boolean(llvm_bool!(boolean)),
             Expression::Array(expression_type, elements) => {
                 self.eval_array(expression_type, elements, env)
             }
             Expression::ArrayElement(ident, index_expression, location) => {
                 self.eval_array_element(ident, *index_expression, env, location)
             }
-            Expression::Prefix(prefix, expr, location) => {
-                self.eval_prefix(prefix, expr, env, location)
-            }
-            Expression::Infix(infix, left, right, location) => {
-                self.eval_infix(infix, left, right, env, location)
-            }
-            Expression::Identifier(ident, location) => self.eval_identifier(ident, env, location),
+            Expression::Boolean(boolean, _location) => Object::Boolean(llvm_bool!(boolean)),
+            Expression::Call(Call {
+                function,
+                arguments,
+                location,
+            }) => self.eval_call(function, arguments, env, location),
             Expression::Function {
                 parameters,
                 parameter_types,
@@ -278,11 +319,21 @@ impl Eval {
                 env,
                 location,
             ),
-            Expression::Call(Call {
-                function,
-                arguments,
-                location,
-            }) => self.eval_call(function, arguments, env, location),
+            Expression::Identifier(ident, location) => self.eval_identifier(ident, env, location),
+            Expression::Infix(infix, left, right, location) => {
+                self.eval_infix(infix, left, right, env, location)
+            }
+            Expression::IntegerLiteral(int, _location) => Object::Integer(llvm_integer!(int)),
+            Expression::Prefix(prefix, expr, location) => {
+                self.eval_prefix(prefix, expr, env, location)
+            }
+            Expression::StringLiteral(string, _location) => Object::String(
+                LLVMExpressionType::Array(
+                    Box::new(LLVMExpressionType::Integer),
+                    string.len() as u32,
+                ),
+                codegen_string(&mut self.lc, &string, ""),
+            ),
             _ => Object::Null,
         }
     }
@@ -339,307 +390,6 @@ impl Eval {
             child_expression_type,
             build_load(self.lc.builder, llvm_child_value, ""),
         )
-    }
-
-    pub fn accumultae_error(&mut self, obj: Object) -> Option<Object> {
-        match obj {
-            Object::Error(_) => {
-                self.error_stack.push(obj);
-                None
-            }
-            _ => Some(obj),
-        }
-    }
-
-    pub fn eval_function(
-        &mut self,
-        parameters: Vec<Identifier>,
-        parameter_types: Vec<LLVMExpressionType>,
-        block: BlockStatement,
-        return_type: LLVMExpressionType,
-        env: &mut Environment,
-        _location: Location,
-    ) -> Object {
-        let mut converted: Vec<*mut LLVMType> = parameter_types
-            .clone()
-            .into_iter()
-            .map(|elem| convert_llvm_type(elem))
-            .collect();
-
-        let fn_type = function_type(convert_llvm_type(return_type.clone()), &mut converted);
-        let (target_func, func_block) = create_function(&mut self.lc, fn_type);
-        self.function_stack.push(target_func);
-
-        let mut func_env = env.clone();
-        for (index, Identifier(string)) in parameters.clone().into_iter().enumerate() {
-            func_env.set(
-                string,
-                Object::Argument(parameter_types[index].clone(), target_func, index as u32),
-            );
-        }
-
-        self.eval_program(block, &mut func_env);
-
-        if return_type == LLVMExpressionType::Null {
-            build_ret_void(self.lc.builder);
-        }
-
-        build_position_at_end(self.lc.builder, self.main_block);
-        let _ = self.function_stack.pop();
-
-        Object::Function(Function {
-            return_type: return_type,
-            llvm_value: target_func,
-            llvm_block: func_block,
-        })
-    }
-
-    pub fn eval_identifier(
-        &self,
-        ident: Identifier,
-        env: &mut Environment,
-        location: Location,
-    ) -> Object {
-        let obj = env.get(&ident.0, location);
-
-        match obj {
-            Object::Integer(llvm_val_ref) => {
-                Object::Integer(build_load(self.lc.builder, llvm_val_ref, ""))
-            }
-            Object::Boolean(llvm_val_ref) => {
-                Object::Boolean(build_load(self.lc.builder, llvm_val_ref, ""))
-            }
-            Object::Argument(expression_type, func, index) => {
-                let llvm_value = get_param(func, index);
-                wrap_llvm_value(expression_type, llvm_value)
-            }
-            _ => obj,
-        }
-    }
-
-    pub fn eval_prefix(
-        &mut self,
-        prefix: Prefix,
-        expr: Box<Expression>,
-        env: &mut Environment,
-        location: Location,
-    ) -> Object {
-        let expr_value = self.eval_expression(*expr, env);
-        match expr_value {
-            Object::Integer(value) => calculate_prefix_integer(self.lc.builder, prefix, value),
-            Object::Boolean(value) => calculate_prefix_boolean(prefix, value, location),
-            _ => Object::Error(format!(
-                "expr value should be integer, but actually {}. row: {}",
-                expr_value, location.row,
-            )),
-        }
-    }
-
-    pub fn eval_infix(
-        &mut self,
-        infix: Infix,
-        left: Box<Expression>,
-        right: Box<Expression>,
-        env: &mut Environment,
-        location: Location,
-    ) -> Object {
-        let left_object = self.eval_expression(*left, env);
-        let right_object = self.eval_expression(*right, env);
-
-        match left_object {
-            Object::Integer(left) => self.resolve_left_integer(infix, left, right_object, location),
-            Object::Boolean(left) => self.resolve_left_boolean(infix, left, right_object, location),
-            Object::Argument(expression_type_left, func, index) => {
-                let left = get_param(func, index);
-                self.resolve_left_argument(
-                    infix,
-                    expression_type_left,
-                    left,
-                    right_object,
-                    location,
-                )
-            }
-            Object::String(_, left) => {
-                self.resolve_left_string(infix, left, right_object, location)
-            }
-            _ => self.resolve_left_failed(infix, left_object, right_object, location),
-        }
-    }
-
-    pub fn resolve_left_integer(
-        &mut self,
-        infix: Infix,
-        left: *mut LLVMValue,
-        right_object: Object,
-        location: Location,
-    ) -> Object {
-        match right_object {
-            Object::Integer(right) => {
-                calculate_infix_integer(self.lc.builder, infix, left, right, location)
-            }
-            Object::Argument(_, func, index) => {
-                let right = get_param(func, index);
-                calculate_infix_integer(self.lc.builder, infix, left, right, location)
-            }
-            _ => Object::Error(format!(
-                "right value should be integer, but actually {}. row: {}",
-                right_object, location.row,
-            )),
-        }
-    }
-
-    pub fn resolve_left_boolean(
-        &mut self,
-        infix: Infix,
-        left: *mut LLVMValue,
-        right_object: Object,
-        location: Location,
-    ) -> Object {
-        match right_object {
-            Object::Boolean(right) => {
-                calculate_infix_boolean(self.lc.builder, infix, left, right, location)
-            }
-            Object::Argument(_, func, index) => {
-                let right = get_param(func, index);
-                calculate_infix_boolean(self.lc.builder, infix, left, right, location)
-            }
-            _ => Object::Error(format!(
-                "right value should be boolean, but actually {}. row: {}",
-                right_object, location.row,
-            )),
-        }
-    }
-
-    pub fn resolve_left_argument(
-        &mut self,
-        infix: Infix,
-        expression_type_left: LLVMExpressionType,
-        left: *mut LLVMValue,
-        right_object: Object,
-        location: Location,
-    ) -> Object {
-        match right_object {
-            Object::Integer(right) => {
-                calculate_infix_integer(self.lc.builder, infix, left, right, location)
-            }
-            Object::Boolean(right) => {
-                calculate_infix_boolean(self.lc.builder, infix, left, right, location)
-            }
-            Object::Argument(_, func, index) => {
-                let right = get_param(func, index);
-                match wrap_llvm_value(expression_type_left.clone(), right) {
-                    Object::Integer(_) => {
-                        calculate_infix_integer(self.lc.builder, infix, left, right, location)
-                    }
-                    Object::Boolean(_) => {
-                        calculate_infix_boolean(self.lc.builder, infix, left, right, location)
-                    }
-                    _ => Object::Error(format!(
-                        "right cannot be analyzed, but actually {:?}. row: {}", // TODO
-                        expression_type_left, location.row,
-                    )),
-                }
-            }
-            _ => Object::Error(format!(
-                "right value should be boolean, but actually {}. row: {}",
-                right_object, location.row,
-            )),
-        }
-    }
-
-    // TODO
-    pub fn resolve_left_string(
-        &mut self,
-        _infix: Infix,
-        left: *mut LLVMValue,
-        right_object: Object,
-        location: Location,
-    ) -> Object {
-        match right_object {
-            Object::String(llvm_expression_type, _) => Object::String(llvm_expression_type, left), // TODO
-            _ => Object::Error(format!(
-                "right value should be string, but actually {}. row: {}",
-                right_object, location.row,
-            )),
-        }
-    }
-
-    pub fn resolve_left_failed(
-        &mut self,
-        infix: Infix,
-        left_object: Object,
-        right_object: Object,
-        location: Location,
-    ) -> Object {
-        let right_type_str = match right_object {
-            Object::Integer(_) => "integer",
-            Object::String(_, _) => "string",
-            Object::Boolean(_) => "boolean",
-            _ => {
-                return Object::Error(format!(
-                    "{} {} {} cannot be culculated. row: {}",
-                    left_object, infix, right_object, location.row,
-                ));
-            }
-        };
-        Object::Error(format!(
-            "left value should be {}, but actually {}. row: {}",
-            right_type_str, left_object, location.row
-        ))
-    }
-
-    pub fn eval_if(
-        &mut self,
-        conditions: Vec<Expression>,
-        bodies: Vec<BlockStatement>,
-        env: &mut Environment,
-        _location: Location,
-    ) -> Option<Object> {
-        let current_function = self.function_stack.last();
-        let last_index = conditions.len();
-        let mut blocks = Vec::new();
-        let mut condition_blocks = Vec::new();
-        let mut return_obj = Object::Null;
-
-        let booleans: Vec<*mut LLVMValue> = conditions
-            .into_iter()
-            .map(|condition| {
-                let mut object = self.eval_expression(condition, &mut env.clone());
-                unwrap_object(&mut object)
-            }).collect();
-
-        for _ in 0..last_index {
-            condition_blocks.push(append_basic_block_in_context(
-                self.lc.context,
-                current_function,
-                "",
-            ));
-            blocks.push(append_basic_block_in_context(
-                self.lc.context,
-                current_function,
-                "",
-            ));
-        }
-        let end_block = append_basic_block_in_context(self.lc.context, current_function, "");
-
-        for (index, condition_block) in condition_blocks.into_iter().enumerate() {
-            let block = blocks[index];
-
-            build_cond_br(self.lc.builder, booleans[index], block, condition_block);
-            build_position_at_end(self.lc.builder, block);
-            return_obj = self.eval_program(bodies[index].clone(), env);
-            build_br(self.lc.builder, end_block);
-
-            build_position_at_end(self.lc.builder, condition_block);
-        }
-
-        build_br(self.lc.builder, end_block);
-        build_position_at_end(self.lc.builder, end_block);
-
-        match return_obj {
-            Object::Null => None,
-            _ => Some(return_obj),
-        }
     }
 
     pub fn eval_call(
@@ -762,8 +512,137 @@ impl Eval {
         }
     }
 
-    pub fn has_error(&self) -> bool {
-        self.error_stack.len() > 0
+    pub fn eval_function(
+        &mut self,
+        parameters: Vec<Identifier>,
+        parameter_types: Vec<LLVMExpressionType>,
+        block: BlockStatement,
+        return_type: LLVMExpressionType,
+        env: &mut Environment,
+        _location: Location,
+    ) -> Object {
+        let mut converted: Vec<*mut LLVMType> = parameter_types
+            .clone()
+            .into_iter()
+            .map(|elem| convert_llvm_type(elem))
+            .collect();
+
+        let fn_type = function_type(convert_llvm_type(return_type.clone()), &mut converted);
+        let (target_func, func_block) = create_function(&mut self.lc, fn_type);
+        self.function_stack.push(target_func);
+
+        let mut func_env = env.clone();
+        for (index, Identifier(string)) in parameters.clone().into_iter().enumerate() {
+            func_env.set(
+                string,
+                Object::Argument(parameter_types[index].clone(), target_func, index as u32),
+            );
+        }
+
+        self.eval_program(block, &mut func_env);
+
+        if return_type == LLVMExpressionType::Null {
+            build_ret_void(self.lc.builder);
+        }
+
+        build_position_at_end(self.lc.builder, self.main_block);
+        let _ = self.function_stack.pop();
+
+        Object::Function(Function {
+            return_type: return_type,
+            llvm_value: target_func,
+            llvm_block: func_block,
+        })
+    }
+
+    pub fn eval_identifier(
+        &self,
+        ident: Identifier,
+        env: &mut Environment,
+        location: Location,
+    ) -> Object {
+        let obj = env.get(&ident.0, location);
+
+        match obj {
+            Object::Integer(llvm_val_ref) => {
+                Object::Integer(build_load(self.lc.builder, llvm_val_ref, ""))
+            }
+            Object::Boolean(llvm_val_ref) => {
+                Object::Boolean(build_load(self.lc.builder, llvm_val_ref, ""))
+            }
+            Object::Argument(expression_type, func, index) => {
+                let llvm_value = get_param(func, index);
+                wrap_llvm_value(expression_type, llvm_value)
+            }
+            _ => obj,
+        }
+    }
+
+    pub fn eval_infix(
+        &mut self,
+        infix: Infix,
+        left: Box<Expression>,
+        right: Box<Expression>,
+        env: &mut Environment,
+        location: Location,
+    ) -> Object {
+        let left_object = self.eval_expression(*left, env);
+        let right_object = self.eval_expression(*right, env);
+
+        match left_object {
+            Object::Integer(left) => {
+                resolve_left_integer(self.lc.builder, infix, left, right_object, location)
+            }
+            Object::Boolean(left) => {
+                resolve_left_boolean(self.lc.builder, infix, left, right_object, location)
+            }
+            Object::Argument(expression_type_left, func, index) => {
+                let left = get_param(func, index);
+                resolve_left_argument(
+                    self.lc.builder,
+                    infix,
+                    expression_type_left,
+                    left,
+                    right_object,
+                    location,
+                )
+            }
+            Object::String(_, left) => resolve_left_string(infix, left, right_object, location),
+            _ => resolve_left_failed(infix, left_object, right_object, location),
+        }
+    }
+
+    pub fn eval_prefix(
+        &mut self,
+        prefix: Prefix,
+        expr: Box<Expression>,
+        env: &mut Environment,
+        location: Location,
+    ) -> Object {
+        let expr_value = self.eval_expression(*expr, env);
+        match expr_value {
+            Object::Integer(value) => calculate_prefix_integer(self.lc.builder, prefix, value),
+            Object::Boolean(value) => calculate_prefix_boolean(prefix, value, location),
+            _ => Object::Error(format!(
+                "expr value should be integer, but actually {}. row: {}",
+                expr_value, location.row,
+            )),
+        }
+    }
+
+    pub fn accumultae_error(&mut self, obj: Object) -> Option<Object> {
+        match obj {
+            Object::Error(_) => {
+                self.error_stack.push(obj);
+                None
+            }
+            _ => Some(obj),
+        }
+    }
+
+    pub fn dump_llvm(&mut self) {
+        self.lc.dump();
+        validate_module(self.lc.module);
     }
 
     pub fn emit_error(&mut self) -> String {
@@ -778,21 +657,20 @@ impl Eval {
         error_message.to_string()
     }
 
+    pub fn emit_llvm(&mut self, file_name: &str) {
+        self.lc.emit_file(file_name);
+    }
+
+    pub fn has_error(&self) -> bool {
+        self.error_stack.len() > 0
+    }
+
     pub fn setup_main(lc: &mut LLVMCreator) -> (*mut LLVMBasicBlock, *mut LLVMValue) {
         let fn_type = function_type(int32_type(), &mut []);
         let main_function = add_function(lc.module, fn_type, "main");
         let block = append_basic_block_in_context(lc.context, main_function, "entry");
         build_position_at_end(lc.builder, block);
         (block, main_function)
-    }
-
-    pub fn dump_llvm(&mut self) {
-        self.lc.dump();
-        validate_module(self.lc.module);
-    }
-
-    pub fn emit_llvm(&mut self, file_name: &str) {
-        self.lc.emit_file(file_name);
     }
 }
 
