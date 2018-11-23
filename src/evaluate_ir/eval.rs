@@ -1003,3 +1003,14 @@ fn parameter_array_element() {
 "#;
     execute_eval_test(input, 5);
 }
+
+#[test]
+fn return_void_function() {
+    let input = r#"
+    let abc = fn(): void {
+    };
+    abc();
+    return 5;
+"#;
+    execute_eval_test(input, 5);
+}

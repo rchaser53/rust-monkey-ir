@@ -12,6 +12,7 @@ impl Environment {
     pub fn new() -> Self {
         let mut store = HashMap::new();
         store.insert("null".to_string(), Object::Null);
+        store.insert("void".to_string(), Object::Null);
         store.insert("printf".to_string(), Object::BuildIn(BuildIn::Printf));
         store.insert("length".to_string(), Object::BuildIn(BuildIn::Length));
 
