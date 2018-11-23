@@ -52,3 +52,8 @@ pub fn cast_type(
 ) -> *mut LLVMValue {
     unsafe { LLVMBuildBitCast(builder, value, dest_type, c_string!(name).as_ptr()) }
 }
+
+#[allow(dead_code)]
+pub fn void_type() -> *mut LLVMType {
+    unsafe { LLVMVoidType() }
+}

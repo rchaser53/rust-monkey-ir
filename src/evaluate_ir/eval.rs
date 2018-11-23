@@ -88,6 +88,7 @@ impl Eval {
                 return obj;
             }
         }
+        build_ret_void(self.lc.builder);
         Object::Null
     }
 

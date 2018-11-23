@@ -40,6 +40,11 @@ pub fn build_ret(builder: *mut LLVMBuilder, llvm_value: *mut LLVMValue) -> *mut 
 }
 
 #[allow(dead_code)]
+pub fn build_ret_void(builder: *mut LLVMBuilder) -> *mut LLVMValue {
+    unsafe { LLVMBuildRetVoid(builder) }
+}
+
+#[allow(dead_code)]
 pub fn run_function(
     engine: LLVMExecutionEngineRef,
     function: *mut LLVMValue,
