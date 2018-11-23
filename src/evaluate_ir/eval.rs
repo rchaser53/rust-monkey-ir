@@ -9,10 +9,11 @@ use parser::prefix::*;
 use parser::statements::*;
 
 use evaluate_ir::environment::*;
+use evaluate_ir::infix::*;
 use evaluate_ir::object::*;
+use evaluate_ir::prefix::*;
 use evaluate_ir::stack::*;
 
-use ir::arithmetic::*;
 use ir::block::*;
 use ir::condition::*;
 use ir::const_value::*;
@@ -24,6 +25,11 @@ use ir::operate::*;
 use ir::string::*;
 use ir::test_util::*;
 use ir::validate::*;
+
+pub fn build_llvm_return(builder: *mut LLVMBuilder, object: &mut Object) {
+    let llvm_value = unwrap_object(object);
+    build_ret(builder, llvm_value);
+}
 
 pub struct Eval {
     pub stack_arg: Vec<Vec<Expression>>,
@@ -68,7 +74,7 @@ impl Eval {
     pub fn entry_eval_program(&mut self, program: Program, env: &mut Environment) -> Object {
         for statement in program.into_iter() {
             if let Some(mut obj) = self.eval_statement(statement, env) {
-                self.build_llvm_return(&mut obj);
+                build_llvm_return(self.lc.builder, &mut obj);
                 return obj;
             }
         }
@@ -76,15 +82,10 @@ impl Eval {
         Object::Null
     }
 
-    pub fn build_llvm_return(&mut self, object: &mut Object) {
-        let llvm_value = unwrap_object(object);
-        build_ret(self.lc.builder, llvm_value);
-    }
-
     pub fn eval_program(&mut self, program: Program, env: &mut Environment) -> Object {
         for statement in program.into_iter() {
             if let Some(mut obj) = self.eval_statement(statement, env) {
-                self.build_llvm_return(&mut obj);
+                build_llvm_return(self.lc.builder, &mut obj);
                 return obj;
             }
         }
@@ -434,8 +435,8 @@ impl Eval {
     ) -> Object {
         let expr_value = self.eval_expression(*expr, env);
         match expr_value {
-            Object::Integer(value) => self.calculate_prefix_integer(prefix, value),
-            Object::Boolean(value) => self.calculate_prefix_boolean(prefix, value, location),
+            Object::Integer(value) => calculate_prefix_integer(self.lc.builder, prefix, value),
+            Object::Boolean(value) => calculate_prefix_boolean(prefix, value, location),
             _ => Object::Error(format!(
                 "expr value should be integer, but actually {}. row: {}",
                 expr_value, location.row,
@@ -482,10 +483,12 @@ impl Eval {
         location: Location,
     ) -> Object {
         match right_object {
-            Object::Integer(right) => self.calculate_infix_integer(infix, left, right, location),
+            Object::Integer(right) => {
+                calculate_infix_integer(self.lc.builder, infix, left, right, location)
+            }
             Object::Argument(_, func, index) => {
                 let right = get_param(func, index);
-                self.calculate_infix_integer(infix, left, right, location)
+                calculate_infix_integer(self.lc.builder, infix, left, right, location)
             }
             _ => Object::Error(format!(
                 "right value should be integer, but actually {}. row: {}",
@@ -502,10 +505,12 @@ impl Eval {
         location: Location,
     ) -> Object {
         match right_object {
-            Object::Boolean(right) => self.calculate_infix_boolean(infix, left, right, location),
+            Object::Boolean(right) => {
+                calculate_infix_boolean(self.lc.builder, infix, left, right, location)
+            }
             Object::Argument(_, func, index) => {
                 let right = get_param(func, index);
-                self.calculate_infix_boolean(infix, left, right, location)
+                calculate_infix_boolean(self.lc.builder, infix, left, right, location)
             }
             _ => Object::Error(format!(
                 "right value should be boolean, but actually {}. row: {}",
@@ -523,16 +528,20 @@ impl Eval {
         location: Location,
     ) -> Object {
         match right_object {
-            Object::Integer(right) => self.calculate_infix_integer(infix, left, right, location),
-            Object::Boolean(right) => self.calculate_infix_boolean(infix, left, right, location),
+            Object::Integer(right) => {
+                calculate_infix_integer(self.lc.builder, infix, left, right, location)
+            }
+            Object::Boolean(right) => {
+                calculate_infix_boolean(self.lc.builder, infix, left, right, location)
+            }
             Object::Argument(_, func, index) => {
                 let right = get_param(func, index);
                 match wrap_llvm_value(expression_type_left.clone(), right) {
                     Object::Integer(_) => {
-                        self.calculate_infix_integer(infix, left, right, location)
+                        calculate_infix_integer(self.lc.builder, infix, left, right, location)
                     }
                     Object::Boolean(_) => {
-                        self.calculate_infix_boolean(infix, left, right, location)
+                        calculate_infix_boolean(self.lc.builder, infix, left, right, location)
                     }
                     _ => Object::Error(format!(
                         "right cannot be analyzed, but actually {:?}. row: {}", // TODO
@@ -639,73 +648,6 @@ impl Eval {
         match return_obj {
             Object::Null => None,
             _ => Some(return_obj),
-        }
-    }
-
-    pub fn calculate_prefix_boolean(
-        &self,
-        prefix: Prefix,
-        value: *mut LLVMValue,
-        location: Location,
-    ) -> Object {
-        match prefix {
-            Prefix::Bang => Object::Boolean(value), // need to fix
-            _ => Object::Error(format!(
-                "{} cannot be use for prefix. row: {}",
-                prefix, location.row
-            )),
-        }
-    }
-
-    pub fn calculate_prefix_integer(&self, prefix: Prefix, value: *mut LLVMValue) -> Object {
-        match prefix {
-            Prefix::Minus => Object::Integer(const_neg(value)),
-            Prefix::Plus => Object::Integer(value),
-            Prefix::Bang => Object::Boolean(build_int_ult(
-                self.lc.builder,
-                const_int(int32_type(), 0),
-                value,
-                "",
-            )),
-        }
-    }
-
-    pub fn calculate_infix_integer(
-        &self,
-        infix: Infix,
-        left: *mut LLVMValue,
-        right: *mut LLVMValue,
-        _location: Location,
-    ) -> Object {
-        match infix {
-            Infix::Plus => Object::Integer(add_variable(self.lc.builder, left, right, "")),
-            Infix::Minus => Object::Integer(sub_variable(self.lc.builder, left, right, "")),
-            Infix::Multiply => Object::Integer(multiple_variable(self.lc.builder, left, right, "")),
-            Infix::Rem => Object::Integer(rem_variable(self.lc.builder, left, right, "")),
-            Infix::Divide => Object::Integer(divide_variable(self.lc.builder, left, right, "")),
-            Infix::Lt => Object::Boolean(build_int_ult(self.lc.builder, left, right, "")),
-            Infix::Lte => Object::Boolean(build_int_ule(self.lc.builder, left, right, "")),
-            Infix::Gt => Object::Boolean(build_int_ugt(self.lc.builder, left, right, "")),
-            Infix::Gte => Object::Boolean(build_int_uge(self.lc.builder, left, right, "")),
-            Infix::Eq => Object::Boolean(build_int_eq(self.lc.builder, left, right, "")),
-            Infix::NotEq => Object::Boolean(build_int_ne(self.lc.builder, left, right, "")),
-        }
-    }
-
-    pub fn calculate_infix_boolean(
-        &self,
-        infix: Infix,
-        left: *mut LLVMValue,
-        right: *mut LLVMValue,
-        location: Location,
-    ) -> Object {
-        match infix {
-            Infix::Eq => Object::Boolean(build_int_eq(self.lc.builder, left, right, "")),
-            Infix::NotEq => Object::Boolean(build_int_ne(self.lc.builder, left, right, "")),
-            _ => Object::Error(format!(
-                "{} cannot be calculate for boolean. row: {}",
-                infix, location.row
-            )),
         }
     }
 
