@@ -88,7 +88,6 @@ impl Eval {
                 return obj;
             }
         }
-        build_ret_void(self.lc.builder);
         Object::Null
     }
 
@@ -388,6 +387,10 @@ impl Eval {
         }
 
         self.eval_program(block, &mut func_env);
+
+        if return_type == LLVMExpressionType::Null {
+          build_ret_void(self.lc.builder);
+        }
 
         build_position_at_end(self.lc.builder, self.main_block);
         let _ = self.function_stack.pop();
