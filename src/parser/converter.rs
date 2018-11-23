@@ -18,6 +18,7 @@ pub fn get_expression_llvm_type(expression: &Expression) -> LLVMExpressionType {
             return_type: _,
             location: _,
         } => LLVMExpressionType::Function,
+        Expression::Call(_) => LLVMExpressionType::Call,
         _ => LLVMExpressionType::Null,
     }
 }

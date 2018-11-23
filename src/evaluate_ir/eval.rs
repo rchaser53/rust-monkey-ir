@@ -170,8 +170,9 @@ impl Eval {
         let llvm_value = unwrap_object(&mut object);
 
         match expr_type {
-            LLVMExpressionType::Function => env.set(ident.0, object),
-            LLVMExpressionType::Array(_child_type, _length) => env.set(ident.0, object),
+            LLVMExpressionType::Function | 
+            LLVMExpressionType::Array(_, _) |
+            LLVMExpressionType::Call => env.set(ident.0, object),
             _ => {
                 let llvm_value_ref = build_alloca(self.lc.builder, llvm_type, &ident.0);
                 build_store(self.lc.builder, llvm_value, llvm_value_ref);

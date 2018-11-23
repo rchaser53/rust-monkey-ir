@@ -15,6 +15,7 @@ pub fn convert_llvm_type(expression_type: LLVMExpressionType) -> *mut LLVMType {
             let mut child_type = convert_llvm_type(*child_type);
             array_type(child_type, length)
         }
+        LLVMExpressionType::Call => void_type(),
     }
 }
 

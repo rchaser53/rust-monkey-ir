@@ -58,6 +58,7 @@ pub enum LLVMExpressionType {
     Null,
     Array(Box<LLVMExpressionType>, u32),
     Function,
+    Call
 }
 
 impl fmt::Display for LLVMExpressionType {
@@ -69,6 +70,7 @@ impl fmt::Display for LLVMExpressionType {
             LLVMExpressionType::Null => write!(f, "{}", "null"),
             LLVMExpressionType::Array(_, _) => write!(f, "{}", "array"),
             LLVMExpressionType::Function => write!(f, "{}", "function"),
+            LLVMExpressionType::Call => write!(f, "{}", "call"),
         }
     }
 }
