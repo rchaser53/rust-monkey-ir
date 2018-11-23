@@ -54,23 +54,6 @@ impl Eval {
         }
     }
 
-    pub fn setup_main(lc: &mut LLVMCreator) -> (*mut LLVMBasicBlock, *mut LLVMValue) {
-        let fn_type = function_type(int32_type(), &mut []);
-        let main_function = add_function(lc.module, fn_type, "main");
-        let block = append_basic_block_in_context(lc.context, main_function, "entry");
-        build_position_at_end(lc.builder, block);
-        (block, main_function)
-    }
-
-    pub fn dump_llvm(&mut self) {
-        self.lc.dump();
-        validate_module(self.lc.module);
-    }
-
-    pub fn emit_llvm(&mut self, file_name: &str) {
-        self.lc.emit_file(file_name);
-    }
-
     pub fn entry_eval_program(&mut self, program: Program, env: &mut Environment) -> Object {
         for statement in program.into_iter() {
             if let Some(mut obj) = self.eval_statement(statement, env) {
@@ -98,38 +81,6 @@ impl Eval {
         env: &mut Environment,
     ) -> Option<Object> {
         match statement {
-            Statement::Let(ident, expr_type, expr) => {
-                let obj = self.eval_let_statement(ident, expr_type, expr, env);
-                let _ = self.accumultae_error(obj);
-                None
-            }
-            Statement::Return(expr) => {
-                let obj = self.eval_return_statement(expr, env);
-                self.accumultae_error(obj)
-            }
-            Statement::Expression(expr) => match expr {
-                Expression::If {
-                    conditions,
-                    bodies,
-                    location,
-                } => {
-                    let obj = self.eval_if(conditions, bodies, env, location);
-                    if let Some(obj) = obj {
-                        self.accumultae_error(obj)
-                    } else {
-                        None
-                    }
-                }
-                _ => {
-                    let obj = self.eval_expression(expr, env);
-                    let _ = self.accumultae_error(obj);
-                    None
-                }
-            },
-            Statement::While(expr, block) => {
-                self.eval_while_statement(expr, block, env);
-                None
-            }
             Statement::Assignment(ident, expr) => {
                 let obj = self.eval_assign_statement(ident, expr, env);
                 let _ = self.accumultae_error(obj);
@@ -140,32 +91,74 @@ impl Eval {
                 let _ = self.accumultae_error(obj);
                 None
             }
+            Statement::Let(ident, expr_type, expr) => {
+                let obj = self.eval_let_statement(ident, expr_type, expr, env);
+                let _ = self.accumultae_error(obj);
+                None
+            }
+            Statement::Expression(expr) => self.eval_expression_statement(expr, env),
+            Statement::Return(expr) => {
+                let obj = self.eval_return_statement(expr, env);
+                self.accumultae_error(obj)
+            }
+            Statement::While(expr, block) => {
+                self.eval_while_statement(expr, block, env);
+                None
+            }
         }
     }
 
-    pub fn eval_while_statement(
+    pub fn eval_assign_statement(
         &mut self,
-        condition: Expression,
-        block: BlockStatement,
+        ident: Identifier,
+        expr: Expression,
         env: &mut Environment,
     ) -> Object {
-        let mut object = self.eval_expression(condition.clone(), &mut env.clone());
-        let mut llvm_value = unwrap_object(&mut object);
+        let identify_object = env.get(&ident.0, Location::new(0)); // TODO
+        let llvm_value_ref = match identify_object {
+            Object::Integer(reference) => reference,
+            Object::Boolean(reference) => reference,
+            Object::Array(_, value, _) => value,
+            _ => 0 as *mut LLVMValue,
+        };
 
-        let current_function = self.function_stack.last();
-        let loop_block = append_basic_block_in_context(self.lc.context, current_function, "");
-        let end_block = append_basic_block_in_context(self.lc.context, current_function, "");
+        let mut object = self.eval_expression(expr, &mut env.clone());
+        let llvm_value = unwrap_object(&mut object);
+        build_store(self.lc.builder, llvm_value, llvm_value_ref);
 
-        build_cond_br(self.lc.builder, llvm_value, loop_block, end_block);
-        build_position_at_end(self.lc.builder, loop_block);
-        let return_obj = self.eval_program(block, env);
+        Object::Null
+    }
 
-        object = self.eval_expression(condition, &mut env.clone());
-        llvm_value = unwrap_object(&mut object);
-        build_cond_br(self.lc.builder, llvm_value, loop_block, end_block);
-        build_position_at_end(self.lc.builder, end_block);
+    pub fn eval_assign_aggregate_statement(
+        &mut self,
+        ident: Identifier,
+        index_expr: Expression,
+        assign_expr: Expression,
+        env: &mut Environment,
+    ) -> Object {
+        let identify_object = env.get(&ident.0, Location::new(0)); // TODO
+        let llvm_value_ref = match identify_object {
+            Object::Integer(reference) => reference,
+            Object::Boolean(reference) => reference,
+            Object::Array(_, value, _) => value,
+            _ => 0 as *mut LLVMValue,
+        };
 
-        return_obj
+        let mut index_object = self.eval_expression(index_expr, &mut env.clone());
+        let llvm_index_value = unwrap_object(&mut index_object);
+
+        let llvm_element_value_ref = build_gep(
+            self.lc.builder,
+            llvm_value_ref,
+            vec![const_int(int32_type(), 0), llvm_index_value],
+            "",
+        );
+
+        let mut assign_object = self.eval_expression(assign_expr, &mut env.clone());
+        let llvm_assign_value = unwrap_object(&mut assign_object);
+        build_store(self.lc.builder, llvm_assign_value, llvm_element_value_ref);
+
+        Object::Null
     }
 
     pub fn eval_let_statement(
@@ -192,8 +185,59 @@ impl Eval {
         }
     }
 
+    pub fn eval_expression_statement(
+        &mut self,
+        expr: Expression,
+        env: &mut Environment,
+    ) -> Option<Object> {
+        match expr {
+            Expression::If {
+                conditions,
+                bodies,
+                location,
+            } => {
+                let obj = self.eval_if(conditions, bodies, env, location);
+                if let Some(obj) = obj {
+                    self.accumultae_error(obj)
+                } else {
+                    None
+                }
+            }
+            _ => {
+                let obj = self.eval_expression(expr, env);
+                let _ = self.accumultae_error(obj);
+                None
+            }
+        }
+    }
+
     pub fn eval_return_statement(&mut self, expr: Expression, env: &mut Environment) -> Object {
         self.eval_expression(expr, env)
+    }
+
+    pub fn eval_while_statement(
+        &mut self,
+        condition: Expression,
+        block: BlockStatement,
+        env: &mut Environment,
+    ) -> Object {
+        let mut object = self.eval_expression(condition.clone(), &mut env.clone());
+        let mut llvm_value = unwrap_object(&mut object);
+
+        let current_function = self.function_stack.last();
+        let loop_block = append_basic_block_in_context(self.lc.context, current_function, "");
+        let end_block = append_basic_block_in_context(self.lc.context, current_function, "");
+
+        build_cond_br(self.lc.builder, llvm_value, loop_block, end_block);
+        build_position_at_end(self.lc.builder, loop_block);
+        let return_obj = self.eval_program(block, env);
+
+        object = self.eval_expression(condition, &mut env.clone());
+        llvm_value = unwrap_object(&mut object);
+        build_cond_br(self.lc.builder, llvm_value, loop_block, end_block);
+        build_position_at_end(self.lc.builder, end_block);
+
+        return_obj
     }
 
     pub fn eval_expression(&mut self, expr: Expression, env: &mut Environment) -> Object {
@@ -297,59 +341,6 @@ impl Eval {
         )
     }
 
-    pub fn eval_assign_aggregate_statement(
-        &mut self,
-        ident: Identifier,
-        index_expr: Expression,
-        assign_expr: Expression,
-        env: &mut Environment,
-    ) -> Object {
-        let identify_object = env.get(&ident.0, Location::new(0)); // TODO
-        let llvm_value_ref = match identify_object {
-            Object::Integer(reference) => reference,
-            Object::Boolean(reference) => reference,
-            Object::Array(_, value, _) => value,
-            _ => 0 as *mut LLVMValue,
-        };
-
-        let mut index_object = self.eval_expression(index_expr, &mut env.clone());
-        let llvm_index_value = unwrap_object(&mut index_object);
-
-        let llvm_element_value_ref = build_gep(
-            self.lc.builder,
-            llvm_value_ref,
-            vec![const_int(int32_type(), 0), llvm_index_value],
-            "",
-        );
-
-        let mut assign_object = self.eval_expression(assign_expr, &mut env.clone());
-        let llvm_assign_value = unwrap_object(&mut assign_object);
-        build_store(self.lc.builder, llvm_assign_value, llvm_element_value_ref);
-
-        Object::Null
-    }
-
-    pub fn eval_assign_statement(
-        &mut self,
-        ident: Identifier,
-        expr: Expression,
-        env: &mut Environment,
-    ) -> Object {
-        let identify_object = env.get(&ident.0, Location::new(0)); // TODO
-        let llvm_value_ref = match identify_object {
-            Object::Integer(reference) => reference,
-            Object::Boolean(reference) => reference,
-            Object::Array(_, value, _) => value,
-            _ => 0 as *mut LLVMValue,
-        };
-
-        let mut object = self.eval_expression(expr, &mut env.clone());
-        let llvm_value = unwrap_object(&mut object);
-        build_store(self.lc.builder, llvm_value, llvm_value_ref);
-
-        Object::Null
-    }
-
     pub fn accumultae_error(&mut self, obj: Object) -> Option<Object> {
         match obj {
             Object::Error(_) => {
@@ -390,7 +381,7 @@ impl Eval {
         self.eval_program(block, &mut func_env);
 
         if return_type == LLVMExpressionType::Null {
-          build_ret_void(self.lc.builder);
+            build_ret_void(self.lc.builder);
         }
 
         build_position_at_end(self.lc.builder, self.main_block);
@@ -785,6 +776,23 @@ impl Eval {
             }
         }
         error_message.to_string()
+    }
+
+    pub fn setup_main(lc: &mut LLVMCreator) -> (*mut LLVMBasicBlock, *mut LLVMValue) {
+        let fn_type = function_type(int32_type(), &mut []);
+        let main_function = add_function(lc.module, fn_type, "main");
+        let block = append_basic_block_in_context(lc.context, main_function, "entry");
+        build_position_at_end(lc.builder, block);
+        (block, main_function)
+    }
+
+    pub fn dump_llvm(&mut self) {
+        self.lc.dump();
+        validate_module(self.lc.module);
+    }
+
+    pub fn emit_llvm(&mut self, file_name: &str) {
+        self.lc.emit_file(file_name);
     }
 }
 
