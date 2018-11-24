@@ -58,7 +58,7 @@ pub enum LLVMExpressionType {
     Null,
     Array(Box<LLVMExpressionType>, u32),
     Function,
-    Call
+    Call,
 }
 
 impl fmt::Display for LLVMExpressionType {

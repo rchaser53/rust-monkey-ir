@@ -4,6 +4,20 @@ use evaluate_ir::object::*;
 use ir::llvm_type::*;
 use parser::expressions::*;
 
+pub fn get_llvm_type_from_object(object: &mut Object) -> *mut LLVMType {
+    match *object {
+        Object::Integer(_) => int32_type(),
+        Object::String(_, _) => int32_type(), // need to fix
+        Object::Boolean(_) => int1_type(),
+        Object::Function(_) => int1_type(), // need to fix
+        Object::Array(ref child_type, _, length) => {
+            let mut child_type = convert_llvm_type(child_type.clone());
+            array_type(child_type, length)
+        }
+        _ => panic!("failed to get llvm_type: {:?}", object),
+    }
+}
+
 pub fn convert_llvm_type(expression_type: LLVMExpressionType) -> *mut LLVMType {
     match expression_type {
         LLVMExpressionType::Integer => int32_type(),

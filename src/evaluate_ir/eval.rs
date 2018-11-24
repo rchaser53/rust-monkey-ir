@@ -166,20 +166,20 @@ impl Eval {
         env: &mut Environment,
     ) -> Object {
         let mut object = self.eval_expression(expr, env);
-        let llvm_type = convert_llvm_type(expr_type.clone());
+        // let llvm_type = convert_llvm_type(expr_type.clone());
         let llvm_value = unwrap_object(&mut object);
 
         match expr_type {
-            LLVMExpressionType::Function | 
-            LLVMExpressionType::Array(_, _) |
-            LLVMExpressionType::Call => env.set(ident.0, object),
-            _ => {
-                let llvm_value_ref = build_alloca(self.lc.builder, llvm_type, &ident.0);
-                build_store(self.lc.builder, llvm_value, llvm_value_ref);
-
-                let rewraped_object = rewrap_llvm_value_ref(object, llvm_value_ref);
-                env.set(ident.0, rewraped_object)
+            LLVMExpressionType::Function | LLVMExpressionType::Array(_, _) => {
+                env.set(ident.0, object)
             }
+            LLVMExpressionType::Call => match object {
+                Object::Integer(value) | Object::String(_, value) | Object::Boolean(value) => {
+                    self.set_value_to_identify(value, object, &ident.0, env)
+                }
+                _ => env.set(ident.0, object),
+            },
+            _ => self.set_value_to_identify(llvm_value, object, &ident.0, env),
         }
     }
 
@@ -673,6 +673,20 @@ impl Eval {
         build_position_at_end(lc.builder, block);
         (block, main_function)
     }
+
+    pub fn set_value_to_identify(
+        &mut self,
+        llvm_value: *mut LLVMValue,
+        mut object: Object,
+        name: &str,
+        env: &mut Environment,
+    ) -> Object {
+        let llvm_type = get_llvm_type_from_object(&mut object);
+        let llvm_value_ref = build_alloca(self.lc.builder, llvm_type, name);
+        build_store(self.lc.builder, llvm_value, llvm_value_ref);
+        let rewraped_object = rewrap_llvm_value_ref(object, llvm_value_ref);
+        env.set(name.to_string(), rewraped_object)
+    }
 }
 
 #[allow(dead_code)]
@@ -842,4 +856,16 @@ fn return_void_function() {
     return 5;
 "#;
     execute_eval_test(input, 5);
+}
+
+#[test]
+fn let_call() {
+    let input = r#"
+    let abc = fn(): int {
+      return 3;
+    };
+    let bbb = abc();
+    return 3;
+"#;
+    execute_eval_test(input, 3);
 }
