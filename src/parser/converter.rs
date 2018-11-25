@@ -1,3 +1,5 @@
+use lexer::token::*;
+
 use parser::expressions::*;
 use parser::infix::*;
 
@@ -36,5 +38,17 @@ pub fn handle_infix_type(infix: Infix, left: Expression) -> LLVMExpressionType {
         Infix::Gt => LLVMExpressionType::Boolean,
         Infix::Lte => LLVMExpressionType::Boolean,
         Infix::Lt => LLVMExpressionType::Boolean,
+    }
+}
+
+pub fn convert_token_to_expression_type(token_type: TokenType) -> LLVMExpressionType {
+    match token_type {
+        TokenType::LLVMTokenType(llvm_type) => match llvm_type {
+            LLVMTokenType::Boolean => LLVMExpressionType::Boolean,
+            LLVMTokenType::Integer => LLVMExpressionType::Integer,
+            LLVMTokenType::String => LLVMExpressionType::String,
+            LLVMTokenType::Null => LLVMExpressionType::Null,
+        },
+        _ => LLVMExpressionType::Null,
     }
 }

@@ -5,6 +5,8 @@ lazy_static! {
   pub static ref PRECEDENCE_TOKEN_MAP: HashMap<TokenType, Precedences>  = {
     let mut m = HashMap::new();
     // ==, !=
+    m.insert(TokenType::Identifier, Precedences::Integer);
+
     m.insert(TokenType::Eq, Precedences::Equals);
     m.insert(TokenType::NotEq, Precedences::Equals);
 
@@ -22,8 +24,6 @@ lazy_static! {
     m.insert(TokenType::Rem, Precedences::Product);
     m.insert(TokenType::Multiply, Precedences::Product);
     m.insert(TokenType::Divide, Precedences::Product);
-
-    m.insert(TokenType::Identifier, Precedences::Integer);
 
     m.insert(TokenType::Lparen, Precedences::Call);
     m
