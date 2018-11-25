@@ -6,7 +6,7 @@ use parser::infix::*;
 pub fn get_expression_llvm_type(expression: &Expression) -> LLVMExpressionType {
     match expression.clone() {
         Expression::IntegerLiteral(_, _) => LLVMExpressionType::Integer,
-        Expression::StringLiteral(_, _) => LLVMExpressionType::String,
+        Expression::StringLiteral(string, _) => LLVMExpressionType::String(string.len() as u32),
         Expression::Boolean(_, _) => LLVMExpressionType::Boolean,
         Expression::Array(expression_type, elements) => {
             LLVMExpressionType::Array(Box::new(expression_type), elements.len() as u32)
@@ -41,12 +41,16 @@ pub fn handle_infix_type(infix: Infix, left: Expression) -> LLVMExpressionType {
     }
 }
 
-pub fn convert_token_to_expression_type(token_type: TokenType) -> LLVMExpressionType {
-    match token_type {
+pub fn convert_token_to_expression_type(token: Token) -> LLVMExpressionType {
+    match token.kind {
         TokenType::LLVMTokenType(llvm_type) => match llvm_type {
             LLVMTokenType::Boolean => LLVMExpressionType::Boolean,
             LLVMTokenType::Integer => LLVMExpressionType::Integer,
-            LLVMTokenType::String => LLVMExpressionType::String,
+            LLVMTokenType::String => {
+              // need to include null character(+1)
+              let string_length = (token.value.len() + 1) as u32;
+              LLVMExpressionType::String(string_length)
+            },
             LLVMTokenType::Null => LLVMExpressionType::Null,
         },
         _ => LLVMExpressionType::Null,

@@ -130,7 +130,7 @@ pub fn resolve_left_string(
     location: Location,
 ) -> Object {
     match right_object {
-        Object::String(llvm_expression_type, _) => Object::String(llvm_expression_type, left), // TODO
+        Object::String(_, length) => Object::String(left, length), // TODO
         _ => Object::Error(format!(
             "right value should be string, but actually {}. row: {}",
             right_object, location.row,

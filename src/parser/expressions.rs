@@ -53,7 +53,7 @@ impl Location {
 #[derive(PartialEq, Clone, Debug)]
 pub enum LLVMExpressionType {
     Integer,
-    String,
+    String(u32),
     Boolean,
     Null,
     Array(Box<LLVMExpressionType>, u32),
@@ -65,7 +65,7 @@ impl fmt::Display for LLVMExpressionType {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             LLVMExpressionType::Integer => write!(f, "{}", "int"),
-            LLVMExpressionType::String => write!(f, "{}", "string"),
+            LLVMExpressionType::String(_) => write!(f, "{}", "string"),
             LLVMExpressionType::Boolean => write!(f, "{}", "boolean"),
             LLVMExpressionType::Null => write!(f, "{}", "null"),
             LLVMExpressionType::Array(_, _) => write!(f, "{}", "array"),

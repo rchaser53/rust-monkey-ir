@@ -8,7 +8,7 @@ use llvm_sys::*;
 pub enum Object {
     Integer(*mut LLVMValue),
     Boolean(*mut LLVMValue),
-    String(LLVMExpressionType, *mut LLVMValue),
+    String(*mut LLVMValue, u32),
     Array(LLVMExpressionType, *mut LLVMValue, u32),
     Function(Function),
     Null,
@@ -35,7 +35,7 @@ impl fmt::Display for Object {
         match self {
             Object::Integer(_) => write!(f, "Integer"), // TODO
             Object::Boolean(_) => write!(f, "Boolean"), // TODO
-            Object::String(llvm_type, _) => write!(f, "{}", llvm_type), // TODO
+            Object::String(_, _) => write!(f, "{}", "String"), // TODO
             Object::Array(child_type, _, _) => write!(f, "{}", child_type), // TODO
             Object::Function(_) => write!(f, "{}", "TODO"),
             Object::Null => write!(f, "Null"),

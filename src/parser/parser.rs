@@ -348,7 +348,7 @@ impl<'a> Parser<'a> {
             }
 
             if let Some(token) = self.peek_token.to_owned() {
-                parameter_types.push(convert_token_to_expression_type(token.kind));
+                parameter_types.push(convert_token_to_expression_type(token));
                 self.next_token();
             }
         }
@@ -366,7 +366,7 @@ impl<'a> Parser<'a> {
             }
 
             if let Some(token) = self.peek_token.to_owned() {
-                parameter_types.push(convert_token_to_expression_type(token.kind));
+                parameter_types.push(convert_token_to_expression_type(token));
                 self.next_token();
             }
         }
@@ -392,7 +392,7 @@ impl<'a> Parser<'a> {
             return (
                 parameters,
                 parameter_types,
-                convert_token_to_expression_type(token.kind),
+                convert_token_to_expression_type(token),
             );
         }
 

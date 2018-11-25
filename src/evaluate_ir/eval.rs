@@ -170,11 +170,13 @@ impl Eval {
         let llvm_value = unwrap_object(&mut object);
 
         match expr_type {
-            LLVMExpressionType::Function | LLVMExpressionType::Array(_, _) => {
+            LLVMExpressionType::Function |
+            LLVMExpressionType::Array(_, _) | 
+            LLVMExpressionType::String(_) => {
                 env.set(ident.0, object)
             }
             LLVMExpressionType::Call => match object {
-                Object::Integer(value) | Object::String(_, value) | Object::Boolean(value) => {
+                Object::Integer(value) | Object::String(value, _) | Object::Boolean(value) => {
                     self.set_value_to_identify(value, object, &ident.0, env)
                 }
                 _ => env.set(ident.0, object),
@@ -328,13 +330,14 @@ impl Eval {
             Expression::Prefix(prefix, expr, location) => {
                 self.eval_prefix(prefix, expr, env, location)
             }
-            Expression::StringLiteral(string, _location) => Object::String(
-                LLVMExpressionType::Array(
-                    Box::new(LLVMExpressionType::Integer),
-                    string.len() as u32,
-                ),
+            Expression::StringLiteral(string, _location) => {
+              // need to include null character(+1)
+              let string_length = (string.len() + 1) as u32;
+              Object::String(
                 codegen_string(&mut self.lc, &string, ""),
-            ),
+                string_length,
+              )
+            },
             _ => Object::Null,
         }
     }
@@ -608,7 +611,7 @@ impl Eval {
                     location,
                 )
             }
-            Object::String(_, left) => resolve_left_string(infix, left, right_object, location),
+            Object::String(left, _) => resolve_left_string(infix, left, right_object, location),
             _ => resolve_left_failed(infix, left_object, right_object, location),
         }
     }
