@@ -15,6 +15,13 @@ pub mod macros {
     }
 
     #[macro_export]
+    macro_rules! str_from_c_str {
+        ($w:expr) => {
+          CStr::from_ptr($w).to_str().unwrap()
+        };
+    }
+
+    #[macro_export]
     macro_rules! llvm_integer {
         ($value:expr) => {
             const_int(int32_type(), $value)
