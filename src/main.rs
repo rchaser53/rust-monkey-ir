@@ -25,6 +25,9 @@ mod evaluate_ir;
 use evaluate_ir::environment::*;
 use evaluate_ir::eval::*;
 
+const INPUT_FILE: &'static str = "input_file";
+const OUTPUT_FILE: &'static str = "output_file";
+
 fn read_file(file_name: &str) -> Result<String, String> {
     if let Ok(mut file) = File::open(file_name) {
         let mut contents = String::new();
@@ -41,11 +44,13 @@ fn main() {
     let matches = App::new("rust-monkey-ir")
         .version("1.0")
         .author("rchaser53. <tayoshizawa29@gmail.com>")
-        .arg(Arg::with_name("input_file").index(1))
+        .arg(Arg::with_name(INPUT_FILE).index(1))
+        .arg(Arg::with_name(OUTPUT_FILE).index(2))
         .get_matches();
 
-    let file_name = matches.value_of("input_file").unwrap_or("index.mr");
-    match read_file(file_name) {
+    let input_file_name = matches.value_of(INPUT_FILE).unwrap_or("input.mr");
+    let output_file_name = matches.value_of(OUTPUT_FILE).unwrap_or("output.ll");
+    match read_file(input_file_name) {
         Ok(input) => {
             let mut lexer = Lexer::new(&input);
 
@@ -62,7 +67,7 @@ fn main() {
             }
 
             eval.dump_llvm();
-            eval.emit_llvm("test.ll");
+            eval.emit_llvm(output_file_name);
         }
         Err(error) => {
             panic!("{}", error);
