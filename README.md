@@ -20,7 +20,7 @@ lli [LLVM IR file]
 # ex. lli output.ll
 ```
 
-#### ※ perhaps you needs to install LLVM to use lli.
+#### ※ perhaps you need to install LLVM to use lli.
 
 # demo
 you can enjoy Fizz Buzz in rust-monkye-ir. like below.
