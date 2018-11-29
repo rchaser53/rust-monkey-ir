@@ -11,7 +11,7 @@ rustc-llvm-proxy = "0.1"
 
 [dependencies.llvm-sys]
 features = ["no-llvm-linking"]
-version = "60.2"
+version = "70"
 
 [build-dependencies]
 cc = "1.0.25"
