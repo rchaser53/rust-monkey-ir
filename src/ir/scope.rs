@@ -30,8 +30,9 @@ pub fn set_global_constant(value: *mut LLVMValue) {
 }
 
 #[allow(dead_code)]
-pub fn set_unnamed_addr(value: *mut LLVMValue) {
+pub fn set_unnamed_address(value: *mut LLVMValue) {
     unsafe {
-        LLVMSetUnnamedAddr(value, 1);
+        let name = LLVMGetUnnamedAddress(value);
+        LLVMSetUnnamedAddress(value, name);
     }
 }

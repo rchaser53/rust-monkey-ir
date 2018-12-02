@@ -32,7 +32,7 @@ pub fn const_array(
     set_linkage(global_array_val, LLVMPrivateLinkage);
     set_initializer(global_array_val, llvm_array);
     set_global_constant(global_array_val);
-    set_unnamed_addr(global_array_val);
+    set_unnamed_address(global_array_val);
 
     return global_array_val;
 }

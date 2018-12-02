@@ -28,7 +28,7 @@ pub fn codegen_string(lc: &mut LLVMCreator, input_str: &str, name: &str) -> *mut
     set_linkage(global_str_val, LLVMPrivateLinkage);
     set_initializer(global_str_val, str_val);
     set_global_constant(global_str_val);
-    set_unnamed_addr(global_str_val);
+    set_unnamed_address(global_str_val);
 
     return build_const_gep(global_str_val);
 }
@@ -40,7 +40,7 @@ pub fn codegen_string_gep(lc: &mut LLVMCreator, input_str: &str, name: &str) -> 
     set_linkage(global_str_val, LLVMPrivateLinkage);
     set_initializer(global_str_val, str_val);
     set_global_constant(global_str_val);
-    set_unnamed_addr(global_str_val);
+    set_unnamed_address(global_str_val);
 
     let mut args = [const_int(int32_type(), 0), const_int(int32_type(), 0)];
 
