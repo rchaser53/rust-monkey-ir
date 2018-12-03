@@ -47,10 +47,10 @@ pub fn convert_token_to_expression_type(token: Token) -> LLVMExpressionType {
             LLVMTokenType::Boolean => LLVMExpressionType::Boolean,
             LLVMTokenType::Integer => LLVMExpressionType::Integer,
             LLVMTokenType::String => {
-              // need to include null character(+1)
-              let string_length = (token.value.len() + 1) as u32;
-              LLVMExpressionType::String(string_length)
-            },
+                // need to include null character(+1)
+                let string_length = (token.value.len() + 1) as u32;
+                LLVMExpressionType::String(string_length)
+            }
             LLVMTokenType::Null => LLVMExpressionType::Null,
         },
         _ => LLVMExpressionType::Null,

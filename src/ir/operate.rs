@@ -89,3 +89,8 @@ pub fn build_const_gep(llvm_const_value: *mut LLVMValue) -> *mut LLVMValue {
     let mut args = vec![const_int(int32_type(), 0), const_int(int32_type(), 0)];
     unsafe { LLVMConstInBoundsGEP(llvm_const_value, args.as_mut_ptr(), args.len() as u32) }
 }
+
+#[allow(dead_code)]
+pub fn get_u64_from_llvm_value(llvm_const_value: *mut LLVMValue) -> u64 {
+    unsafe { LLVMConstIntGetZExtValue(llvm_const_value) }
+}

@@ -47,10 +47,7 @@ pub fn unwrap_object(object: &mut Object) -> *mut LLVMValue {
 pub fn wrap_llvm_value(expression_type: LLVMExpressionType, llvm_value: *mut LLVMValue) -> Object {
     match expression_type {
         LLVMExpressionType::Integer => Object::Integer(llvm_value),
-        LLVMExpressionType::String(length) => Object::String(
-          llvm_value,
-          length,
-        ),
+        LLVMExpressionType::String(length) => Object::String(llvm_value, length),
         LLVMExpressionType::Boolean => Object::Boolean(llvm_value),
         LLVMExpressionType::Array(child_type, array_length) => {
             Object::Array(*child_type, llvm_value, array_length)
@@ -62,9 +59,7 @@ pub fn wrap_llvm_value(expression_type: LLVMExpressionType, llvm_value: *mut LLV
 pub fn rewrap_llvm_value_ref(object: Object, llvm_value_ref: *mut LLVMValue) -> Object {
     match object {
         Object::Integer(_) => Object::Integer(llvm_value_ref),
-        Object::String(_, length) => {
-            Object::String(llvm_value_ref, length)
-        }
+        Object::String(_, length) => Object::String(llvm_value_ref, length),
         Object::Boolean(_) => Object::Boolean(llvm_value_ref),
         Object::Array(llvm_child_type, _, array_length) => {
             Object::Array(llvm_child_type, llvm_value_ref, array_length)

@@ -8,6 +8,7 @@ use evaluate_ir::object::*;
 use ir::condition::*;
 use ir::const_value::*;
 use ir::llvm_type::*;
+use ir::operate::*;
 
 pub fn calculate_prefix_boolean(
     prefix: Prefix,
@@ -15,7 +16,13 @@ pub fn calculate_prefix_boolean(
     location: Location,
 ) -> Object {
     match prefix {
-        Prefix::Bang => Object::Boolean(value), // need to fix
+        Prefix::Bang => {
+            if get_u64_from_llvm_value(value) == 1 {
+                Object::Boolean(const_int(int1_type(), 0))
+            } else {
+                Object::Boolean(const_int(int1_type(), 1))
+            }
+        }
         _ => Object::Error(format!(
             "{} cannot be use for prefix. row: {}",
             prefix, location.row
