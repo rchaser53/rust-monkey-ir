@@ -872,3 +872,17 @@ fn let_call() {
 "#;
     execute_eval_test(input, 3);
 }
+
+#[test]
+fn bang_boolean() {
+    let input = r#"
+    let a = 0;
+    if (!true) {
+      a = a + 1;
+    } elseif (!false) {
+      a = a + 2;
+    }
+    return 2;
+"#;
+    execute_eval_test(input, 2);
+}
