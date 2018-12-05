@@ -1,5 +1,4 @@
 use std::ffi::CString;
-use std::os::raw::c_char;
 
 use llvm_sys::execution_engine::*;
 use llvm_sys::*;
@@ -15,18 +14,17 @@ const LLVM_ERROR: i32 = 1;
 
 #[allow(dead_code)]
 fn create_llvm_engine(module: *mut LLVMModule) -> LLVMExecutionEngineRef {
-    let error: *mut c_char = 0 as *mut c_char;
+    let error = 0 as *mut i8;
     let mut engine: LLVMExecutionEngineRef = 0 as LLVMExecutionEngineRef;
     let ok = unsafe {
-        let mut error = 0 as *mut c_char;
-        let buf: *mut *mut c_char = &mut error;
+        let mut error = 0 as *mut i8;
+        let buf: *mut *mut i8 = &mut error;
         let engine_ref: *mut LLVMExecutionEngineRef = &mut engine;
         LLVMLinkInInterpreter();
         LLVMCreateInterpreterForModule(engine_ref, module, buf)
     };
     if ok == LLVM_ERROR {
-        let err_msg = unsafe { CString::from_raw(error).into_string().unwrap() };
-        panic!("Execution error: {}", err_msg);
+        panic!("Execution error: {}", string_from_raw!(error));
     }
     validate_module(module);
     engine

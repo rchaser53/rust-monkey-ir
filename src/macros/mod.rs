@@ -15,9 +15,9 @@ pub mod macros {
     }
 
     #[macro_export]
-    macro_rules! str_from_c_str {
+    macro_rules! string_from_raw {
         ($w:expr) => {
-            CStr::from_ptr($w).to_str().unwrap()
+            unsafe { CString::from_raw($w).into_string().unwrap() }
         };
     }
 

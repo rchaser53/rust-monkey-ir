@@ -90,7 +90,8 @@ impl Expression {
                     .fold(Vec::new(), |mut stack, element| {
                         stack.push(element.string());
                         stack
-                    }).join(", ");
+                    })
+                    .join(", ");
 
                 format!("[{}]", elements_string)
             }
