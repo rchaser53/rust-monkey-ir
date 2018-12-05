@@ -1,3 +1,4 @@
+use std::path::Path;
 use std::collections::HashMap;
 use std::ffi::CString;
 
@@ -42,13 +43,21 @@ impl LLVMCreator {
     }
 
     #[allow(dead_code)]
-    pub fn emit_file(&self, filename: &str) {
+    pub fn emit_file<P: AsRef<Path>>(&self, path: P) {
+        let path = path.as_ref().to_str().expect("Did not find a valid Unicode path string");
         unsafe {
-            LLVMPrintModuleToFile(
+            let mut error: *mut i8 = 0 as *mut i8;
+            let buf: *mut *mut i8 = &mut error;
+            let result = LLVMPrintModuleToFile(
                 self.module,
-                c_string!(filename).as_ptr(),
-                c_string!("").as_ptr() as *mut _,
+                path.as_ptr() as *const _,
+                buf,
             );
+
+            if result > 0 {
+                let err_msg = CString::from_raw(error).into_string().unwrap();
+                println!("{}", err_msg);
+            }
         }
     }
 }
