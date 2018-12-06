@@ -170,11 +170,9 @@ impl Eval {
         let llvm_value = unwrap_object(&mut object);
 
         match expr_type {
-            LLVMExpressionType::Function |
-            LLVMExpressionType::Array(_, _) | 
-            LLVMExpressionType::String(_) => {
-                env.set(ident.0, object)
-            }
+            LLVMExpressionType::Function
+            | LLVMExpressionType::Array(_, _)
+            | LLVMExpressionType::String(_) => env.set(ident.0, object),
             LLVMExpressionType::Call => match object {
                 Object::Integer(value) | Object::String(value, _) | Object::Boolean(value) => {
                     self.set_value_to_identify(value, object, &ident.0, env)
@@ -258,7 +256,8 @@ impl Eval {
             .map(|condition| {
                 let mut object = self.eval_expression(condition, &mut env.clone());
                 unwrap_object(&mut object)
-            }).collect();
+            })
+            .collect();
 
         for _ in 0..last_index {
             condition_blocks.push(append_basic_block_in_context(
@@ -331,13 +330,10 @@ impl Eval {
                 self.eval_prefix(prefix, expr, env, location)
             }
             Expression::StringLiteral(string, _location) => {
-              // need to include null character(+1)
-              let string_length = (string.len() + 1) as u32;
-              Object::String(
-                codegen_string(&mut self.lc, &string, ""),
-                string_length,
-              )
-            },
+                // need to include null character(+1)
+                let string_length = (string.len() + 1) as u32;
+                Object::String(codegen_string(&mut self.lc, &string, ""), string_length)
+            }
             _ => Object::Null,
         }
     }
@@ -356,7 +352,8 @@ impl Eval {
                     Object::Boolean(reference) => reference,
                     _ => 0 as *mut LLVMValue,
                 },
-            ).collect();
+            )
+            .collect();
         let array_length = object_vec.len();
         let llvm_type = convert_llvm_type(expression_type.clone());
         let llvm_array_value = const_array(&mut self.lc, llvm_type, object_vec);
@@ -476,7 +473,8 @@ impl Eval {
                     .map(|elem| {
                         let mut object = self.eval_expression(elem, &mut outer_env.clone());
                         unwrap_object(&mut object)
-                    }).collect();
+                    })
+                    .collect();
                 let llvm_value =
                     call_function(self.lc.builder, func.llvm_value, function_argments, "");
                 wrap_llvm_value(func.return_type, llvm_value)
@@ -489,7 +487,8 @@ impl Eval {
                         .map(|elem| {
                             let mut object = self.eval_expression(elem, &mut outer_env.clone());
                             unwrap_object(&mut object)
-                        }).collect();
+                        })
+                        .collect();
 
                     call_function(self.lc.builder, printf, function_argments, "");
                     Object::Null
@@ -883,6 +882,34 @@ fn bang_boolean() {
       a = a + 2;
     }
     return 2;
+"#;
+    execute_eval_test(input, 2);
+}
+
+#[test]
+fn equal_boolean_true() {
+    let input = r#"
+    let a = 0;
+    if (false == false) {
+      a = a + 1;
+    }
+
+    return a;
+"#;
+    execute_eval_test(input, 1);
+}
+
+#[test]
+fn equal_boolean_false() {
+    let input = r#"
+    let a = 0;
+    if (true == false) {
+      a = a + 1;
+    } else {
+      a = a + 2;
+    }
+
+    return a;
 "#;
     execute_eval_test(input, 2);
 }
