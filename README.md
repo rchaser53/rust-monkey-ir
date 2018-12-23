@@ -1,3 +1,5 @@
+# Failed to create this compiler. [next](https://github.com/rchaser53/rr-llvm-ir).
+
 # rust-monkey-ir
 this is a toy compiler emits LLVM IR
 
